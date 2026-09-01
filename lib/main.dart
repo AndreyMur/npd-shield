@@ -9,8 +9,26 @@ import 'presentation/dashboard/dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final isar = await AppDatabase.open();
-  runApp(NpdShieldApp(repository: IsarTransactionRepository(isar)));
+  try {
+    final isar = await AppDatabase.open();
+    runApp(NpdShieldApp(repository: IsarTransactionRepository(isar)));
+  } catch (error) {
+    runApp(const _StartupErrorApp());
+  }
+}
+
+class _StartupErrorApp extends StatelessWidget {
+  const _StartupErrorApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      title: 'NPD Shield',
+      home: Scaffold(
+        body: Center(child: Text('Не удалось инициализировать базу данных')),
+      ),
+    );
+  }
 }
 
 class NpdShieldApp extends StatefulWidget {
@@ -28,9 +46,16 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
   @override
   void initState() {
     super.initState();
-    AppTheme.loadMode().then((mode) {
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    try {
+      final mode = await AppTheme.loadMode();
       if (mounted) setState(() => _themeMode = mode);
-    });
+    } catch (_) {
+      // Keep the system default if the stored preference cannot be read.
+    }
   }
 
   Future<void> _setThemeMode(ThemeMode mode) async {

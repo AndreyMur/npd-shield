@@ -62,17 +62,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<Map<DashboardFilter, IncomeSummary>>(
-              future: _summaries(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                return _DashboardBody(
-                  summaries: snapshot.data!,
-                  filter: _filter,
-                );
-              },
+            child: _DashboardView(
+              future: _load(_filter),
+              filter: _filter,
             ),
           ),
         ],
@@ -80,99 +72,106 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<Map<DashboardFilter, IncomeSummary>> _summaries() async {
+  Future<_DashboardData> _load(DashboardFilter filter) {
     final now = widget.now ?? DateTime.now();
-    final summaries = <DashboardFilter, IncomeSummary>{};
-    summaries[DashboardFilter.all] =
-        await widget.repository.getIncomeSummary(now: now);
-    summaries[DashboardFilter.it] = await widget.repository
-        .getIncomeSummary(sphere: TransactionSphere.it, now: now);
-    summaries[DashboardFilter.logistics] = await widget.repository
-        .getIncomeSummary(sphere: TransactionSphere.logistics, now: now);
-    return summaries;
+    switch (filter) {
+      case DashboardFilter.all:
+        return Future.wait([
+          widget.repository.getIncomeSummary(now: now),
+          widget.repository
+              .getIncomeSummary(sphere: TransactionSphere.it, now: now),
+          widget.repository
+              .getIncomeSummary(sphere: TransactionSphere.logistics, now: now),
+        ]).then((values) => _DashboardData(
+              total: values[0],
+              it: values[1],
+              logistics: values[2],
+            ));
+      case DashboardFilter.it:
+        return widget.repository
+            .getIncomeSummary(sphere: TransactionSphere.it, now: now)
+            .then((v) => _DashboardData(total: v));
+      case DashboardFilter.logistics:
+        return widget.repository
+            .getIncomeSummary(sphere: TransactionSphere.logistics, now: now)
+            .then((v) => _DashboardData(total: v));
+    }
   }
 }
 
-class _ThemeModeButton extends StatefulWidget {
-  final void Function(ThemeMode mode)? onChanged;
+class _DashboardData {
+  final IncomeSummary? total;
+  final IncomeSummary? it;
+  final IncomeSummary? logistics;
 
-  const _ThemeModeButton({this.onChanged});
-
-  @override
-  State<_ThemeModeButton> createState() => _ThemeModeButtonState();
+  const _DashboardData({this.total, this.it, this.logistics});
 }
 
-class _ThemeModeButtonState extends State<_ThemeModeButton> {
+class _DashboardView extends StatelessWidget {
+  final Future<_DashboardData> future;
+  final DashboardFilter filter;
+
+  const _DashboardView({required this.future, required this.filter});
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    return IconButton(
-      tooltip: isDark ? 'Светлая тема' : 'Тёмная тема',
-      icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-      onPressed: () {
-        final next = isDark ? ThemeMode.light : ThemeMode.dark;
-        widget.onChanged?.call(next);
+    return FutureBuilder<_DashboardData>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError || snapshot.data == null) {
+          return const Center(child: Text('Не удалось загрузить данные'));
+        }
+        return _DashboardBody(data: snapshot.data!, filter: filter);
       },
     );
   }
 }
 
 class _DashboardBody extends StatelessWidget {
-  final Map<DashboardFilter, IncomeSummary> summaries;
+  final _DashboardData data;
   final DashboardFilter filter;
 
-  const _DashboardBody({required this.summaries, required this.filter});
+  const _DashboardBody({required this.data, required this.filter});
 
   @override
   Widget build(BuildContext context) {
-    final spheres = _visibleSpheres();
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _TotalCard(
-          summary: summaries[filter]!,
-          filter: filter,
-        ),
-        const SizedBox(height: 16),
-        for (final sphere in spheres) ...[
-          _SphereCard(summary: summaries[_filterFor(sphere)]!),
-          const SizedBox(height: 16),
-        ],
-      ],
-    );
-  }
-
-  List<TransactionSphere> _visibleSpheres() {
-    return switch (filter) {
-      DashboardFilter.all => [TransactionSphere.it, TransactionSphere.logistics],
-      DashboardFilter.it => [TransactionSphere.it],
-      DashboardFilter.logistics => [TransactionSphere.logistics],
-    };
-  }
-
-  DashboardFilter _filterFor(TransactionSphere sphere) {
-    return switch (sphere) {
-      TransactionSphere.it => DashboardFilter.it,
-      TransactionSphere.logistics => DashboardFilter.logistics,
-    };
-  }
-}
-
-class _TotalCard extends StatelessWidget {
-  final IncomeSummary summary;
-  final DashboardFilter filter;
-
-  const _TotalCard({required this.summary, required this.filter});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final title = switch (filter) {
       DashboardFilter.all => 'Все сферы',
       DashboardFilter.it => 'IT',
       DashboardFilter.logistics => 'Логистика',
     };
+
+    final children = <Widget>[
+      _TotalCard(title: title, summary: data.total!),
+    ];
+
+    if (filter == DashboardFilter.all) {
+      children
+        ..add(const SizedBox(height: 16))
+        ..add(_SphereCard(title: 'IT', summary: data.it!))
+        ..add(const SizedBox(height: 16))
+        ..add(_SphereCard(title: 'Логистика', summary: data.logistics!));
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: children,
+    );
+  }
+}
+
+class _TotalCard extends StatelessWidget {
+  final String title;
+  final IncomeSummary summary;
+
+  const _TotalCard({required this.title, required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -192,9 +191,10 @@ class _TotalCard extends StatelessWidget {
 }
 
 class _SphereCard extends StatelessWidget {
+  final String title;
   final IncomeSummary summary;
 
-  const _SphereCard({required this.summary});
+  const _SphereCard({required this.title, required this.summary});
 
   @override
   Widget build(BuildContext context) {
@@ -205,11 +205,11 @@ class _SphereCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Доход', style: theme.textTheme.titleMedium),
+            Text(title, style: theme.textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _MetricRow(label: 'Доход за месяц', value: summary.month),
             const SizedBox(height: 8),
-            _MetricRow(label: 'За месяц', value: summary.month),
-            const SizedBox(height: 8),
-            _MetricRow(label: 'За год', value: summary.year),
+            _MetricRow(label: 'Доход за год', value: summary.year),
           ],
         ),
       ),
@@ -231,7 +231,7 @@ class _MetricRow extends StatelessWidget {
       children: [
         Text(label, style: theme.textTheme.bodyMedium),
         Text(
-          _format(value),
+          _formatRubles(value),
           style: theme.textTheme.titleMedium,
           key: Key('summary_$label'),
         ),
@@ -239,7 +239,44 @@ class _MetricRow extends StatelessWidget {
     );
   }
 
-  static String _format(double value) {
-    return '${value.toStringAsFixed(2).replaceAll('.', ',')} ₽';
+  static String _formatRubles(double value) {
+    final fixed = value.toStringAsFixed(2);
+    final parts = fixed.split('.');
+    final digits = parts[0];
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
+      buffer.write(digits[i]);
+    }
+    return '${buffer.toString().replaceAll('.', ',')},${parts[1]} ₽';
+  }
+}
+
+class _ThemeModeButton extends StatelessWidget {
+  final void Function(ThemeMode mode)? onChanged;
+
+  const _ThemeModeButton({this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<ThemeMode>(
+      tooltip: 'Тема',
+      icon: const Icon(Icons.brightness_6),
+      onSelected: onChanged,
+      itemBuilder: (context) => const [
+        PopupMenuItem(
+          value: ThemeMode.system,
+          child: Text('Системная'),
+        ),
+        PopupMenuItem(
+          value: ThemeMode.light,
+          child: Text('Светлая'),
+        ),
+        PopupMenuItem(
+          value: ThemeMode.dark,
+          child: Text('Тёмная'),
+        ),
+      ],
+    );
   }
 }

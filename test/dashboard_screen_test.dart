@@ -99,8 +99,8 @@ void main() {
     ]);
     await pumpDashboard(tester, repo, now: DateTime(2026, 8, 31));
 
-    expect(find.text('2000,00 ₽'), findsWidgets);
-    expect(find.text('1500,00 ₽'), findsWidgets);
+    expect(find.text('2 000,00 ₽'), findsWidgets);
+    expect(find.text('1 500,00 ₽'), findsWidgets);
     expect(find.text('500,00 ₽'), findsWidgets);
   });
 
@@ -115,16 +115,16 @@ void main() {
     ]);
     await pumpDashboard(tester, repo, now: DateTime(2026, 8, 31));
 
-    expect(find.text('2200,00 ₽'), findsWidgets);
+    expect(find.text('2 200,00 ₽'), findsWidgets);
 
-    await tester.tap(find.text('IT'));
+    await tester.tap(find.byIcon(Icons.code));
     await tester.pumpAndSettle();
-    expect(find.text('1500,00 ₽'), findsWidgets);
+    expect(find.text('1 500,00 ₽'), findsWidgets);
     expect(find.text('700,00 ₽'), findsNothing);
 
-    await tester.tap(find.text('Логистика'));
+    await tester.tap(find.byIcon(Icons.local_shipping));
     await tester.pumpAndSettle();
     expect(find.text('700,00 ₽'), findsWidgets);
-    expect(find.text('1500,00 ₽'), findsNothing);
+    expect(find.text('1 500,00 ₽'), findsNothing);
   });
 }
