@@ -80,7 +80,8 @@ void main() {
     test('отрицательный доход трактуется как нулевой доход', () {
       final result = calculator.calculate(income: -5000);
       expect(result.payableTax, 0);
-      expect(result.accruedTax, lessThanOrEqualTo(0));
+      expect(result.accruedTax, 0);
+      expect(result.limitExceeded, isFalse);
     });
   });
 }

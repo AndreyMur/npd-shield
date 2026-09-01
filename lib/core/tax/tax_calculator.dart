@@ -29,24 +29,27 @@ class TaxCalculation {
 /// Рассчитывает налог 6% от дохода с вычетом фиксированной части
 /// страховых взносов ИП в соответствии с константами [TaxConstants].
 ///
+/// Отрицательный доход трактуется как нулевой.
+///
 /// Формула:
-/// - accrued = income * rate
+/// - accrued = max(0, income) * rate
 /// - payable = max(0, accrued - fixedInsurancePremium)
 class TaxCalculator {
   const TaxCalculator();
 
   TaxCalculation calculate({required double income}) {
-    final accruedTax = income * TaxConstants.rate;
+    final effectiveIncome = income < 0 ? 0.0 : income;
+    final accruedTax = effectiveIncome * TaxConstants.rate;
     final deduction = TaxConstants.fixedInsurancePremium;
     final payableTax =
         (accruedTax - deduction) < 0 ? 0.0 : accruedTax - deduction;
 
     return TaxCalculation(
-      income: income,
+      income: effectiveIncome,
       accruedTax: accruedTax,
       insuranceDeduction: deduction,
       payableTax: payableTax,
-      limitExceeded: income > TaxConstants.limit,
+      limitExceeded: effectiveIncome > TaxConstants.limit,
     );
   }
 }

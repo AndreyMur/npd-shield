@@ -261,9 +261,10 @@ class _LimitRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final remaining = (TaxConstants.limit - yearIncome).clamp(0, double.infinity).toDouble();
+    final remaining =
+        (TaxConstants.limit - yearIncome).clamp(0.0, TaxConstants.limit).toDouble();
     final message =
-        exceeded ? 'Лимит НПД превышен' : 'Осталось ${_format(remaining)}';
+        exceeded ? 'Лимит НПД превышен' : 'Осталось ${_formatRubles(remaining)}';
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -274,18 +275,6 @@ class _LimitRow extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  static String _format(double value) {
-    final fixed = value.toStringAsFixed(2);
-    final parts = fixed.split('.');
-    final digits = parts[0];
-    final buffer = StringBuffer();
-    for (var i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(digits[i]);
-    }
-    return '${buffer.toString().replaceAll('.', ',')},${parts[1]} ₽';
   }
 }
 
@@ -337,18 +326,6 @@ class _MetricRow extends StatelessWidget {
       ],
     );
   }
-
-  static String _formatRubles(double value) {
-    final fixed = value.toStringAsFixed(2);
-    final parts = fixed.split('.');
-    final digits = parts[0];
-    final buffer = StringBuffer();
-    for (var i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
-      buffer.write(digits[i]);
-    }
-    return '${buffer.toString().replaceAll('.', ',')},${parts[1]} ₽';
-  }
 }
 
 class _ThemeModeButton extends StatelessWidget {
@@ -378,4 +355,16 @@ class _ThemeModeButton extends StatelessWidget {
       ],
     );
   }
+}
+
+String _formatRubles(double value) {
+  final fixed = value.toStringAsFixed(2);
+  final parts = fixed.split('.');
+  final digits = parts[0];
+  final buffer = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
+    buffer.write(digits[i]);
+  }
+  return '${buffer.toString().replaceAll('.', ',')},${parts[1]} ₽';
 }
