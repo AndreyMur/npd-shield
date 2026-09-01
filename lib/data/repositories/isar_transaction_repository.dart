@@ -52,6 +52,30 @@ class IsarTransactionRepository implements TransactionRepository {
   }
 
   @override
+  Future<double> getAverageMonthlyIncome({
+    TransactionSphere? sphere,
+    DateTime? now,
+  }) {
+    final today = now ?? DateTime.now();
+    final start = DateTime(today.year, today.month - 2);
+    final end = DateTime(today.year, today.month + 1);
+
+    return isar.txn(() async {
+      final all = sphere != null
+          ? await isar.transactions.where().sphereEqualTo(sphere).findAll()
+          : await isar.transactions.where().findAll();
+
+      double total = 0;
+      for (final t in all) {
+        if (!t.date.isBefore(start) && t.date.isBefore(end)) {
+          total += t.amount;
+        }
+      }
+      return total / 3;
+    });
+  }
+
+  @override
   Future<void> clear() {
     return isar.writeTxn(() => isar.transactions.clear());
   }

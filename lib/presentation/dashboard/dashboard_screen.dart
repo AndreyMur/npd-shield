@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/transaction.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../domain/limit/limit_calculator.dart';
 
 enum DashboardFilter { all, it, logistics }
 
@@ -82,19 +83,37 @@ class _DashboardScreenState extends State<DashboardScreen> {
               .getIncomeSummary(sphere: TransactionSphere.it, now: now),
           widget.repository
               .getIncomeSummary(sphere: TransactionSphere.logistics, now: now),
+          widget.repository.getAverageMonthlyIncome(now: now),
         ]).then((values) => _DashboardData(
-              total: values[0],
-              it: values[1],
-              logistics: values[2],
+              total: values[0] as IncomeSummary,
+              it: values[1] as IncomeSummary,
+              logistics: values[2] as IncomeSummary,
+              averageMonthlyIncome: values[3] as double,
             ));
       case DashboardFilter.it:
-        return widget.repository
-            .getIncomeSummary(sphere: TransactionSphere.it, now: now)
-            .then((v) => _DashboardData(total: v));
+        return Future.wait([
+          widget.repository
+              .getIncomeSummary(sphere: TransactionSphere.it, now: now),
+          widget.repository.getAverageMonthlyIncome(
+            sphere: TransactionSphere.it,
+            now: now,
+          ),
+        ]).then((values) => _DashboardData(
+              total: values[0] as IncomeSummary,
+              averageMonthlyIncome: values[1] as double,
+            ));
       case DashboardFilter.logistics:
-        return widget.repository
-            .getIncomeSummary(sphere: TransactionSphere.logistics, now: now)
-            .then((v) => _DashboardData(total: v));
+        return Future.wait([
+          widget.repository
+              .getIncomeSummary(sphere: TransactionSphere.logistics, now: now),
+          widget.repository.getAverageMonthlyIncome(
+            sphere: TransactionSphere.logistics,
+            now: now,
+          ),
+        ]).then((values) => _DashboardData(
+              total: values[0] as IncomeSummary,
+              averageMonthlyIncome: values[1] as double,
+            ));
     }
   }
 }
@@ -103,8 +122,14 @@ class _DashboardData {
   final IncomeSummary? total;
   final IncomeSummary? it;
   final IncomeSummary? logistics;
+  final double averageMonthlyIncome;
 
-  const _DashboardData({this.total, this.it, this.logistics});
+  const _DashboardData({
+    this.total,
+    this.it,
+    this.logistics,
+    this.averageMonthlyIncome = 0,
+  });
 }
 
 class _DashboardView extends StatelessWidget {
@@ -146,6 +171,11 @@ class _DashboardBody extends StatelessWidget {
 
     final children = <Widget>[
       _TotalCard(title: title, summary: data.total!),
+      const SizedBox(height: 16),
+      _LimitCard(
+        usedAmount: data.total!.year,
+        averageMonthlyIncome: data.averageMonthlyIncome,
+      ),
     ];
 
     if (filter == DashboardFilter.all) {
@@ -214,6 +244,83 @@ class _SphereCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _LimitCard extends StatelessWidget {
+  final double usedAmount;
+  final double averageMonthlyIncome;
+
+  const _LimitCard({
+    required this.usedAmount,
+    required this.averageMonthlyIncome,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final result = const LimitCalculator().calculate(
+      usedAmount: usedAmount,
+      averageMonthlyIncome: averageMonthlyIncome,
+    );
+    final ratio = result.ratio.clamp(0.0, 1.0);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Лимит НПД', style: theme.textTheme.titleLarge),
+                Text(
+                  '${LimitCalculator.formatAmount(usedAmount)} ₽ / '
+                  '${LimitCalculator.formatAmount(result.limit)} ₽',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: LinearProgressIndicator(
+                key: const Key('limit_progress'),
+                minHeight: 16,
+                value: ratio,
+                valueColor: AlwaysStoppedAnimation<Color>(_levelColor(result.level)),
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              result.text,
+              key: const Key('limit_text'),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Точность прогноза ±15 дней на горизонте 3 месяцев.',
+              style: theme.textTheme.bodySmall,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Прогноз не учитывает сезонность.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Color _levelColor(LimitLevel level) {
+    return switch (level) {
+      LimitLevel.green => const Color(0xFF4CAF50),
+      LimitLevel.yellow => const Color(0xFFFFC107),
+      LimitLevel.red => const Color(0xFFF44336),
+    };
   }
 }
 
