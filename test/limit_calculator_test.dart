@@ -81,17 +81,19 @@ void main() {
         averageMonthlyIncome: 100000,
       );
       expect(result.amountRemaining, closeTo(1200000, 0.001));
-      // ~1200000 / (100000 / 30.44) ≈ 365 дней — больше горизонта, обрезается до 92.
-      expect(result.daysRemaining, 92);
+      // ~1200000 / (100000 / 30.44) ≈ 365 дней — выходит за горизонт 3 месяцев.
+      expect(result.daysRemaining, greaterThan(LimitCalculator.forecastHorizonDays));
+      expect(result.isBeyondHorizon, isTrue);
     });
 
     test('прогноз без дохода недоступен (null)', () {
       final result = LimitCalculator().calculate(usedAmount: 100, averageMonthlyIncome: 0);
       expect(result.daysRemaining, isNull);
+      expect(result.isBeyondHorizon, isFalse);
       expect(result.text, contains('до лимита осталось'));
     });
 
-    test('прогноз на горизонте 3 месяцев (≤ 92 дней)', () {
+    test('прогноз в пределах горизонта 3 месяцев', () {
       final result = LimitCalculator().calculate(
         usedAmount: TaxConstants.limit - 100000,
         averageMonthlyIncome: 100000,
@@ -99,27 +101,51 @@ void main() {
       final days = result.daysRemaining!;
       expect(days, greaterThan(0));
       expect(days, lessThanOrEqualTo(LimitCalculator.forecastHorizonDays));
+      expect(result.isBeyondHorizon, isFalse);
     });
 
-    test('точность прогноза ±15 дней на горизонте 3 месяцев', () {
-      // Случай: ровно 3 месяца (92 дня) до исчерпания.
+    test('граничное значение остатка ровно на границе горизонта', () {
+      // До исчерпания ровно 92 дня (горизонт).
       final monthly = 100000.0;
-      final used = TaxConstants.limit - (monthly * 3);
+      final used = TaxConstants.limit - (monthly / LimitCalculator.daysPerMonth) * 92;
       final result = LimitCalculator().calculate(
         usedAmount: used,
         averageMonthlyIncome: monthly,
       );
-      final expectedDays =
-          ((TaxConstants.limit - used) / (monthly / LimitCalculator.daysPerMonth)).ceil();
-      expect((result.daysRemaining! - expectedDays).abs(), lessThanOrEqualTo(15));
+      expect(result.daysRemaining, 92);
+      expect(result.isBeyondHorizon, isFalse);
     });
 
     test('текстовый прогноз «до лимита осталось X руб. (Y дней)»', () {
       final result = LimitCalculator().calculate(
-        usedAmount: 100000,
+        usedAmount: TaxConstants.limit - 100000,
         averageMonthlyIncome: 100000,
       );
-      expect(result.text, matches(RegExp(r'^до лимита осталось [\d ]+ руб\. \(\d+ дней\)$')));
+      expect(result.daysRemaining, isNotNull);
+      expect(result.isBeyondHorizon, isFalse);
+      expect(result.text, startsWith('до лимита осталось 100 000 руб. ('));
+      expect(result.text, endsWith(')'));
+    });
+
+    test('текст за пределами горизонта — «более 3 месяцев»', () {
+      final result = LimitCalculator().calculate(
+        usedAmount: TaxConstants.limit / 2,
+        averageMonthlyIncome: 100000,
+      );
+      expect(result.text, contains('более 3 месяцев'));
+    });
+  });
+
+  group('LimitCalculator.pluralDays — склонение слова «день»', () {
+    test('правильное склонение', () {
+      expect(LimitCalculator.pluralDays(1), '1 день');
+      expect(LimitCalculator.pluralDays(2), '2 дня');
+      expect(LimitCalculator.pluralDays(4), '4 дня');
+      expect(LimitCalculator.pluralDays(5), '5 дней');
+      expect(LimitCalculator.pluralDays(11), '11 дней');
+      expect(LimitCalculator.pluralDays(21), '21 день');
+      expect(LimitCalculator.pluralDays(22), '22 дня');
+      expect(LimitCalculator.pluralDays(25), '25 дней');
     });
   });
 }

@@ -25,15 +25,18 @@ class LimitResult {
   /// Прогноз количества дней до исчерпания лимита при текущем темпе.
   ///
   /// Возвращает `null`, если прогноз недоступен (нет дохода за последние 3 месяца).
-  /// Ограничен горизонтом 3 месяца из соображений точности (погрешность ±15 дней).
+  /// Не ограничивается горизонтом — для проверки выхода за горизонт см. [isBeyondHorizon].
   int? get daysRemaining {
     if (amountRemaining <= 0) return 0;
     if (averageMonthlyIncome <= 0) return null;
     final daily = averageMonthlyIncome / LimitCalculator.daysPerMonth;
-    final days = (amountRemaining / daily).ceil();
-    return days > LimitCalculator.forecastHorizonDays
-        ? LimitCalculator.forecastHorizonDays
-        : days;
+    return (amountRemaining / daily).ceil();
+  }
+
+  /// Истинно, когда прогноз [daysRemaining] выходит за горизонт прогнозирования.
+  bool get isBeyondHorizon {
+    final days = daysRemaining;
+    return days != null && days > LimitCalculator.forecastHorizonDays;
   }
 
   /// Текстовый прогноз «до лимита осталось X руб. (Y дней)».
@@ -43,13 +46,18 @@ class LimitResult {
     if (days == null) {
       return 'до лимита осталось $amount руб.';
     }
-    return 'до лимита осталось $amount руб. ($days дней)';
+    if (isBeyondHorizon) {
+      return 'до лимита осталось $amount руб. (более 3 месяцев)';
+    }
+    return 'до лимита осталось $amount руб. (${LimitCalculator.pluralDays(days)})';
   }
 }
 
 class LimitCalculator {
   static const int forecastHorizonDays = 92; // ~3 месяца
   static const double daysPerMonth = 30.44;
+  static const double yellowThreshold = 0.7;
+  static const double redThreshold = 0.9;
 
   final double limit;
 
@@ -75,9 +83,25 @@ class LimitCalculator {
 
   /// Цветовая кодировка: зелёный < 70%, жёлтый 70–90%, красный > 90%.
   static LimitLevel levelFor(double ratio) {
-    if (ratio < 0.7) return LimitLevel.green;
-    if (ratio > 0.9) return LimitLevel.red;
+    if (ratio < yellowThreshold) return LimitLevel.green;
+    if (ratio > redThreshold) return LimitLevel.red;
     return LimitLevel.yellow;
+  }
+
+  /// Русское склонение слова «день» по количеству.
+  static String pluralDays(int days) {
+    final n = days % 100;
+    if (n >= 11 && n <= 14) return '$days дней';
+    switch (days % 10) {
+      case 1:
+        return '$days день';
+      case 2:
+      case 3:
+      case 4:
+        return '$days дня';
+      default:
+        return '$days дней';
+    }
   }
 
   static String formatAmount(double value) {
