@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:isar/isar.dart';
 import 'package:npd_shield/data/models/transaction.dart';
 import 'package:npd_shield/data/repositories/isar_transaction_repository.dart';
+import 'package:npd_shield/data/repositories/transaction_repository.dart';
 
 void main() {
   late Isar isar;
@@ -168,6 +169,147 @@ void main() {
       test('returns zero when no transactions in range', () async {
         final average = await repository.getAverageMonthlyIncome(now: now);
         expect(average, 0);
+      });
+    });
+  group('getIncomeSeries', () {
+      final now = DateTime(2026, 8, 31);
+
+      double amountAt(List<IncomePoint> series, DateTime start) {
+        return series.firstWhere((p) => p.start == start).amount;
+      }
+
+      test('aggregates monthly income over last 12 months (all spheres)', () async {
+        await repository.add(
+          tx(amount: 1000, date: DateTime(2026, 8, 5),
+              sphere: TransactionSphere.it),
+        );
+        await repository.add(
+          tx(amount: 2500, date: DateTime(2026, 1, 20),
+              sphere: TransactionSphere.logistics),
+        );
+        await repository.add(
+          tx(amount: 300, date: DateTime(2025, 11, 10),
+              sphere: TransactionSphere.it),
+        );
+        await repository.add(
+          tx(amount: 900, date: DateTime(2024, 8, 15),
+              sphere: TransactionSphere.it),
+        );
+
+        final series = await repository.getIncomeSeries(now: now);
+
+        expect(series.length, 12);
+        expect(series.first.start, DateTime(2025, 9));
+        expect(series.last.start, DateTime(2026, 8));
+        expect(amountAt(series, DateTime(2025, 11)), 300);
+        expect(amountAt(series, DateTime(2026, 1)), 2500);
+        expect(amountAt(series, DateTime(2026, 8)), 1000);
+        expect(amountAt(series, DateTime(2026, 2)), 0);
+      });
+
+      test('filters series by sphere', () async {
+        await repository.add(
+          tx(amount: 1000, date: DateTime(2026, 8, 5),
+              sphere: TransactionSphere.it),
+        );
+        await repository.add(
+          tx(amount: 2500, date: DateTime(2026, 1, 20),
+              sphere: TransactionSphere.logistics),
+        );
+
+        final it = await repository.getIncomeSeries(
+          sphere: TransactionSphere.it,
+          now: now,
+        );
+        final logistics = await repository.getIncomeSeries(
+          sphere: TransactionSphere.logistics,
+          now: now,
+        );
+
+        expect(amountAt(it, DateTime(2026, 8)), 1000);
+        expect(amountAt(it, DateTime(2026, 1)), 0);
+        expect(amountAt(logistics, DateTime(2026, 8)), 0);
+        expect(amountAt(logistics, DateTime(2026, 1)), 2500);
+      });
+
+      test('aggregates income by week', () async {
+        await repository.add(
+          tx(amount: 1000, date: DateTime(2026, 8, 3)),
+        );
+        await repository.add(
+          tx(amount: 1500, date: DateTime(2026, 8, 7)),
+        );
+        await repository.add(
+          tx(amount: 200, date: DateTime(2026, 8, 17)),
+        );
+
+        final expectedSameWeek = startOfBucket(SeriesPeriod.week, DateTime(2026, 8, 3));
+        expect(startOfBucket(SeriesPeriod.week, DateTime(2026, 8, 7)), expectedSameWeek);
+        expect(
+          startOfBucket(SeriesPeriod.week, DateTime(2026, 8, 17)),
+          isNot(expectedSameWeek),
+        );
+
+        final series = await repository.getIncomeSeries(
+          period: SeriesPeriod.week,
+          now: now,
+        );
+
+        expect(series.length, 12);
+        expect(amountAt(series, expectedSameWeek), 2500);
+        expect(
+          amountAt(series, startOfBucket(SeriesPeriod.week, DateTime(2026, 8, 17))),
+          200,
+        );
+      });
+
+      test('aggregates income by quarter', () async {
+        await repository.add(
+          tx(amount: 1000, date: DateTime(2026, 8, 5)),
+        );
+        await repository.add(
+          tx(amount: 500, date: DateTime(2026, 9, 2)),
+        );
+        await repository.add(
+          tx(amount: 700, date: DateTime(2025, 9, 10)),
+        );
+
+        final series = await repository.getIncomeSeries(
+          period: SeriesPeriod.quarter,
+          now: now,
+        );
+
+        expect(series.length, 8);
+        expect(series.first.start, DateTime(2024, 10));
+        expect(series.last.start, DateTime(2026, 7));
+        expect(amountAt(series, DateTime(2026, 7)), 1500);
+        expect(amountAt(series, DateTime(2025, 7)), 700);
+      });
+
+      test('aggregates income by year', () async {
+        await repository.add(
+          tx(amount: 1000, date: DateTime(2026, 8, 5)),
+        );
+        await repository.add(
+          tx(amount: 900, date: DateTime(2024, 6, 10)),
+        );
+
+        final series = await repository.getIncomeSeries(
+          period: SeriesPeriod.year,
+          now: now,
+        );
+
+        expect(series.length, 5);
+        expect(series.first.start, DateTime(2022));
+        expect(series.last.start, DateTime(2026));
+        expect(amountAt(series, DateTime(2026)), 1000);
+        expect(amountAt(series, DateTime(2024)), 900);
+      });
+
+      test('returns zero-filled buckets when there are no transactions', () async {
+        final series = await repository.getIncomeSeries(now: now);
+        expect(series.length, SeriesPeriod.month.bucketCount);
+        expect(series.every((p) => p.amount == 0), isTrue);
       });
     });
   });
