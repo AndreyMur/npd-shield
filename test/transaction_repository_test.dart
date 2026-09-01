@@ -134,5 +134,41 @@ void main() {
         expect(summary.year, 0);
       });
     });
+
+    group('getAverageMonthlyIncome', () {
+      final now = DateTime(2026, 8, 31);
+
+      test('averages income over the last 3 months', () async {
+        await repository.add(
+          tx(amount: 3000, date: DateTime(2026, 8, 5)),
+        );
+        await repository.add(
+          tx(amount: 3000, date: DateTime(2026, 7, 10)),
+        );
+        await repository.add(
+          tx(amount: 3000, date: DateTime(2026, 6, 15)),
+        );
+
+        final average = await repository.getAverageMonthlyIncome(now: now);
+        expect(average, 3000);
+      });
+
+      test('excludes income older than 3 months', () async {
+        await repository.add(
+          tx(amount: 9000, date: DateTime(2026, 8, 5)),
+        );
+        await repository.add(
+          tx(amount: 9000, date: DateTime(2026, 2, 10)),
+        );
+
+        final average = await repository.getAverageMonthlyIncome(now: now);
+        expect(average, 3000);
+      });
+
+      test('returns zero when no transactions in range', () async {
+        final average = await repository.getAverageMonthlyIncome(now: now);
+        expect(average, 0);
+      });
+    });
   });
 }

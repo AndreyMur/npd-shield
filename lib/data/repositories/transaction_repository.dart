@@ -16,5 +16,8 @@ abstract class TransactionRepository {
 
   Future<IncomeSummary> getIncomeSummary({TransactionSphere? sphere, DateTime? now});
 
+  /// Средний доход за последние 3 месяца (включая текущий).
+  Future<double> getAverageMonthlyIncome({TransactionSphere? sphere, DateTime? now});
+
   Future<void> clear();
 }

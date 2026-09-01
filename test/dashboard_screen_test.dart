@@ -46,6 +46,23 @@ class FakeTransactionRepository implements TransactionRepository {
   }
 
   @override
+  Future<double> getAverageMonthlyIncome({
+    TransactionSphere? sphere,
+    DateTime? now,
+  }) async {
+    final today = now ?? DateTime.now();
+    final start = DateTime(today.year, today.month - 2);
+    final end = DateTime(today.year, today.month + 1);
+    final filtered =
+        sphere == null ? transactions : transactions.where((t) => t.sphere == sphere);
+    double total = 0;
+    for (final t in filtered) {
+      if (!t.date.isBefore(start) && t.date.isBefore(end)) total += t.amount;
+    }
+    return total / 3;
+  }
+
+  @override
   Future<void> clear() async => transactions.clear();
 }
 
@@ -69,6 +86,9 @@ void main() {
     FakeTransactionRepository repository, {
     DateTime? now,
   }) async {
+    tester.view.physicalSize = const Size(800, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       MaterialApp(
         home: DashboardScreen(repository: repository, now: now),
