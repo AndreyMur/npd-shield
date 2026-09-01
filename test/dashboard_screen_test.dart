@@ -69,6 +69,8 @@ void main() {
     FakeTransactionRepository repository, {
     DateTime? now,
   }) async {
+    await tester.binding.setSurfaceSize(const Size(800, 1600));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       MaterialApp(
         home: DashboardScreen(repository: repository, now: now),
@@ -84,7 +86,7 @@ void main() {
 
     expect(find.text('Все сферы'), findsOneWidget);
     expect(find.byType(SegmentedButton<DashboardFilter>), findsOneWidget);
-    expect(find.text('0,00 ₽'), findsNWidgets(6));
+    expect(find.text('0,00 ₽'), findsNWidgets(8));
   });
 
   testWidgets('shows totals for all spheres with data in current month and year',

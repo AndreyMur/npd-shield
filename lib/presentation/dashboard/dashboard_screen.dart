@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/tax_constants.dart';
+import '../../core/tax/tax_calculator.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/transaction_repository.dart';
 
@@ -144,8 +146,15 @@ class _DashboardBody extends StatelessWidget {
       DashboardFilter.logistics => 'Логистика',
     };
 
+    final total = data.total!;
     final children = <Widget>[
-      _TotalCard(title: title, summary: data.total!),
+      _TotalCard(title: title, summary: total),
+      const SizedBox(height: 16),
+      _TaxCard(
+        calculator: const TaxCalculator(),
+        periodIncome: total.month,
+        yearIncome: total.year,
+      ),
     ];
 
     if (filter == DashboardFilter.all) {
@@ -187,6 +196,96 @@ class _TotalCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _TaxCard extends StatelessWidget {
+  final TaxCalculator calculator;
+  final double periodIncome;
+  final double yearIncome;
+
+  const _TaxCard({
+    required this.calculator,
+    required this.periodIncome,
+    required this.yearIncome,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final period = calculator.calculate(income: periodIncome);
+    final year = calculator.calculate(income: yearIncome);
+
+    final limitColor = year.limitExceeded
+        ? theme.colorScheme.error
+        : theme.colorScheme.primary;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Налог (НПД 6%)', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _MetricRow(label: 'К уплате за период', value: period.payableTax),
+            const SizedBox(height: 8),
+            _MetricRow(label: 'Начислено (6%)', value: period.accruedTax),
+            const SizedBox(height: 8),
+            _LimitRow(
+              label: 'До лимита НПД',
+              yearIncome: year.income,
+              exceeded: year.limitExceeded,
+              color: limitColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LimitRow extends StatelessWidget {
+  final String label;
+  final double yearIncome;
+  final bool exceeded;
+  final Color color;
+
+  const _LimitRow({
+    required this.label,
+    required this.yearIncome,
+    required this.exceeded,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final remaining = (TaxConstants.limit - yearIncome).clamp(0, double.infinity).toDouble();
+    final message =
+        exceeded ? 'Лимит НПД превышен' : 'Осталось ${_format(remaining)}';
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: theme.textTheme.bodyMedium),
+        Text(
+          message,
+          style: theme.textTheme.titleMedium!.copyWith(color: color),
+        ),
+      ],
+    );
+  }
+
+  static String _format(double value) {
+    final fixed = value.toStringAsFixed(2);
+    final parts = fixed.split('.');
+    final digits = parts[0];
+    final buffer = StringBuffer();
+    for (var i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) buffer.write(' ');
+      buffer.write(digits[i]);
+    }
+    return '${buffer.toString().replaceAll('.', ',')},${parts[1]} ₽';
   }
 }
 
