@@ -5,13 +5,16 @@ import 'core/theme/app_theme.dart';
 import 'data/database.dart';
 import 'data/repositories/isar_transaction_repository.dart';
 import 'data/repositories/transaction_repository.dart';
+import 'data/seed_data.dart';
 import 'presentation/dashboard/dashboard_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     final isar = await AppDatabase.open();
-    runApp(NpdShieldApp(repository: IsarTransactionRepository(isar)));
+    final repository = IsarTransactionRepository(isar);
+    await seedDashboardData(repository);
+    runApp(NpdShieldApp(repository: repository));
   } catch (error) {
     runApp(const _StartupErrorApp());
   }

@@ -10,6 +10,7 @@ class AppDatabase {
 
   static Future<Isar> open({String? path}) async {
     final isarDir = path ?? (await getApplicationDocumentsDirectory()).path;
+    
     instance = await Isar.open(
       [TransactionSchema],
       directory: isarDir,
