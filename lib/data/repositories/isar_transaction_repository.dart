@@ -1,31 +1,57 @@
 import 'package:isar/isar.dart';
 
 import '../models/transaction.dart';
+import '../security/database_encryption_service.dart';
 import 'transaction_repository.dart';
 
 class IsarTransactionRepository implements TransactionRepository {
   final Isar isar;
   final _cache = _OptimizedCache();
+  final _encryptionService = DatabaseEncryptionService();
 
   IsarTransactionRepository(this.isar);
 
   @override
   Future<int> add(Transaction transaction) {
     return isar.writeTxn(() async {
+      await _encryptTransaction(transaction);
       final id = await isar.transactions.put(transaction);
       _cache.invalidate();
       return id;
     });
   }
 
-  @override
-  Future<List<Transaction>> getAll() {
-    return isar.transactions.where().findAll();
+  Future<void> _encryptTransaction(Transaction transaction) async {
+    transaction.clientName = await _encryptionService.encrypt(transaction.clientName);
+    transaction.clientInn = await _encryptionService.encrypt(transaction.clientInn);
+  }
+
+  Future<void> _decryptTransaction(Transaction transaction) async {
+    try {
+      transaction.clientName = await _encryptionService.decrypt(transaction.clientName);
+      transaction.clientInn = await _encryptionService.decrypt(transaction.clientInn);
+    } catch (e) {
+      // Если расшифровка не удалась, оставляем зашифрованные данные
+      // Это может произойти при миграции старых данных
+    }
   }
 
   @override
-  Future<List<Transaction>> getAllForSphere(TransactionSphere sphere) {
-    return isar.transactions.where().sphereEqualTo(sphere).findAll();
+  Future<List<Transaction>> getAll() async {
+    final transactions = await isar.transactions.where().findAll();
+    for (final t in transactions) {
+      await _decryptTransaction(t);
+    }
+    return transactions;
+  }
+
+  @override
+  Future<List<Transaction>> getAllForSphere(TransactionSphere sphere) async {
+    final transactions = await isar.transactions.where().sphereEqualTo(sphere).findAll();
+    for (final t in transactions) {
+      await _decryptTransaction(t);
+    }
+    return transactions;
   }
 
   @override
