@@ -5,6 +5,7 @@ import '../../core/tax/tax_calculator.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../domain/limit/limit_calculator.dart';
+import 'income_chart_card.dart';
 
 enum DashboardFilter { all, it, logistics }
 
@@ -68,6 +69,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: _DashboardView(
               future: _load(_filter),
               filter: _filter,
+              repository: widget.repository,
+              now: widget.now ?? DateTime.now(),
             ),
           ),
         ],
@@ -137,8 +140,15 @@ class _DashboardData {
 class _DashboardView extends StatelessWidget {
   final Future<_DashboardData> future;
   final DashboardFilter filter;
+  final TransactionRepository repository;
+  final DateTime now;
 
-  const _DashboardView({required this.future, required this.filter});
+  const _DashboardView({
+    required this.future,
+    required this.filter,
+    required this.repository,
+    required this.now,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +161,12 @@ class _DashboardView extends StatelessWidget {
         if (snapshot.hasError || snapshot.data == null) {
           return const Center(child: Text('Не удалось загрузить данные'));
         }
-        return _DashboardBody(data: snapshot.data!, filter: filter);
+        return _DashboardBody(
+          data: snapshot.data!,
+          filter: filter,
+          repository: repository,
+          now: now,
+        );
       },
     );
   }
@@ -160,8 +175,15 @@ class _DashboardView extends StatelessWidget {
 class _DashboardBody extends StatelessWidget {
   final _DashboardData data;
   final DashboardFilter filter;
+  final TransactionRepository repository;
+  final DateTime now;
 
-  const _DashboardBody({required this.data, required this.filter});
+  const _DashboardBody({
+    required this.data,
+    required this.filter,
+    required this.repository,
+    required this.now,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +216,18 @@ class _DashboardBody extends StatelessWidget {
         ..add(const SizedBox(height: 16))
         ..add(_SphereCard(title: 'Логистика', summary: data.logistics!));
     }
+
+    children
+      ..add(const SizedBox(height: 16))
+      ..add(IncomeChartCard(
+        repository: repository,
+        now: now,
+        sphere: switch (filter) {
+          DashboardFilter.all => null,
+          DashboardFilter.it => TransactionSphere.it,
+          DashboardFilter.logistics => TransactionSphere.logistics,
+        },
+      ));
 
     return ListView(
       padding: const EdgeInsets.all(16),

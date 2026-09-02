@@ -39,6 +39,7 @@ dependencies:
   path_provider: ^2.1.6
   shared_preferences: ^2.5.5
   dynamic_color: ^1.7.0
+  fl_chart: ^1.2.0
 
 dev_dependencies:
   flutter_test:
