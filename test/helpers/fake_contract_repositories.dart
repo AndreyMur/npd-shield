@@ -67,13 +67,22 @@ class FakeContractTemplateRepository implements ContractTemplateRepository {
 /// Фейковый репозиторий черновиков для widget-тестов.
 class FakeContractDraftRepository implements ContractDraftRepository {
   final List<ContractDraft> drafts;
+  final bool failOnSave;
   int _nextId = 1;
 
-  FakeContractDraftRepository([List<ContractDraft>? initial])
-    : drafts = initial ?? [];
+  FakeContractDraftRepository([
+    List<ContractDraft>? initial,
+    this.failOnSave = false,
+  ]) : drafts = initial ?? [];
+
+  factory FakeContractDraftRepository.failing() =>
+      FakeContractDraftRepository(null, true);
 
   @override
   Future<int> save(ContractDraft draft) async {
+    if (failOnSave) {
+      throw Exception('save failed');
+    }
     final index = drafts.indexWhere((d) => d.id == draft.id && draft.id != 0);
     if (index >= 0) {
       drafts[index] = draft;

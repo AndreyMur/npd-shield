@@ -160,6 +160,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('показывает ошибку и разблокирует кнопку при сбое сохранения', (
+    tester,
+  ) async {
+    final drafts = FakeContractDraftRepository.failing();
+    final profile = FakeContractorProfileRepository(ContractorProfile.demo);
+
+    await openForm(tester, drafts: drafts, profile: profile);
+
+    await tester.enterText(
+      find.byKey(const Key('field_clientName')),
+      'ООО «Ромашка»',
+    );
+    await tester.enterText(
+      find.byKey(const Key('field_clientInn')),
+      '7701234567',
+    );
+    await tester.enterText(
+      find.byKey(const Key('field_subject')),
+      'Разработка сайта',
+    );
+    await tester.enterText(find.byKey(const Key('field_amount')), '150000');
+    await tapSave(tester);
+
+    expect(
+      find.text('Не удалось сохранить черновик. Попробуйте ещё раз.'),
+      findsOneWidget,
+    );
+    expect(popResult, isNull);
+    expect(drafts.drafts, isEmpty);
+
+    final button = tester.widget<FilledButton>(
+      find.byKey(const Key('save_draft_button')),
+    );
+    expect(button.onPressed, isNotNull);
+  });
 }
 
 class _FormHost extends StatelessWidget {

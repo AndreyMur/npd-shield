@@ -5,6 +5,7 @@ import 'package:isar/isar.dart';
 import 'package:npd_shield/data/models/contract_draft.dart';
 import 'package:npd_shield/data/models/contract_template.dart';
 import 'package:npd_shield/data/repositories/isar_contract_draft_repository.dart';
+import 'package:npd_shield/data/security/field_encryption_service.dart';
 
 void main() {
   late Isar isar;
@@ -17,7 +18,10 @@ void main() {
       directory: dir.path,
       name: 'draft_test_${dir.path.hashCode}',
     );
-    repository = IsarContractDraftRepository(isar);
+    repository = IsarContractDraftRepository(
+      isar,
+      encryption: const _PassthroughEncryption(),
+    );
   });
 
   tearDown(() async {
@@ -140,4 +144,57 @@ void main() {
       expect(contractFieldsToMap(fields), source);
     });
   });
+
+  group('шифрование полей', () {
+    test(
+      'filledFields шифруются перед записью и расшифровываются при чтении',
+      () async {
+        final encryptedRepo = IsarContractDraftRepository(
+          isar,
+          encryption: const _PrefixEncryption(),
+        );
+        final id = await encryptedRepo.save(
+          draft(fields: {'clientName': 'ООО «Ромашка»', 'amount': '150000'}),
+        );
+
+        final raw = await isar.contractDrafts.where().idEqualTo(id).findFirst();
+        expect(
+          contractFieldsToMap(raw!.filledFields)['clientName'],
+          startsWith('enc:'),
+        );
+
+        final loaded = await encryptedRepo.getById(id);
+        final map = contractFieldsToMap(loaded!.filledFields);
+        expect(map['clientName'], 'ООО «Ромашка»');
+        expect(map['amount'], '150000');
+      },
+    );
+  });
+}
+
+/// Шифрование-заглушка: хранит значение как есть (для тестов механики репозитория).
+class _PassthroughEncryption implements FieldEncryptionService {
+  const _PassthroughEncryption();
+
+  @override
+  Future<String> encrypt(String plainText) async => plainText;
+
+  @override
+  Future<String> decrypt(String encryptedText) async => encryptedText;
+}
+
+/// Детерминированное шифрование: добавляет префикс `enc:`.
+class _PrefixEncryption implements FieldEncryptionService {
+  const _PrefixEncryption();
+
+  static const _marker = 'enc:';
+
+  @override
+  Future<String> encrypt(String plainText) async => '$_marker$plainText';
+
+  @override
+  Future<String> decrypt(String encryptedText) async =>
+      encryptedText.startsWith(_marker)
+      ? encryptedText.substring(_marker.length)
+      : encryptedText;
 }

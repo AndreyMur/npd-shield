@@ -97,6 +97,7 @@ class _ContractFormScreenState extends State<ContractFormScreen> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     final draft = ContractDraft(
@@ -104,7 +105,18 @@ class _ContractFormScreenState extends State<ContractFormScreen> {
       filledFields: contractFieldsFromMap(_collectFields()),
       status: ContractStatus.draft,
     );
-    await widget.draftRepository.save(draft);
+    try {
+      await widget.draftRepository.save(draft);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Не удалось сохранить черновик. Попробуйте ещё раз.'),
+        ),
+      );
+      return;
+    }
     if (!mounted) return;
     Navigator.of(context).pop(true);
   }
