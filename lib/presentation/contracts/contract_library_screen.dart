@@ -4,7 +4,7 @@ import '../../data/models/contract_template.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
-import 'contract_form_screen.dart';
+import 'contract_wizard_screen.dart';
 import 'template_sphere_visuals.dart';
 
 /// Экран «Библиотека шаблонов»: карточки встроенных договоров.
@@ -43,16 +43,16 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
   }
 
   Future<void> _openTemplate(Template template) async {
-    final saved = await Navigator.of(context).push<bool>(
+    final created = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => ContractFormScreen(
+        builder: (_) => ContractWizardScreen(
           template: template,
           draftRepository: widget.draftRepository,
           profileRepository: widget.profileRepository,
         ),
       ),
     );
-    if (saved == true && mounted) {
+    if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Черновик договора сохранён')),
       );
