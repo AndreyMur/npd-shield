@@ -1,21 +1,24 @@
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
+
 import 'package:crypto/crypto.dart';
 import 'package:encrypt/encrypt.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class DatabaseEncryptionService {
+import 'field_encryption_service.dart';
+
+class DatabaseEncryptionService implements FieldEncryptionService {
   final _secureStorage = const FlutterSecureStorage();
   final _seedAlias = 'npd_shield_db_seed';
   final _ivAlias = 'npd_shield_db_iv';
-  
+
   Key? _cachedKey;
   IV? _cachedIV;
   bool _isAvailable = true;
 
   static const int _keySize = 32; // AES-256
-  static const int _ivSize = 16;  // AES block size
+  static const int _ivSize = 16; // AES block size
 
   Future<Key> getEncryptionKey() async {
     if (_cachedKey != null) {
@@ -28,10 +31,13 @@ class DatabaseEncryptionService {
 
     try {
       var seed = await _secureStorage.read(key: _seedAlias);
-      
+
       if (seed == null) {
         final random = Random.secure();
-        final seedBytes = List<int>.generate(_keySize, (i) => random.nextInt(256));
+        final seedBytes = List<int>.generate(
+          _keySize,
+          (i) => random.nextInt(256),
+        );
         seed = base64Encode(Uint8List.fromList(seedBytes));
         await _secureStorage.write(key: _seedAlias, value: seed);
       }
@@ -39,7 +45,7 @@ class DatabaseEncryptionService {
       final seedBytes = base64Decode(seed);
       final hash = sha256.convert(seedBytes);
       final keyBytes = hash.bytes;
-      
+
       _cachedKey = Key(Uint8List.fromList(keyBytes));
       return _cachedKey!;
     } catch (e) {
@@ -59,7 +65,7 @@ class DatabaseEncryptionService {
 
     try {
       var ivBase64 = await _secureStorage.read(key: _ivAlias);
-      
+
       if (ivBase64 == null) {
         final random = Random.secure();
         final ivBytes = List<int>.generate(_ivSize, (i) => random.nextInt(256));
@@ -76,6 +82,7 @@ class DatabaseEncryptionService {
     }
   }
 
+  @override
   Future<String> encrypt(String plainText) async {
     if (!_isAvailable) {
       return plainText; // Не шифруем в тестах
@@ -85,7 +92,7 @@ class DatabaseEncryptionService {
       final key = await getEncryptionKey();
       final iv = await getIV();
       final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
-      
+
       final encrypted = encrypter.encrypt(plainText, iv: iv);
       return encrypted.base64;
     } catch (e) {
@@ -94,6 +101,7 @@ class DatabaseEncryptionService {
     }
   }
 
+  @override
   Future<String> decrypt(String encryptedText) async {
     if (!_isAvailable) {
       return encryptedText; // Не расшифровываем в тестах
@@ -103,7 +111,7 @@ class DatabaseEncryptionService {
       final key = await getEncryptionKey();
       final iv = await getIV();
       final encrypter = Encrypter(AES(key, mode: AESMode.cbc));
-      
+
       final decrypted = encrypter.decrypt64(encryptedText, iv: iv);
       return decrypted;
     } catch (e) {

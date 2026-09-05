@@ -1,6 +1,8 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'models/contract_draft.dart';
+import 'models/contract_template.dart';
 import 'models/transaction.dart';
 
 class AppDatabase {
@@ -8,11 +10,20 @@ class AppDatabase {
 
   static late Isar instance;
 
+  /// Открывает базу данных приложения.
+  ///
+  /// Миграции схемы выполняются Isar автоматически: при добавлении новых
+  /// коллекций или полей существующая база обновляется без потери данных.
+  /// Удалённые поля помечаются как устаревшие и игнорируются при чтении.
   static Future<Isar> open({String? path}) async {
     final isarDir = path ?? (await getApplicationDocumentsDirectory()).path;
-    
+
     instance = await Isar.open(
-      [TransactionSchema],
+      [
+        TransactionSchema,
+        TemplateSchema,
+        ContractDraftSchema,
+      ],
       directory: isarDir,
       name: 'npd_shield',
     );
