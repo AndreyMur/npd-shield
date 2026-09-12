@@ -22,6 +22,13 @@ enum RiskSeverity {
     RiskSeverity.medium => 'Средний',
     RiskSeverity.low => 'Низкий',
   };
+
+  /// Метка уровня во множественном числе — для фильтров списка рисков.
+  String get pluralLabel => switch (this) {
+    RiskSeverity.critical => 'Критические',
+    RiskSeverity.medium => 'Средние',
+    RiskSeverity.low => 'Низкие',
+  };
 }
 
 /// Маркер риска — правило поиска опасной формулировки в тексте договора.
