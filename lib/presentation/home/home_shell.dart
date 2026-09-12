@@ -4,10 +4,11 @@ import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 
-/// Нижняя навигация приложения: дашборд и библиотека шаблонов договоров.
+/// Нижняя навигация приложения: дашборд, шаблоны и сохранённые договоры.
 class HomeShell extends StatefulWidget {
   final TransactionRepository transactionRepository;
   final ContractTemplateRepository templateRepository;
@@ -46,6 +47,11 @@ class _HomeShellState extends State<HomeShell> {
             draftRepository: widget.draftRepository,
             profileRepository: widget.profileRepository,
           ),
+          ContractArchiveScreen(
+            draftRepository: widget.draftRepository,
+            templateRepository: widget.templateRepository,
+            profileRepository: widget.profileRepository,
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -62,6 +68,11 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.description_outlined),
             selectedIcon: Icon(Icons.description),
+            label: 'Шаблоны',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.folder_copy_outlined),
+            selectedIcon: Icon(Icons.folder_copy),
             label: 'Договоры',
           ),
         ],

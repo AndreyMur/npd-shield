@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/contracts/contract_document.dart';
+import '../../domain/contracts/protective_clauses.dart';
 
 /// Предпросмотр документа договора в реальном времени.
 ///
@@ -137,6 +138,8 @@ class ContractDocumentPreview extends StatelessWidget {
             ),
           ),
         ];
+      case ContractBlockType.protective:
+        return [_buildProtectiveBlock(block)];
       case ContractBlockType.signature:
         return [
           Padding(
@@ -167,5 +170,69 @@ class ContractDocumentPreview extends StatelessWidget {
           ),
         ];
     }
+  }
+
+  /// Защитная формулировка: подсвечивается и маркируется значком щита.
+  Widget _buildProtectiveBlock(ContractBlock block) {
+    final isHeading = isProtectiveHeading(block.text);
+    if (isHeading) {
+      return Padding(
+        key: const Key('protective_section_heading'),
+        padding: const EdgeInsets.only(top: 14, bottom: 6),
+        child: Row(
+          children: [
+            const Icon(Icons.shield, size: 18, color: Color(0xFF2E7D32)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                block.text,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  height: 1.3,
+                  color: Color(0xFF1B5E20),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(6),
+        border: const Border(
+          left: BorderSide(color: Color(0xFF2E7D32), width: 3),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(top: 2, right: 6),
+            child: Icon(
+              Icons.shield,
+              key: Key('protective_shield_icon'),
+              size: 16,
+              color: Color(0xFF2E7D32),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              block.text,
+              textAlign: TextAlign.justify,
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.3,
+                color: Color(0xFF1B5E20),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

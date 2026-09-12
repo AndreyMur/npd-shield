@@ -11,6 +11,12 @@ abstract class ContractDraftRepository {
   /// Возвращает черновики, самые новые — первыми.
   Future<List<ContractDraft>> getAll();
 
+  /// Возвращает договоры с указанным статусом, самые новые — первыми.
+  Future<List<ContractDraft>> getByStatus(ContractStatus status);
+
+  /// Возвращает договоры по коду шаблона, самые новые — первыми.
+  Future<List<ContractDraft>> getByTemplateId(String templateId);
+
   /// Количество сохранённых черновиков.
   Future<int> count();
 
