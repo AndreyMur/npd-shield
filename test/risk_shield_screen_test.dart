@@ -311,6 +311,30 @@ void main() {
 
     handle.dispose();
   });
+
+  testWidgets('кнопка истории открывает экран истории проверок', (tester) async {
+    final reports = _FakeRiskReportRepository();
+
+    await pumpScreen(
+      tester,
+      picker: _FakeTextFilePicker(
+        file: const PickedTextFile(
+          name: 'dogovor.txt',
+          content: 'Стороны заключают трудовой договор.',
+        ),
+      ),
+      reportRepository: reports,
+    );
+    await tester.tap(find.byKey(const Key('risk_pick_button')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('risk_history_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('risk_history_screen')), findsOneWidget);
+    expect(find.byKey(const Key('risk_history_list')), findsOneWidget);
+    expect(find.text('dogovor.txt'), findsWidgets);
+  });
 }
 
 class _FakeTextFilePicker implements TextFilePicker {
