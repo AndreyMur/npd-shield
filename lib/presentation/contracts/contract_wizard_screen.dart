@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../core/constants/contract_field_keys.dart';
+import '../../../core/validation/contract_input.dart';
 import '../../../data/models/contract_draft.dart';
 import '../../../data/models/contract_template.dart';
 import '../../../data/pdf/contract_pdf_font_loader.dart';
@@ -23,6 +25,16 @@ typedef ContractPdfGenerator =
       ComposedContract document,
       String fileName,
     );
+
+/// Переход к следующему шагу (Ctrl/Cmd+Enter).
+class _NextStepIntent extends Intent {
+  const _NextStepIntent();
+}
+
+/// Возврат к предыдущему шагу (Alt+←).
+class _PreviousStepIntent extends Intent {
+  const _PreviousStepIntent();
+}
 
 /// Пошаговый мастер заполнения договора (5 шагов).
 ///
@@ -462,16 +474,25 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   Map<String, String> _collectValues() {
     final values = <String, String>{};
     for (final key in _allFieldKeys) {
-      var text = _controllers[key]?.text.trim() ?? '';
+      // Санитайз — защита в глубину: форматтер и валидатор уже ограничивают
+      // ввод, но значения профиля и вставка из буфера тоже должны быть
+      // безопасны при подстановке в шаблон.
+      var text = ContractInput.sanitize(_controllers[key]?.text ?? '').trim();
       if (key == ContractFieldKeys.amount) {
         text = text.replaceAll(' ', '');
       }
       values[key] = text;
     }
     final profile = _profile;
-    values[ContractFieldKeys.executorBankName] = profile?.bankName ?? '';
-    values[ContractFieldKeys.executorBankBik] = profile?.bankBik ?? '';
-    values[ContractFieldKeys.executorBankAccount] = profile?.bankAccount ?? '';
+    values[ContractFieldKeys.executorBankName] = ContractInput.sanitize(
+      profile?.bankName ?? '',
+    );
+    values[ContractFieldKeys.executorBankBik] = ContractInput.sanitize(
+      profile?.bankBik ?? '',
+    );
+    values[ContractFieldKeys.executorBankAccount] = ContractInput.sanitize(
+      profile?.bankAccount ?? '',
+    );
     return values;
   }
 
@@ -497,7 +518,8 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     final generator = widget.pdfGenerator;
     if (generator != null) return generator(document, fileName);
     final fonts = await _fontLoader.load();
-    return const ContractPdfService().generate(
+    // Генерация выносится в фоновый изолят, чтобы не блокировать UI.
+    return const ContractPdfService().generateInBackground(
       document: document,
       fonts: fonts,
       fileName: fileName,
@@ -596,9 +618,50 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     );
   }
 
+  void _handleNextShortcut() {
+    if (_step == _stepsCount - 1) {
+      _createContract();
+    } else {
+      _goNext();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    return Shortcuts(
+      shortcuts: const <ShortcutActivator, Intent>{
+        SingleActivator(LogicalKeyboardKey.enter, control: true):
+            _NextStepIntent(),
+        SingleActivator(LogicalKeyboardKey.enter, meta: true):
+            _NextStepIntent(),
+        SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true):
+            _PreviousStepIntent(),
+      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          _NextStepIntent: CallbackAction<_NextStepIntent>(
+            onInvoke: (_) {
+              _handleNextShortcut();
+              return null;
+            },
+          ),
+          _PreviousStepIntent: CallbackAction<_PreviousStepIntent>(
+            onInvoke: (_) {
+              _goBack();
+              return null;
+            },
+          ),
+        },
+        child: FocusTraversalGroup(
+          policy: OrderedTraversalPolicy(),
+          child: _buildScaffold(theme),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScaffold(ThemeData theme) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -778,15 +841,30 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
 
   Widget _buildField(_FieldSpec field) {
     final controller = _controllers[field.key]!;
+    final fields = _steps[_step].fields;
+    final isFirst = fields.first.key == field.key;
+    final isLast = fields.last.key == field.key;
+    final isMultiline = field.maxLines > 1;
     return TextFormField(
       key: Key('field_${field.key}'),
       controller: controller,
-      validator: field.validator,
+      validator: (value) {
+        final security = ContractInput.validate(value);
+        if (security != null) return security;
+        return field.validator?.call(value);
+      },
       keyboardType: field.keyboardType,
       maxLines: field.maxLines,
-      textInputAction: field.maxLines > 1
+      autofocus: isFirst,
+      inputFormatters: const [ContractInputFormatter()],
+      textInputAction: isMultiline
           ? TextInputAction.newline
+          : isLast
+          ? TextInputAction.done
           : TextInputAction.next,
+      onFieldSubmitted: isMultiline || !isLast
+          ? null
+          : (_) => _goNext(),
       decoration: InputDecoration(
         labelText: field.label,
         helperText: field.helper,

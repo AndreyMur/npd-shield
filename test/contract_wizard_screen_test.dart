@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npd_shield/core/constants/contract_field_keys.dart';
 import 'package:npd_shield/data/models/contract_draft.dart';
@@ -319,6 +318,59 @@ void main() {
     );
     final button = tester.widget<FilledButton>(createButton);
     expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('Ctrl+Enter переходит к следующему шагу, Alt+← — назад', (
+    tester,
+  ) async {
+    await pumpWizard(tester);
+    expect(find.text('Шаг 1 из 5'), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pumpAndSettle();
+    expect(find.text('Шаг 2 из 5'), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.altLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.altLeft);
+    await tester.pumpAndSettle();
+    expect(find.text('Шаг 1 из 5'), findsOneWidget);
+  });
+
+  testWidgets('форматтер не даёт ввести плейсхолдеры шаблона', (tester) async {
+    await pumpWizard(tester);
+    await goNext(tester);
+
+    await tester.enterText(
+      find.byKey(const Key('field_executorFullName')),
+      '{{evil}}',
+    );
+    await tester.pumpAndSettle();
+
+    final field = tester.widget<TextFormField>(
+      find.byKey(const Key('field_executorFullName')),
+    );
+    expect(field.controller!.text, isNot(contains('{')));
+    expect(field.controller!.text, isNot(contains('}')));
+  });
+
+  testWidgets('поля формы и индикатор шага доступны для скринридеров', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    await pumpWizard(tester);
+
+    final field = tester.getSemantics(
+      find.byKey(const Key('field_contractNumber')),
+    );
+    expect(field.label, contains('Номер договора'));
+
+    final stepLabel = tester.getSemantics(find.text('Шаг 1 из 5'));
+    expect(stepLabel.label, contains('Шаг 1 из 5'));
+
+    handle.dispose();
   });
 }
 
