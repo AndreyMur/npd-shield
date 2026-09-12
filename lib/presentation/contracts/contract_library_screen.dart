@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../data/models/contract_template.dart';
+import '../../data/pdf/contract_pdf_font_loader.dart';
+import '../../data/pdf/contract_pdf_share_service.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
+import '../../data/repositories/contract_template_text_loader.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../domain/contracts/template_catalog.dart';
 import 'contract_wizard_screen.dart';
@@ -18,11 +21,23 @@ class ContractLibraryScreen extends StatefulWidget {
   final ContractDraftRepository draftRepository;
   final ContractorProfileRepository profileRepository;
 
+  /// Необязательные зависимости мастера, переопределяемые в тестах.
+  final ContractTemplateTextLoader? templateTextLoader;
+  final ContractPdfGenerator? pdfGenerator;
+  final ContractPdfFontLoader? fontLoader;
+  final ContractPdfShareService? shareService;
+  final Widget Function()? previewBuilder;
+
   const ContractLibraryScreen({
     super.key,
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
+    this.templateTextLoader,
+    this.pdfGenerator,
+    this.fontLoader,
+    this.shareService,
+    this.previewBuilder,
   });
 
   @override
@@ -64,6 +79,11 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
           template: template,
           draftRepository: widget.draftRepository,
           profileRepository: widget.profileRepository,
+          templateTextLoader: widget.templateTextLoader,
+          pdfGenerator: widget.pdfGenerator,
+          fontLoader: widget.fontLoader,
+          shareService: widget.shareService,
+          previewBuilder: widget.previewBuilder,
         ),
       ),
     );
