@@ -10,12 +10,18 @@ Template template({
   TemplateSphere sphere = TemplateSphere.it,
   String title = 'Разработка программного обеспечения',
   String description = 'Описание шаблона',
+  String okved = '',
+  bool recommended = false,
+  String example = '',
 }) {
   return Template(
     code: code,
     sphere: sphere,
     title: title,
     description: description,
+    okved: okved,
+    recommended: recommended,
+    example: example,
   );
 }
 

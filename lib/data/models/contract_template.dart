@@ -54,10 +54,24 @@ class Template {
   /// Краткое описание: когда и для каких сделок подходит шаблон.
   late String description;
 
+  /// Код ОКВЭД, под который адаптирован шаблон
+  /// (например, `62.01` для IT или `49.41` для логистики).
+  late String okved;
+
+  /// Пометка «Рекомендовано» для наиболее безопасных шаблонов.
+  @Index()
+  late bool recommended;
+
+  /// Пример заполнения ключевых полей шаблона для карточки библиотеки.
+  late String example;
+
   Template({
     required this.code,
     required this.sphere,
     required this.title,
     required this.description,
+    this.okved = '',
+    this.recommended = false,
+    this.example = '',
   });
 }
