@@ -27,14 +27,29 @@ const TemplateSchema = CollectionSchema(
       name: r'description',
       type: IsarType.string,
     ),
-    r'sphere': PropertySchema(
+    r'example': PropertySchema(
       id: 2,
+      name: r'example',
+      type: IsarType.string,
+    ),
+    r'okved': PropertySchema(
+      id: 3,
+      name: r'okved',
+      type: IsarType.string,
+    ),
+    r'recommended': PropertySchema(
+      id: 4,
+      name: r'recommended',
+      type: IsarType.bool,
+    ),
+    r'sphere': PropertySchema(
+      id: 5,
       name: r'sphere',
       type: IsarType.byte,
       enumMap: _TemplatesphereEnumValueMap,
     ),
     r'title': PropertySchema(
-      id: 3,
+      id: 6,
       name: r'title',
       type: IsarType.string,
     )
@@ -70,6 +85,19 @@ const TemplateSchema = CollectionSchema(
           caseSensitive: false,
         )
       ],
+    ),
+    r'recommended': IndexSchema(
+      id: 5272754758935607889,
+      name: r'recommended',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'recommended',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
     )
   },
   links: {},
@@ -88,6 +116,8 @@ int _templateEstimateSize(
   var bytesCount = offsets.last;
   bytesCount += 3 + object.code.length * 3;
   bytesCount += 3 + object.description.length * 3;
+  bytesCount += 3 + object.example.length * 3;
+  bytesCount += 3 + object.okved.length * 3;
   bytesCount += 3 + object.title.length * 3;
   return bytesCount;
 }
@@ -100,8 +130,11 @@ void _templateSerialize(
 ) {
   writer.writeString(offsets[0], object.code);
   writer.writeString(offsets[1], object.description);
-  writer.writeByte(offsets[2], object.sphere.index);
-  writer.writeString(offsets[3], object.title);
+  writer.writeString(offsets[2], object.example);
+  writer.writeString(offsets[3], object.okved);
+  writer.writeBool(offsets[4], object.recommended);
+  writer.writeByte(offsets[5], object.sphere.index);
+  writer.writeString(offsets[6], object.title);
 }
 
 Template _templateDeserialize(
@@ -113,9 +146,12 @@ Template _templateDeserialize(
   final object = Template(
     code: reader.readString(offsets[0]),
     description: reader.readString(offsets[1]),
-    sphere: _TemplatesphereValueEnumMap[reader.readByteOrNull(offsets[2])] ??
+    example: reader.readStringOrNull(offsets[2]) ?? '',
+    okved: reader.readStringOrNull(offsets[3]) ?? '',
+    recommended: reader.readBoolOrNull(offsets[4]) ?? false,
+    sphere: _TemplatesphereValueEnumMap[reader.readByteOrNull(offsets[5])] ??
         TemplateSphere.it,
-    title: reader.readString(offsets[3]),
+    title: reader.readString(offsets[6]),
   );
   object.id = id;
   return object;
@@ -133,9 +169,15 @@ P _templateDeserializeProp<P>(
     case 1:
       return (reader.readString(offset)) as P;
     case 2:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 3:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 4:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 5:
       return (_TemplatesphereValueEnumMap[reader.readByteOrNull(offset)] ??
           TemplateSphere.it) as P;
-    case 3:
+    case 6:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -176,6 +218,14 @@ extension TemplateQueryWhereSort on QueryBuilder<Template, Template, QWhere> {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'sphere'),
+      );
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterWhere> anyRecommended() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'recommended'),
       );
     });
   }
@@ -378,6 +428,51 @@ extension TemplateQueryWhere on QueryBuilder<Template, Template, QWhereClause> {
         upper: [upperSphere],
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterWhereClause> recommendedEqualTo(
+      bool recommended) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'recommended',
+        value: [recommended],
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterWhereClause> recommendedNotEqualTo(
+      bool recommended) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'recommended',
+              lower: [],
+              upper: [recommended],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'recommended',
+              lower: [recommended],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'recommended',
+              lower: [recommended],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'recommended',
+              lower: [],
+              upper: [recommended],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -646,6 +741,136 @@ extension TemplateQueryFilter
     });
   }
 
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'example',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'example',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'example',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'example',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'example',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'example',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'example',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'example',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'example',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> exampleIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'example',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Template, Template, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -694,6 +919,146 @@ extension TemplateQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'okved',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'okved',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'okved',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'okved',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'okved',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'okved',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'okved',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'okved',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'okved',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> okvedIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'okved',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterFilterCondition> recommendedEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'recommended',
+        value: value,
       ));
     });
   }
@@ -913,6 +1278,42 @@ extension TemplateQuerySortBy on QueryBuilder<Template, Template, QSortBy> {
     });
   }
 
+  QueryBuilder<Template, Template, QAfterSortBy> sortByExample() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'example', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> sortByExampleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'example', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> sortByOkved() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'okved', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> sortByOkvedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'okved', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> sortByRecommended() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recommended', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> sortByRecommendedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recommended', Sort.desc);
+    });
+  }
+
   QueryBuilder<Template, Template, QAfterSortBy> sortBySphere() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'sphere', Sort.asc);
@@ -964,6 +1365,18 @@ extension TemplateQuerySortThenBy
     });
   }
 
+  QueryBuilder<Template, Template, QAfterSortBy> thenByExample() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'example', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> thenByExampleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'example', Sort.desc);
+    });
+  }
+
   QueryBuilder<Template, Template, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -973,6 +1386,30 @@ extension TemplateQuerySortThenBy
   QueryBuilder<Template, Template, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> thenByOkved() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'okved', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> thenByOkvedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'okved', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> thenByRecommended() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recommended', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Template, Template, QAfterSortBy> thenByRecommendedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recommended', Sort.desc);
     });
   }
 
@@ -1017,6 +1454,26 @@ extension TemplateQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Template, Template, QDistinct> distinctByExample(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'example', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Template, Template, QDistinct> distinctByOkved(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'okved', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Template, Template, QDistinct> distinctByRecommended() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'recommended');
+    });
+  }
+
   QueryBuilder<Template, Template, QDistinct> distinctBySphere() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'sphere');
@@ -1048,6 +1505,24 @@ extension TemplateQueryProperty
   QueryBuilder<Template, String, QQueryOperations> descriptionProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'description');
+    });
+  }
+
+  QueryBuilder<Template, String, QQueryOperations> exampleProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'example');
+    });
+  }
+
+  QueryBuilder<Template, String, QQueryOperations> okvedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'okved');
+    });
+  }
+
+  QueryBuilder<Template, bool, QQueryOperations> recommendedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'recommended');
     });
   }
 

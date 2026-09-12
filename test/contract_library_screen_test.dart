@@ -100,4 +100,103 @@ void main() {
     expect(find.text('Новый договор'), findsOneWidget);
     expect(find.text('Разработка ПО'), findsWidgets);
   });
+
+  testWidgets('фильтрует шаблоны по категории', (tester) async {
+    final repo = FakeContractTemplateRepository([
+      template(
+        code: 'it_dev',
+        sphere: TemplateSphere.it,
+        title: 'Разработка ПО',
+      ),
+      template(
+        code: 'logistics_cargo',
+        sphere: TemplateSphere.logistics,
+        title: 'Перевозка груза',
+      ),
+    ]);
+
+    await pumpLibrary(tester, repo);
+
+    await tester.tap(find.byKey(const Key('template_filter_logistics')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('template_card_logistics_cargo')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('template_card_it_dev')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('template_filter_all')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('template_card_it_dev')), findsOneWidget);
+    expect(
+      find.byKey(const Key('template_card_logistics_cargo')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('ищет шаблоны по названию и ОКВЭД', (tester) async {
+    final repo = FakeContractTemplateRepository([
+      template(
+        code: 'it_dev',
+        sphere: TemplateSphere.it,
+        title: 'Разработка ПО',
+        okved: '62.01',
+      ),
+      template(
+        code: 'logistics_cargo',
+        sphere: TemplateSphere.logistics,
+        title: 'Перевозка груза',
+        okved: '49.41',
+      ),
+    ]);
+
+    await pumpLibrary(tester, repo);
+
+    await tester.enterText(
+      find.byKey(const Key('template_search_field')),
+      'перевозка',
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('template_card_logistics_cargo')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('template_card_it_dev')), findsNothing);
+
+    await tester.enterText(
+      find.byKey(const Key('template_search_field')),
+      '62.01',
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('template_card_it_dev')), findsOneWidget);
+    expect(
+      find.byKey(const Key('template_card_logistics_cargo')),
+      findsNothing,
+    );
+  });
+
+  testWidgets('показывает пометку «Рекомендовано» и пример заполнения', (
+    tester,
+  ) async {
+    final repo = FakeContractTemplateRepository([
+      template(
+        code: 'it_dev',
+        sphere: TemplateSphere.it,
+        title: 'Разработка ПО',
+        okved: '62.01',
+        recommended: true,
+        example: 'Разработка CRM, 250 000 ₽.',
+      ),
+    ]);
+
+    await pumpLibrary(tester, repo);
+
+    expect(find.text('Рекомендовано'), findsOneWidget);
+    expect(find.text('Пример: Разработка CRM, 250 000 ₽.'), findsOneWidget);
+    expect(find.text('ОКВЭД: 62.01'), findsOneWidget);
+  });
 }

@@ -119,29 +119,71 @@ void main() {
   });
 
   group('built_in_templates', () {
-    test('каталог содержит 6 шаблонов: 2 IT, 2 логистики, 2 универсальных', () {
-      expect(builtInTemplates.length, 6);
-      expect(
-        builtInTemplates.where((t) => t.sphere == TemplateSphere.it).length,
-        2,
-      );
-      expect(
-        builtInTemplates
-            .where((t) => t.sphere == TemplateSphere.logistics)
-            .length,
-        2,
-      );
-      expect(
-        builtInTemplates
-            .where((t) => t.sphere == TemplateSphere.universal)
-            .length,
-        2,
-      );
-    });
+    test(
+      'каталог содержит 20+ шаблонов: 10 IT, 10 логистики, 2 универсальных',
+      () {
+        expect(builtInTemplates.length, greaterThanOrEqualTo(20));
+        expect(
+          builtInTemplates.where((t) => t.sphere == TemplateSphere.it).length,
+          10,
+        );
+        expect(
+          builtInTemplates
+              .where((t) => t.sphere == TemplateSphere.logistics)
+              .length,
+          10,
+        );
+        expect(
+          builtInTemplates
+              .where((t) => t.sphere == TemplateSphere.universal)
+              .length,
+          2,
+        );
+      },
+    );
 
     test('коды шаблонов уникальны', () {
       final codes = builtInTemplates.map((t) => t.code).toSet();
       expect(codes.length, builtInTemplates.length);
+    });
+
+    test('каждый шаблон адаптирован под ОКВЭД сферы', () {
+      for (final descriptor in builtInTemplates) {
+        expect(descriptor.okved, isNotEmpty, reason: descriptor.code);
+        switch (descriptor.sphere) {
+          case TemplateSphere.it:
+            expect(descriptor.okved, anyOf('62.01', '62.02'));
+          case TemplateSphere.logistics:
+            expect(descriptor.okved, '49.41');
+          case TemplateSphere.universal:
+            break;
+        }
+      }
+    });
+
+    test('каждый шаблон содержит пример заполнения', () {
+      for (final descriptor in builtInTemplates) {
+        expect(descriptor.example, isNotEmpty, reason: descriptor.code);
+      }
+    });
+
+    test('есть рекомендованные шаблоны в IT и логистике', () {
+      expect(
+        builtInTemplates.where((t) => t.recommended).length,
+        greaterThanOrEqualTo(2),
+      );
+      expect(
+        builtInTemplates.any(
+          (t) => t.recommended && t.sphere == TemplateSphere.it,
+        ),
+        isTrue,
+      );
+      expect(
+        builtInTemplates.any(
+          (t) => t.recommended && t.sphere == TemplateSphere.logistics,
+        ),
+        isTrue,
+      );
     });
 
     test(
@@ -150,9 +192,9 @@ void main() {
         final first = await seedBuiltInTemplates(repository);
         final second = await seedBuiltInTemplates(repository);
 
-        expect(first, 6);
+        expect(first, builtInTemplates.length);
         expect(second, 0);
-        expect(await repository.getAll(), hasLength(6));
+        expect(await repository.getAll(), hasLength(builtInTemplates.length));
       },
     );
 
