@@ -79,9 +79,13 @@ jobs:
         run: |
           Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath npd_shield-windows-x64.zip
 
+      # Публикация дистрибутива — приятный бонус, а не критерий успеха:
+      # при исчерпанной квоте хранилища GitHub артефакт не загрузится,
+      # но сам факт успешной сборки уже проверен предыдущим шагом.
       - name: Загрузить артефакт
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: npd_shield-windows-x64
           path: npd_shield-windows-x64.zip
-          retention-days: 7
+          retention-days: 3
