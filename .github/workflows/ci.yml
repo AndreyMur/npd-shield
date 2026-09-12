@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Повторный пуш в ту же ветку отменяет предыдущий запуск.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Версия, на которой проверена сборка проекта.
+  # Можно заменить на "stable", если нужна последняя стабильная версия Flutter.
+  FLUTTER_VERSION: "3.44.8"
+  FLUTTER_SUPPRESS_ANALYTICS: "true"
+
+jobs:
+  analyze-and-test:
+    name: Анализ и тесты
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Установить Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Установить зависимости
+        run: flutter pub get
+
+      # Тесты открывают Isar напрямую, поэтому нативной библиотеке нужно лежать
+      # в корне проекта. Готовый бинарник уже поставляется внутри пакета
+      # isar_flutter_libs, отдельная загрузка из релизов Isar не нужна.
+      - name: Подготовить нативную библиотеку Isar
+        run: |
+          cp "$(find ~/.pub-cache/hosted -path '*isar_flutter_libs*/linux/libisar.so' | head -n 1)" .
+          ls -l libisar.so
+
+      - name: Статический анализ
+        run: flutter analyze
+
+      - name: Тесты
+        run: flutter test
+
+  build-windows:
+    name: Сборка Windows (release)
+    runs-on: windows-latest
+    needs: analyze-and-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Установить Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Установить зависимости
+        run: flutter pub get
+
+      - name: Собрать release
+        run: flutter build windows --release
+
+      # Приложение не работает без соседних DLL и папки data,
+      # поэтому артефакт отдаём архивом целиком.
+      - name: Упаковать дистрибутив
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath npd_shield-windows-x64.zip
+
+      - name: Загрузить артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: npd_shield-windows-x64
+          path: npd_shield-windows-x64.zip
+          retention-days: 7
