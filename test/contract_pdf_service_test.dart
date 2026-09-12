@@ -112,6 +112,20 @@ void main() {
     },
   );
 
+  test('generateInBackground возвращает корректный PDF', () async {
+    final document = composeContractDocument(await readTemplate(), fullValues());
+    final generated = await ContractPdfService().generateInBackground(
+      document: document,
+      fonts: fonts,
+      fileName: 'contract_bg.pdf',
+    );
+
+    expect(generated.bytes, isNotEmpty);
+    expect(String.fromCharCodes(generated.bytes.take(4)), '%PDF');
+    expect(generated.fileName, 'contract_bg.pdf');
+    expect(generated.pageCount, greaterThanOrEqualTo(1));
+  });
+
   test('макет: страницы PDF имеют геометрию A4', () async {
     final document = composeContractDocument(await readTemplate(), fullValues());
     final generated = await ContractPdfService().generate(

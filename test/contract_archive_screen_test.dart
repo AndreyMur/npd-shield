@@ -230,4 +230,53 @@ void main() {
 
     expect(find.text('Редактирование договора'), findsOneWidget);
   });
+
+  testWidgets('подгружает следующую страницу при прокрутке', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.reset);
+
+    final drafts = FakeContractDraftRepository([
+      for (var i = 1; i <= 25; i++)
+        makeDraft(
+          id: i,
+          code: 'it_dev',
+          client: 'Клиент $i',
+          createdAt: DateTime(2026, 9, 1).add(Duration(days: 25 - i)),
+        ),
+    ]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ContractArchiveScreen(
+          draftRepository: drafts,
+          templateRepository: templates,
+          profileRepository: FakeContractorProfileRepository(null),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(drafts.requestedOffsets, contains(0));
+    expect(drafts.drafts.length, 25);
+    expect(find.byKey(const Key('contract_card_1')), findsOneWidget);
+    expect(find.byKey(const Key('contract_card_21')), findsNothing);
+
+    await tester.drag(
+      find.byKey(const Key('contract_archive_list')),
+      const Offset(0, -4000),
+    );
+    await tester.pumpAndSettle();
+
+    expect(drafts.requestedOffsets, contains(20));
+
+    // Вторая страница добавлена в конец списка — доскролливаем до неё.
+    await tester.drag(
+      find.byKey(const Key('contract_archive_list')),
+      const Offset(0, -4000),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('contract_card_25')), findsOneWidget);
+  });
 }

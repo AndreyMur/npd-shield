@@ -33,11 +33,20 @@ class ContractArchiveScreen extends StatefulWidget {
 }
 
 class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
+  static const int _pageSize = ContractDraftRepository.defaultPageSize;
+
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+
+  /// Номер последней запущенной загрузки: защищает от устаревших ответов,
+  /// если пользователь быстро меняет запрос или фильтр.
+  int _loadGeneration = 0;
 
   Map<String, Template> _templates = {};
   List<ContractDraft> _drafts = [];
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
   Object? _error;
   String _query = '';
   ContractStatus? _statusFilter;
@@ -45,36 +54,93 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _load();
   }
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      _loadMore();
+    }
+  }
+
+  void _loadMore() {
+    if (_loading || _loadingMore || !_hasMore) return;
+    if (_query.trim().isNotEmpty) return;
+    _load(reset: false);
+  }
+
+  Future<void> _load({bool reset = true, bool silent = false}) async {
+    final generation = ++_loadGeneration;
+    if (reset) {
+      if (!silent) {
+        setState(() {
+          _loading = true;
+          _error = null;
+          _drafts = [];
+          _hasMore = true;
+        });
+      }
+    } else {
+      setState(() => _loadingMore = true);
+    }
     try {
       final templates = await widget.templateRepository.getAll();
-      final drafts = await widget.draftRepository.getAll();
-      if (!mounted) return;
+      final List<ContractDraft> drafts;
+      final bool hasMore;
+      if (_query.trim().isNotEmpty) {
+        // Поиск — намеренное действие пользователя: ищем по всем договорам,
+        // а не только по загруженной странице.
+        drafts = _statusFilter == null
+            ? await widget.draftRepository.getAll()
+            : await widget.draftRepository.getByStatus(_statusFilter!);
+        hasMore = false;
+      } else {
+        final page = await widget.draftRepository.getPage(
+          offset: reset ? 0 : _drafts.length,
+          limit: _pageSize,
+          status: _statusFilter,
+        );
+        drafts = page;
+        hasMore = page.length == _pageSize;
+      }
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _templates = {for (final t in templates) t.code: t};
-        _drafts = drafts;
+        _drafts = reset ? drafts : [..._drafts, ...drafts];
+        _hasMore = hasMore;
         _loading = false;
+        _loadingMore = false;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || generation != _loadGeneration) return;
       setState(() {
         _error = error;
         _loading = false;
+        _loadingMore = false;
       });
     }
+  }
+
+  void _onQueryChanged(String value) {
+    setState(() => _query = value);
+    // Тихая перезагрузка: список не мигает, пока ищем по всем договорам.
+    _load(silent: true);
+  }
+
+  void _selectStatus(ContractStatus? status) {
+    setState(() => _statusFilter = status);
+    _load();
   }
 
   String _titleOf(ContractDraft draft) =>
@@ -213,7 +279,7 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
             child: TextField(
               key: const Key('contract_search_field'),
               controller: _searchController,
-              onChanged: (value) => setState(() => _query = value),
+              onChanged: _onQueryChanged,
               decoration: InputDecoration(
                 hintText: 'Поиск по названию, контрагенту, дате',
                 prefixIcon: const Icon(Icons.search),
@@ -222,10 +288,12 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
                     ? null
                     : IconButton(
                         key: const Key('contract_search_clear'),
+                        tooltip: 'Очистить поиск',
                         icon: const Icon(Icons.close),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _query = '');
+                          _load();
                         },
                       ),
               ),
@@ -249,7 +317,7 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
             key: const Key('status_filter_all'),
             label: 'Все',
             selected: _statusFilter == null,
-            onSelected: () => setState(() => _statusFilter = null),
+            onSelected: () => _selectStatus(null),
           ),
           for (final status in ContractStatus.values)
             Padding(
@@ -258,7 +326,7 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
                 key: Key('status_filter_${status.name}'),
                 label: status.label,
                 selected: _statusFilter == status,
-                onSelected: () => setState(() => _statusFilter = status),
+                onSelected: () => _selectStatus(status),
               ),
             ),
         ],
@@ -294,13 +362,23 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
         ),
       );
     }
+    final showFooter = _hasMore || _loadingMore;
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView.builder(
         key: const Key('contract_archive_list'),
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        itemCount: drafts.length,
+        itemCount: drafts.length + (showFooter ? 1 : 0),
         itemBuilder: (context, index) {
+          if (index >= drafts.length) {
+            return const Padding(
+              key: Key('contract_archive_loading_more'),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
           final draft = drafts[index];
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),

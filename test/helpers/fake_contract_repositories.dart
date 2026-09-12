@@ -76,6 +76,9 @@ class FakeContractDraftRepository implements ContractDraftRepository {
   final bool failOnSave;
   int _nextId = 1;
 
+  /// Запрошенные смещения страниц — для проверки пейджинга в тестах.
+  final List<int> requestedOffsets = [];
+
   FakeContractDraftRepository([
     List<ContractDraft>? initial,
     this.failOnSave = false,
@@ -112,6 +115,21 @@ class FakeContractDraftRepository implements ContractDraftRepository {
     final result = List.of(drafts);
     result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
     return result;
+  }
+
+  @override
+  Future<List<ContractDraft>> getPage({
+    int offset = 0,
+    int limit = ContractDraftRepository.defaultPageSize,
+    ContractStatus? status,
+  }) async {
+    requestedOffsets.add(offset);
+    final all = status == null
+        ? List.of(drafts)
+        : drafts.where((d) => d.status == status).toList();
+    all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    if (offset >= all.length) return [];
+    return all.sublist(offset, (offset + limit).clamp(0, all.length));
   }
 
   @override

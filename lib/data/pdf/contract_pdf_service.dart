@@ -1,5 +1,4 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -72,6 +71,31 @@ class ContractPdfService {
   });
 
   static const double _pointsPerMm = 72.0 / 25.4;
+
+  /// Генерирует PDF-файл в фоновом изоляте, не блокируя UI-поток.
+  ///
+  /// Разбор шрифтов и вёрстка документа — синхронные и тяжёлые операции.
+  /// На слабых устройствах они могут вызывать пропуски кадров, поэтому
+  /// генерация выполняется через [compute]. На web [compute] выполняет
+  /// задачу на текущем потоке (изоляты недоступны).
+  Future<GeneratedContractPdf> generateInBackground({
+    required ComposedContract document,
+    required ContractPdfFonts fonts,
+    String fileName = 'contract.pdf',
+  }) {
+    return compute(
+      _generateContractPdfInIsolate,
+      ContractPdfJob(
+        document: document,
+        regularFont: fonts.regular,
+        boldFont: fonts.bold,
+        fileName: fileName,
+        bodyFontSize: typography.bodyFontSize,
+        headingFontSize: typography.headingFontSize,
+        marginMillimeters: typography.marginMillimeters,
+      ),
+    );
+  }
 
   /// Генерирует PDF-файл для разобранного документа [document].
   Future<GeneratedContractPdf> generate({
@@ -293,4 +317,46 @@ class ContractPdfService {
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
       '<path fill="#2E7D32" d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 '
       '5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>';
+}
+
+/// Задание на генерацию PDF, передаваемое в фоновый изолят.
+///
+/// Содержит только сериализуемые данные: разобранный документ и байты
+/// шрифтов. Параметры вёрстки передаются явно, чтобы изолят не зависел от
+/// состояния основного потока.
+class ContractPdfJob {
+  final ComposedContract document;
+  final Uint8List regularFont;
+  final Uint8List boldFont;
+  final String fileName;
+  final double bodyFontSize;
+  final double headingFontSize;
+  final double marginMillimeters;
+
+  const ContractPdfJob({
+    required this.document,
+    required this.regularFont,
+    required this.boldFont,
+    required this.fileName,
+    required this.bodyFontSize,
+    required this.headingFontSize,
+    required this.marginMillimeters,
+  });
+}
+
+/// Точка входа генерации PDF в фоновом изоляте (для [compute]).
+Future<GeneratedContractPdf> _generateContractPdfInIsolate(
+  ContractPdfJob job,
+) {
+  return ContractPdfService(
+    typography: ContractPdfTypography(
+      bodyFontSize: job.bodyFontSize,
+      headingFontSize: job.headingFontSize,
+      marginMillimeters: job.marginMillimeters,
+    ),
+  ).generate(
+    document: job.document,
+    fonts: ContractPdfFonts(regular: job.regularFont, bold: job.boldFont),
+    fileName: job.fileName,
+  );
 }

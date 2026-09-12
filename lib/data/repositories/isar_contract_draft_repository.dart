@@ -42,6 +42,25 @@ class IsarContractDraftRepository implements ContractDraftRepository {
   }
 
   @override
+  Future<List<ContractDraft>> getPage({
+    int offset = 0,
+    int limit = ContractDraftRepository.defaultPageSize,
+    ContractStatus? status,
+  }) async {
+    final builder = status == null
+        ? isar.contractDrafts.where().sortByCreatedAtDesc()
+        : isar.contractDrafts
+              .filter()
+              .statusEqualTo(status)
+              .sortByCreatedAtDesc();
+    final drafts = await builder.offset(offset).limit(limit).findAll();
+    for (final draft in drafts) {
+      await _decryptFields(draft);
+    }
+    return drafts;
+  }
+
+  @override
   Future<List<ContractDraft>> getByStatus(ContractStatus status) async {
     final drafts = await isar.contractDrafts
         .filter()

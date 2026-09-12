@@ -108,6 +108,60 @@ void main() {
       expect(all.map((d) => d.templateId).toList(), ['b', 'c', 'a']);
     });
 
+    test('getPage возвращает страницы от новых к старым', () async {
+      final now = DateTime(2026, 9, 10);
+      for (var i = 0; i < 5; i++) {
+        await repository.save(
+          draft(
+            templateId: 't$i',
+            createdAt: now.subtract(Duration(days: i)),
+          ),
+        );
+      }
+
+      final first = await repository.getPage(limit: 2);
+      expect(first.map((d) => d.templateId).toList(), ['t0', 't1']);
+
+      final second = await repository.getPage(offset: 2, limit: 2);
+      expect(second.map((d) => d.templateId).toList(), ['t2', 't3']);
+
+      final third = await repository.getPage(offset: 4, limit: 2);
+      expect(third.map((d) => d.templateId).toList(), ['t4']);
+    });
+
+    test('getPage фильтрует по статусу на уровне БД', () async {
+      final now = DateTime(2026, 9, 10);
+      await repository.save(
+        draft(
+          templateId: 'draft',
+          status: ContractStatus.draft,
+          createdAt: now,
+        ),
+      );
+      await repository.save(
+        draft(
+          templateId: 'signed1',
+          status: ContractStatus.signed,
+          createdAt: now.subtract(const Duration(hours: 1)),
+        ),
+      );
+      await repository.save(
+        draft(
+          templateId: 'signed2',
+          status: ContractStatus.signed,
+          createdAt: now.subtract(const Duration(hours: 2)),
+        ),
+      );
+
+      final page = await repository.getPage(status: ContractStatus.signed);
+
+      expect(page.map((d) => d.templateId).toList(), ['signed1', 'signed2']);
+      expect(
+        page.every((d) => d.status == ContractStatus.signed),
+        isTrue,
+      );
+    });
+
     test('save обновляет существующий черновик вместо дублирования', () async {
       final id = await repository.save(draft(templateId: 'a'));
       final saved = await repository.getById(id);

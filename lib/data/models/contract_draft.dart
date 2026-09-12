@@ -59,6 +59,10 @@ class ContractDraft {
   List<DraftFieldValue> filledFields = [];
 
   /// Текущий статус договора.
+  ///
+  /// Проиндексирован: архив фильтрует договоры по статусу без полного
+  /// сканирования коллекции.
+  @Index()
   @enumerated
   ContractStatus status = ContractStatus.draft;
 
