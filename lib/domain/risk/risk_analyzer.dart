@@ -1,4 +1,5 @@
 import '../../data/models/risk_marker.dart';
+import 'safety_index.dart';
 
 /// Доменный use case проверки текста договора на маркеры риска.
 ///
@@ -8,7 +9,13 @@ class RiskAnalyzerUseCase {
   /// База маркеров, по которой выполняется поиск.
   final List<RiskMarker> markers;
 
-  const RiskAnalyzerUseCase(this.markers);
+  /// Калькулятор индекса безопасности по найденным рискам.
+  final SafetyIndexCalculator indexCalculator;
+
+  const RiskAnalyzerUseCase(
+    this.markers, {
+    this.indexCalculator = const SafetyIndexCalculator(),
+  });
 
   /// Ищет все совпадения маркеров в [text] и возвращает отчёт.
   ///
@@ -39,6 +46,10 @@ class RiskAnalyzerUseCase {
       sourceName: sourceName,
       textLength: text.length,
       risks: matches,
+      safetyIndex: indexCalculator.calculate(
+        matches,
+        totalMarkers: markers.length,
+      ),
     );
   }
 

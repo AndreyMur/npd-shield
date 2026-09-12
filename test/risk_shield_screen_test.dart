@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npd_shield/data/files/text_file_picker.dart';
 import 'package:npd_shield/data/models/risk_marker.dart';
@@ -11,14 +12,16 @@ RiskMarker marker({
   String code = 'labor',
   String pattern = r'трудовой\s+договор',
   RiskSeverity severity = RiskSeverity.critical,
+  String description = 'Договор назван трудовым.',
+  String suggestion = 'Замените на договор ГПХ.',
 }) {
   return RiskMarker(
     code: code,
     pattern: pattern,
     severity: severity,
-    description: 'Договор назван трудовым.',
+    description: description,
     example: 'Стороны заключают трудовой договор.',
-    suggestion: 'Замените на договор ГПХ.',
+    suggestion: suggestion,
   );
 }
 
@@ -44,6 +47,25 @@ Future<void> pumpScreen(
   await tester.pumpAndSettle();
 }
 
+Future<void> pumpAndAnalyze(
+  WidgetTester tester, {
+  required String name,
+  required String content,
+  RiskAnalyzerUseCase? analyzer,
+  RiskReportRepository? reportRepository,
+}) async {
+  await pumpScreen(
+    tester,
+    picker: _FakeTextFilePicker(
+      file: PickedTextFile(name: name, content: content),
+    ),
+    analyzer: analyzer,
+    reportRepository: reportRepository,
+  );
+  await tester.tap(find.byKey(const Key('risk_pick_button')));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('пустое состояние предлагает загрузить договор', (tester) async {
     await pumpScreen(tester, picker: _FakeTextFilePicker());
@@ -53,41 +75,48 @@ void main() {
     expect(find.text('Загрузить договор'), findsOneWidget);
   });
 
-  testWidgets('после загрузки показывает риски с уровнями', (tester) async {
-    final picker = _FakeTextFilePicker(
-      file: const PickedTextFile(
-        name: 'dogovor.txt',
-        content: 'Стороны заключают трудовой договор.',
+  testWidgets('после загрузки показывает индекс и риски с уровнями', (
+    tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      picker: _FakeTextFilePicker(
+        file: const PickedTextFile(
+          name: 'dogovor.txt',
+          content: 'Стороны заключают трудовой договор.',
+        ),
       ),
     );
-
-    await pumpScreen(tester, picker: picker);
     await tester.tap(find.byKey(const Key('risk_pick_button')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('risk_file_name')), findsOneWidget);
     expect(find.text('dogovor.txt'), findsOneWidget);
+    expect(find.byKey(const Key('safety_index_gauge')), findsOneWidget);
+    expect(find.text('0%'), findsOneWidget);
+    expect(find.text('Высокий риск'), findsOneWidget);
     expect(find.text('Найдено рисков: 1'), findsOneWidget);
     expect(find.byKey(const Key('risk_result_list')), findsOneWidget);
     expect(find.text('Критический'), findsOneWidget);
-    expect(find.textContaining('трудовой договор'), findsWidgets);
-    expect(find.text('Замените на договор ГПХ.'), findsOneWidget);
   });
 
   testWidgets('при отсутствии рисков показывает безопасный результат', (
     tester,
   ) async {
-    final picker = _FakeTextFilePicker(
-      file: const PickedTextFile(
-        name: 'safe.txt',
-        content: 'Исполнитель оказывает услуги и передаёт результат по акту.',
+    await pumpScreen(
+      tester,
+      picker: _FakeTextFilePicker(
+        file: const PickedTextFile(
+          name: 'safe.txt',
+          content: 'Исполнитель оказывает услуги и передаёт результат по акту.',
+        ),
       ),
     );
-
-    await pumpScreen(tester, picker: picker);
     await tester.tap(find.byKey(const Key('risk_pick_button')));
     await tester.pumpAndSettle();
 
+    expect(find.text('100%'), findsOneWidget);
+    expect(find.text('Высокая безопасность'), findsOneWidget);
     expect(find.text('Риски не найдены'), findsOneWidget);
     expect(find.text('Опасных формулировок не найдено'), findsOneWidget);
   });
@@ -120,39 +149,167 @@ void main() {
     expect(find.byKey(const Key('risk_result_list')), findsNothing);
   });
 
-  testWidgets('сохраняет отчёт проверки в репозиторий', (tester) async {
-    final picker = _FakeTextFilePicker(
-      file: const PickedTextFile(
-        name: 'dogovor.txt',
-        content: 'Стороны заключают трудовой договор.',
-      ),
-    );
+  testWidgets('сохраняет отчёт проверки с индексом в репозиторий', (
+    tester,
+  ) async {
     final reports = _FakeRiskReportRepository();
 
-    await pumpScreen(tester, picker: picker, reportRepository: reports);
+    await pumpScreen(
+      tester,
+      picker: _FakeTextFilePicker(
+        file: const PickedTextFile(
+          name: 'dogovor.txt',
+          content: 'Стороны заключают трудовой договор.',
+        ),
+      ),
+      reportRepository: reports,
+    );
     await tester.tap(find.byKey(const Key('risk_pick_button')));
     await tester.pumpAndSettle();
 
     expect(reports.saved, hasLength(1));
     expect(reports.saved.single.sourceName, 'dogovor.txt');
     expect(reports.saved.single.risks, hasLength(1));
+    expect(reports.saved.single.safetyIndex, 0);
   });
 
   testWidgets('позволяет проверить другой договор после результата', (
     tester,
   ) async {
-    final picker = _FakeTextFilePicker(
-      file: const PickedTextFile(
-        name: 'dogovor.txt',
-        content: 'Стороны заключают трудовой договор.',
+    await pumpScreen(
+      tester,
+      picker: _FakeTextFilePicker(
+        file: const PickedTextFile(
+          name: 'dogovor.txt',
+          content: 'Стороны заключают трудовой договор.',
+        ),
       ),
     );
-
-    await pumpScreen(tester, picker: picker);
     await tester.tap(find.byKey(const Key('risk_pick_button')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('risk_pick_another_button')), findsOneWidget);
+  });
+
+  testWidgets('карточка риска раскрывает описание, место и альтернативу', (
+    tester,
+  ) async {
+    await pumpAndAnalyze(
+      tester,
+      name: 'dogovor.txt',
+      content: 'Стороны заключают трудовой договор.',
+    );
+
+    expect(find.text('Где найдено'), findsNothing);
+
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Где найдено'), findsOneWidget);
+    expect(find.text('Безопасная формулировка'), findsOneWidget);
+    expect(find.text('Замените на договор ГПХ.'), findsOneWidget);
+    expect(find.textContaining('трудовой договор'), findsOneWidget);
+    expect(find.textContaining('позиция'), findsOneWidget);
+  });
+
+  testWidgets('фильтрует риски по уровню', (tester) async {
+    final analyzer = RiskAnalyzerUseCase([
+      marker(
+        code: 'critical',
+        pattern: r'трудовой\s+договор',
+        severity: RiskSeverity.critical,
+        description: 'Трудовой договор.',
+      ),
+      marker(
+        code: 'medium',
+        pattern: 'отпуск',
+        severity: RiskSeverity.medium,
+        description: 'Оплачиваемый отпуск.',
+      ),
+      marker(
+        code: 'low',
+        pattern: 'наличными',
+        severity: RiskSeverity.low,
+        description: 'Оплата наличными.',
+      ),
+    ]);
+
+    await pumpAndAnalyze(
+      tester,
+      name: 'mixed.txt',
+      content: 'Трудовой договор. Ежегодный отпуск. Оплата наличными.',
+      analyzer: analyzer,
+    );
+
+    expect(find.text('Все (3)'), findsOneWidget);
+    expect(find.text('Критические (1)'), findsOneWidget);
+    expect(find.text('Средние (1)'), findsOneWidget);
+    expect(find.text('Низкие (1)'), findsOneWidget);
+
+    await tester.tap(find.text('Средние (1)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Средний'), findsOneWidget);
+    expect(find.text('Критический'), findsNothing);
+    expect(find.text('Низкий'), findsNothing);
+
+    await tester.tap(find.text('Все (3)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Критический'), findsOneWidget);
+    expect(find.text('Средний'), findsOneWidget);
+    expect(find.text('Низкий'), findsOneWidget);
+  });
+
+  testWidgets('копирует безопасную формулировку в буфер обмена', (tester) async {
+    final clipboardCalls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(SystemChannels.platform, (call) async {
+          clipboardCalls.add(call);
+          return null;
+        });
+    addTearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(SystemChannels.platform, null);
+    });
+
+    await pumpAndAnalyze(
+      tester,
+      name: 'dogovor.txt',
+      content: 'Стороны заключают трудовой договор.',
+    );
+
+    await tester.tap(find.byIcon(Icons.expand_more));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Скопировать формулировку'));
+    await tester.pumpAndSettle();
+
+    final copy = clipboardCalls.singleWhere(
+      (call) => call.method == 'Clipboard.setData',
+    );
+    expect((copy.arguments as Map)['text'], 'Замените на договор ГПХ.');
+    expect(find.text('Безопасная формулировка скопирована'), findsOneWidget);
+  });
+
+  testWidgets('индекс и уровни доступны для скринридеров', (tester) async {
+    final handle = tester.ensureSemantics();
+
+    await pumpAndAnalyze(
+      tester,
+      name: 'dogovor.txt',
+      content: 'Стороны заключают трудовой договор.',
+    );
+
+    final gauge = tester.getSemantics(
+      find.byKey(const Key('safety_index_gauge')),
+    );
+    expect(gauge.label, contains('Индекс безопасности'));
+    expect(gauge.label, contains('0 процентов'));
+    expect(gauge.label, contains('Высокий риск'));
+
+    expect(find.bySemanticsLabel(RegExp('Критический')), findsWidgets);
+
+    handle.dispose();
   });
 }
 
