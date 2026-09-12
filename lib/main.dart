@@ -4,11 +4,17 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'data/built_in_templates.dart';
 import 'data/database.dart';
+import 'data/files/file_picker_text_file_picker.dart';
+import 'data/files/text_file_picker.dart';
 import 'data/repositories/isar_contract_draft_repository.dart';
 import 'data/repositories/isar_contract_template_repository.dart';
+import 'data/repositories/isar_risk_marker_repository.dart';
+import 'data/repositories/isar_risk_report_repository.dart';
 import 'data/repositories/isar_transaction_repository.dart';
 import 'data/repositories/shared_prefs_contractor_profile_repository.dart';
+import 'data/risk_markers.dart';
 import 'data/seed_data.dart';
+import 'domain/risk/risk_analyzer.dart';
 import 'presentation/home/home_shell.dart';
 
 Future<void> main() async {
@@ -24,12 +30,20 @@ Future<void> main() async {
     final profileRepository = SharedPrefsContractorProfileRepository();
     await profileRepository.seedDemoIfEmpty();
 
+    final riskMarkerRepository = IsarRiskMarkerRepository(isar);
+    await seedRiskMarkers(riskMarkerRepository);
+    final riskReportRepository = IsarRiskReportRepository(isar);
+    final riskAnalyzer = RiskAnalyzerUseCase(await riskMarkerRepository.getAll());
+
     runApp(
       NpdShieldApp(
         transactionRepository: transactionRepository,
         templateRepository: templateRepository,
         draftRepository: draftRepository,
         profileRepository: profileRepository,
+        riskAnalyzer: riskAnalyzer,
+        riskReportRepository: riskReportRepository,
+        textFilePicker: const FilePickerTextFilePicker(),
       ),
     );
   } catch (error) {
@@ -56,6 +70,9 @@ class NpdShieldApp extends StatefulWidget {
   final IsarContractTemplateRepository templateRepository;
   final IsarContractDraftRepository draftRepository;
   final SharedPrefsContractorProfileRepository profileRepository;
+  final RiskAnalyzerUseCase riskAnalyzer;
+  final IsarRiskReportRepository riskReportRepository;
+  final TextFilePicker textFilePicker;
 
   const NpdShieldApp({
     super.key,
@@ -63,6 +80,9 @@ class NpdShieldApp extends StatefulWidget {
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
+    required this.riskAnalyzer,
+    required this.riskReportRepository,
+    required this.textFilePicker,
   });
 
   @override
@@ -106,6 +126,9 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
             templateRepository: widget.templateRepository,
             draftRepository: widget.draftRepository,
             profileRepository: widget.profileRepository,
+            riskAnalyzer: widget.riskAnalyzer,
+            riskReportRepository: widget.riskReportRepository,
+            textFilePicker: widget.textFilePicker,
             onThemeModeChanged: _setThemeMode,
           ),
         );

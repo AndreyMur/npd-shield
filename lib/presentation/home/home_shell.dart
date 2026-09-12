@@ -1,19 +1,26 @@
 import 'package:flutter/material.dart';
 
+import '../../data/files/text_file_picker.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/risk_report_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../domain/risk/risk_analyzer.dart';
 import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../risk/risk_shield_screen.dart';
 
-/// Нижняя навигация приложения: дашборд, шаблоны и сохранённые договоры.
+/// Нижняя навигация приложения: дашборд, шаблоны, договоры и Risk Shield.
 class HomeShell extends StatefulWidget {
   final TransactionRepository transactionRepository;
   final ContractTemplateRepository templateRepository;
   final ContractDraftRepository draftRepository;
   final ContractorProfileRepository profileRepository;
+  final RiskAnalyzerUseCase riskAnalyzer;
+  final RiskReportRepository riskReportRepository;
+  final TextFilePicker textFilePicker;
   final void Function(ThemeMode mode) onThemeModeChanged;
 
   const HomeShell({
@@ -22,6 +29,9 @@ class HomeShell extends StatefulWidget {
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
+    required this.riskAnalyzer,
+    required this.riskReportRepository,
+    required this.textFilePicker,
     required this.onThemeModeChanged,
   });
 
@@ -52,6 +62,11 @@ class _HomeShellState extends State<HomeShell> {
             templateRepository: widget.templateRepository,
             profileRepository: widget.profileRepository,
           ),
+          RiskShieldScreen(
+            analyzer: widget.riskAnalyzer,
+            filePicker: widget.textFilePicker,
+            reportRepository: widget.riskReportRepository,
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -74,6 +89,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.folder_copy_outlined),
             selectedIcon: Icon(Icons.folder_copy),
             label: 'Договоры',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shield_outlined),
+            selectedIcon: Icon(Icons.shield),
+            label: 'Проверка',
           ),
         ],
       ),
