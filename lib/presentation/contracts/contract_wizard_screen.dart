@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../core/constants/contract_field_keys.dart';
@@ -50,6 +52,13 @@ class ContractWizardScreen extends StatefulWidget {
   /// «Сейчас» для предзаполнения даты (для тестов).
   final DateTime? now;
 
+  /// Черновик для редактирования. Если задан — поля заполняются его
+  /// значениями, а сохранение обновляет существующую запись.
+  final ContractDraft? initialDraft;
+
+  /// Интервал автосохранения черновика (по умолчанию 30 секунд).
+  final Duration autosaveInterval;
+
   const ContractWizardScreen({
     super.key,
     required this.template,
@@ -61,6 +70,8 @@ class ContractWizardScreen extends StatefulWidget {
     this.shareService,
     this.previewBuilder,
     this.now,
+    this.initialDraft,
+    this.autosaveInterval = const Duration(seconds: 30),
   });
 
   @override
@@ -114,6 +125,13 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   int _step = 0;
   bool _busy = false;
 
+  Timer? _autosaveTimer;
+  bool _savingDraft = false;
+  int _draftId = 0;
+  ContractStatus _initialStatus = ContractStatus.draft;
+  DateTime? _lastSavedAt;
+  bool _restoredSession = false;
+
   @override
   void initState() {
     super.initState();
@@ -131,8 +149,86 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
         ),
     };
     _steps = _buildSteps();
-    _loadProfile();
+    _initialize();
     _loadTemplateText();
+    _startAutosave();
+  }
+
+  Future<void> _initialize() async {
+    await _loadProfile();
+    await _restoreDraft();
+  }
+
+  void _startAutosave() {
+    final interval = widget.autosaveInterval;
+    if (interval <= Duration.zero) return;
+    _autosaveTimer = Timer.periodic(interval, (_) => _autosave());
+  }
+
+  /// Восстанавливает незавершённую сессию: явный [ContractWizardScreen.initialDraft]
+  /// или последний черновик этого шаблона.
+  Future<void> _restoreDraft() async {
+    final initial = widget.initialDraft;
+    if (initial != null) {
+      _applyDraft(initial);
+      return;
+    }
+    try {
+      final drafts = await widget.draftRepository.getByTemplateId(
+        widget.template.code,
+      );
+      for (final draft in drafts) {
+        if (draft.status == ContractStatus.draft) {
+          _applyDraft(draft);
+          _restoredSession = true;
+          break;
+        }
+      }
+    } catch (_) {
+      // Восстановление не критично: при ошибке начинаем с чистого листа.
+    }
+    if (_restoredSession && mounted) {
+      _showSnack('Восстановлен незавершённый черновик');
+    }
+  }
+
+  void _applyDraft(ContractDraft draft) {
+    _draftId = draft.id;
+    _initialStatus = draft.status;
+    final fields = contractFieldsToMap(draft.filledFields);
+    for (final key in _allFieldKeys) {
+      final value = fields[key];
+      if (value != null && value.isNotEmpty) {
+        _controllers[key]?.text = value;
+      }
+    }
+  }
+
+  Future<void> _autosave() async {
+    if (!mounted || _savingDraft || _busy) return;
+    _savingDraft = true;
+    try {
+      await _persistDraft();
+      if (!mounted) return;
+      setState(() => _lastSavedAt = DateTime.now());
+    } catch (_) {
+      // Автосохранение не должно мешать пользователю: ошибки молчаливы.
+    } finally {
+      _savingDraft = false;
+    }
+  }
+
+  /// Сохраняет (создаёт или обновляет) черновик и возвращает его `id`.
+  Future<int> _persistDraft({ContractStatus? status}) async {
+    final draft = ContractDraft(
+      templateId: widget.template.code,
+      filledFields: contractFieldsFromMap(_collectValues()),
+      status: status ?? _initialStatus,
+    );
+    draft.id = _draftId;
+    final id = await widget.draftRepository.save(draft);
+    _draftId = id;
+    return id;
   }
 
   static const _allFieldKeys = [
@@ -152,6 +248,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
 
   @override
   void dispose() {
+    _autosaveTimer?.cancel();
     for (final controller in _controllers.values) {
       controller.dispose();
     }
@@ -420,13 +517,8 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     setState(() => _busy = true);
     final document = composeContractDocument(_templateText!, _collectValues());
     final fileName = _pdfFileName();
-    final draft = ContractDraft(
-      templateId: widget.template.code,
-      filledFields: contractFieldsFromMap(_collectValues()),
-      status: ContractStatus.draft,
-    );
     try {
-      await widget.draftRepository.save(draft);
+      await _persistDraft();
       final pdf = await _generatePdf(document, fileName);
       if (!mounted) return;
       setState(() => _busy = false);
@@ -509,8 +601,24 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Новый договор'),
+        title: Text(
+          widget.initialDraft == null
+              ? 'Новый договор'
+              : 'Редактирование договора',
+        ),
         actions: [
+          if (_lastSavedAt != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Tooltip(
+                message: 'Черновик сохранён',
+                child: Icon(
+                  Icons.cloud_done_outlined,
+                  key: const Key('autosave_indicator'),
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ),
           IconButton(
             key: const Key('wizard_live_preview_button'),
             tooltip: 'Предпросмотр документа',

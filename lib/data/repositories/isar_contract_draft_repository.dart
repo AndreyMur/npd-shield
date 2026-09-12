@@ -42,6 +42,32 @@ class IsarContractDraftRepository implements ContractDraftRepository {
   }
 
   @override
+  Future<List<ContractDraft>> getByStatus(ContractStatus status) async {
+    final drafts = await isar.contractDrafts
+        .filter()
+        .statusEqualTo(status)
+        .sortByCreatedAtDesc()
+        .findAll();
+    for (final draft in drafts) {
+      await _decryptFields(draft);
+    }
+    return drafts;
+  }
+
+  @override
+  Future<List<ContractDraft>> getByTemplateId(String templateId) async {
+    final drafts = await isar.contractDrafts
+        .where()
+        .templateIdEqualTo(templateId)
+        .sortByCreatedAtDesc()
+        .findAll();
+    for (final draft in drafts) {
+      await _decryptFields(draft);
+    }
+    return drafts;
+  }
+
+  @override
   Future<int> count() {
     return isar.contractDrafts.where().count();
   }

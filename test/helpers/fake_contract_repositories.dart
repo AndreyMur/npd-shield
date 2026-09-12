@@ -109,6 +109,20 @@ class FakeContractDraftRepository implements ContractDraftRepository {
   }
 
   @override
+  Future<List<ContractDraft>> getByStatus(ContractStatus status) async {
+    final result = drafts.where((d) => d.status == status).toList();
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return result;
+  }
+
+  @override
+  Future<List<ContractDraft>> getByTemplateId(String templateId) async {
+    final result = drafts.where((d) => d.templateId == templateId).toList();
+    result.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return result;
+  }
+
+  @override
   Future<int> count() async => drafts.length;
 
   @override
