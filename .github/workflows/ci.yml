@@ -12,9 +12,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Версия, на которой проверена сборка проекта.
-  # Можно заменить на "stable", если нужна последняя стабильная версия Flutter.
-  FLUTTER_VERSION: "3.44.8"
+  # pubspec.yaml требует Dart ^3.13.2, поэтому нужен Flutter >= 3.47.2:
+  #   Flutter 3.44.8 -> Dart 3.12.2  (не подходит)
+  #   Flutter 3.47.2 -> Dart 3.13.2  (совпадает с версией Dart на машине разработчика)
+  #   Flutter 3.47.4 -> Dart 3.13.3  (последняя стабильная)
+  FLUTTER_VERSION: "3.47.2"
   FLUTTER_SUPPRESS_ANALYTICS: "true"
 
 jobs:
