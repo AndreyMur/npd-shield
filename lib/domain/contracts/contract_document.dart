@@ -1,3 +1,5 @@
+import 'protective_clauses.dart';
+
 /// Тип блока разобранного документа договора.
 ///
 /// Используется для единообразного отображения документа: в живом
@@ -20,6 +22,9 @@ enum ContractBlockType {
 
   /// Строка «г. Город ... «дата»» с выравниванием по краям.
   meta,
+
+  /// Защитная формулировка (ГПХ-характер) или её заголовок.
+  protective,
 
   /// Вертикальный отступ: одна единица на каждую пустую строку шаблона.
   spacing,
@@ -44,6 +49,9 @@ class ContractBlock {
     this.secondaryText,
     this.spacingSteps = 1,
   });
+
+  /// Является ли блок защитной формулировкой (маркируется значком щита).
+  bool get isProtective => type == ContractBlockType.protective;
 }
 
 /// Результат разбора текста шаблона с подставленными значениями полей.
@@ -89,12 +97,18 @@ final RegExp _placeholderRegExp = RegExp(r'\{\{\s*([A-Za-zА-ЯЁа-яё0-9_]+)\
 /// * строки с подчёркиваниями — подписи сторон;
 /// * остальные непустые строки — обычные абзацы;
 /// * пустые строки превращаются в отступы.
+/// [injectProtectiveClauses] включает автоматическую вставку раздела
+/// защитных формулировок (ГПХ-характер) в текст договора.
 ComposedContract composeContractDocument(
   String rawText,
-  Map<String, String> values,
-) {
+  Map<String, String> values, {
+  bool injectProtectiveClauses = true,
+}) {
   final unresolved = <String>{};
-  final substituted = _substitutePlaceholders(rawText, values, unresolved);
+  final source = injectProtectiveClauses
+      ? withProtectiveClauses(rawText)
+      : rawText;
+  final substituted = _substitutePlaceholders(source, values, unresolved);
   final lines = substituted
       .split('\n')
       .map((line) => line.trimRight())
@@ -188,6 +202,9 @@ ContractBlock _classifyLine(String line) {
       }
     }
     return ContractBlock(ContractBlockType.body, line);
+  }
+  if (isProtectiveHeading(line) || isProtectiveClause(line)) {
+    return ContractBlock(ContractBlockType.protective, line);
   }
   if (_isHeading(line)) {
     return ContractBlock(ContractBlockType.heading, line);

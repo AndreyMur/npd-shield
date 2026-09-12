@@ -4,6 +4,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../domain/contracts/contract_document.dart';
+import '../../domain/contracts/protective_clauses.dart';
 
 /// Типографские параметры PDF-документа договора.
 ///
@@ -196,6 +197,8 @@ class ContractPdfService {
               ),
             ),
           );
+        case ContractBlockType.protective:
+          widgets.add(_buildProtective(block));
         case ContractBlockType.signature:
           widgets.add(
             pw.Padding(
@@ -228,6 +231,48 @@ class ContractPdfService {
     return widgets;
   }
 
+  /// Защитная формулировка: подсвеченный блок со значком щита.
+  pw.Widget _buildProtective(ContractBlock block) {
+    final isHeading = isProtectiveHeading(block.text);
+    final shield = pw.SvgImage(svg: _shieldSvg, width: 10, height: 10);
+    return pw.Container(
+      margin: const pw.EdgeInsets.symmetric(vertical: 2),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: pw.BoxDecoration(
+        color: const PdfColor.fromInt(0xFFE8F5E9),
+        border: const pw.Border(
+          left: pw.BorderSide(
+            color: PdfColor.fromInt(0xFF2E7D32),
+            width: 2,
+          ),
+        ),
+      ),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(top: 1, right: 4),
+            child: shield,
+          ),
+          pw.Expanded(
+            child: pw.Text(
+              block.text,
+              textAlign: isHeading ? pw.TextAlign.left : pw.TextAlign.justify,
+              style: pw.TextStyle(
+                fontSize: typography.bodyFontSize,
+                fontWeight: isHeading
+                    ? pw.FontWeight.bold
+                    : pw.FontWeight.normal,
+                color: const PdfColor.fromInt(0xFF1B5E20),
+                height: 1.25,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   pw.Widget _buildPageNumber(int pageNumber, int pagesCount) {
     return pw.Center(
       child: pw.Text(
@@ -242,4 +287,10 @@ class ContractPdfService {
 
   /// Высота вертикального отступа на одну пустую строку шаблона (pt).
   static const double _spacingUnit = 5;
+
+  /// Значок щита (SVG) для маркировки защитных формулировок в PDF.
+  static const String _shieldSvg =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+      '<path fill="#2E7D32" d="M12 1 3 5v6c0 5.55 3.84 10.74 9 12 '
+      '5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>';
 }
