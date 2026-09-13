@@ -4,6 +4,7 @@ import '../../core/constants/contract_field_keys.dart';
 import '../../data/models/contract_draft.dart';
 import '../../data/models/contract_template.dart';
 import '../../data/models/transaction.dart';
+import '../../data/pdf/act_pdf_service.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
 import '../../data/pdf/receipt_pdf_service.dart';
@@ -16,6 +17,7 @@ import '../../data/repositories/transaction_repository.dart';
 import '../../domain/contracts/contract_search.dart';
 import '../../domain/contracts/contract_status.dart';
 import '../../domain/risk/risk_analyzer.dart';
+import '../documents/act_screen.dart';
 import '../documents/deal_completion_screen.dart';
 import 'contract_status_visuals.dart';
 import 'contract_wizard_screen.dart';
@@ -49,6 +51,9 @@ class ContractArchiveScreen extends StatefulWidget {
   final ContractPdfShareService? shareService;
   final Widget Function()? previewBuilder;
 
+  /// Необязательный генератор PDF акта (для тестов).
+  final ActPdfGenerator? actPdfGenerator;
+
   const ContractArchiveScreen({
     super.key,
     required this.draftRepository,
@@ -62,6 +67,7 @@ class ContractArchiveScreen extends StatefulWidget {
     this.fontLoader,
     this.shareService,
     this.previewBuilder,
+    this.actPdfGenerator,
   });
 
   @override
@@ -244,6 +250,29 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
     if (mounted) await _load();
   }
 
+  Future<void> _openAct(ContractDraft draft) async {
+    final documentRepository = widget.documentRepository;
+    if (documentRepository == null) {
+      _showSnack('Архив документов недоступен');
+      return;
+    }
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ActScreen(
+          draft: draft,
+          templateTitle: _titleOf(draft),
+          profileRepository: widget.profileRepository,
+          documentRepository: documentRepository,
+          pdfGenerator: widget.actPdfGenerator,
+          fontLoader: widget.fontLoader,
+          shareService: widget.shareService,
+          previewBuilder: widget.previewBuilder,
+        ),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
   /// Сопоставляет сферу шаблона со сферой транзакции дашборда.
   static TransactionSphere? _sphereOf(Template? template) {
     return switch (template?.sphere) {
@@ -324,6 +353,8 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
       _openWizard(draft);
     } else if (action == 'complete') {
       _openDealCompletion(draft);
+    } else if (action == 'act') {
+      _openAct(draft);
     } else if (action == 'duplicate') {
       _duplicate(draft);
     } else if (action == 'delete') {
@@ -475,6 +506,9 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
               canComplete:
                   widget.documentRepository != null &&
                   draft.status == ContractStatus.signed,
+              canCreateAct:
+                  widget.documentRepository != null &&
+                  draft.status == ContractStatus.signed,
               onTap: () => _openWizard(draft),
               onAction: (action) => _onAction(draft, action),
             ),
@@ -515,6 +549,7 @@ class _ContractCard extends StatelessWidget {
   final String date;
   final ContractStatus status;
   final bool canComplete;
+  final bool canCreateAct;
   final VoidCallback onTap;
   final void Function(String action) onAction;
 
@@ -527,6 +562,7 @@ class _ContractCard extends StatelessWidget {
     required this.date,
     required this.status,
     required this.canComplete,
+    required this.canCreateAct,
     required this.onTap,
     required this.onAction,
   });
@@ -579,6 +615,11 @@ class _ContractCard extends StatelessWidget {
                     const PopupMenuItem(
                       value: 'complete',
                       child: Text('Завершить сделку'),
+                    ),
+                  if (canCreateAct)
+                    const PopupMenuItem(
+                      value: 'act',
+                      child: Text('Создать акт'),
                     ),
                   const PopupMenuItem(
                     value: 'duplicate',

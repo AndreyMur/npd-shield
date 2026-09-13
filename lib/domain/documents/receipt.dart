@@ -39,6 +39,25 @@ class Receipt {
     this.transactionId = 0,
   });
 
+  /// Восстанавливает чек из записи архива документов.
+  ///
+  /// Используется, когда чек уже сохранён, а его данные нужны для
+  /// автозаполнения связанного акта.
+  factory Receipt.fromDocument(Document document) {
+    return Receipt(
+      sellerName: document.issuerName,
+      sellerInn: document.issuerInn,
+      serviceName: document.serviceName,
+      amount: document.amount,
+      date: document.date,
+      buyerName: document.counterpartyName,
+      buyerInn: document.counterpartyInn,
+      contractDraftId: document.contractDraftId,
+      contractNumber: document.contractNumber,
+      transactionId: document.transactionId,
+    );
+  }
+
   /// Указан ли ИНН покупателя (для чеков организациям/ИП).
   bool get hasBuyerInn => buyerInn.trim().isNotEmpty;
 

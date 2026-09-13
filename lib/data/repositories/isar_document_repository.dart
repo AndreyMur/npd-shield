@@ -83,6 +83,19 @@ class IsarDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<Document>> getByReceiptDocumentId(int receiptDocumentId) async {
+    final documents = await isar.documents
+        .filter()
+        .receiptDocumentIdEqualTo(receiptDocumentId)
+        .sortByDateDesc()
+        .findAll();
+    for (final document in documents) {
+      await _decryptFields(document);
+    }
+    return documents;
+  }
+
+  @override
   Future<int> count() {
     return isar.documents.where().count();
   }
@@ -101,6 +114,9 @@ class IsarDocumentRepository implements DocumentRepository {
     document.counterpartyName = await _encrypt(document.counterpartyName);
     document.counterpartyInn = await _encrypt(document.counterpartyInn);
     document.serviceName = await _encrypt(document.serviceName);
+    document.result = await _encrypt(document.result);
+    document.executorSignatory = await _encrypt(document.executorSignatory);
+    document.customerSignatory = await _encrypt(document.customerSignatory);
     document.issuerName = await _encrypt(document.issuerName);
     document.issuerInn = await _encrypt(document.issuerInn);
   }
@@ -109,6 +125,9 @@ class IsarDocumentRepository implements DocumentRepository {
     document.counterpartyName = await _decrypt(document.counterpartyName);
     document.counterpartyInn = await _decrypt(document.counterpartyInn);
     document.serviceName = await _decrypt(document.serviceName);
+    document.result = await _decrypt(document.result);
+    document.executorSignatory = await _decrypt(document.executorSignatory);
+    document.customerSignatory = await _decrypt(document.customerSignatory);
     document.issuerName = await _decrypt(document.issuerName);
     document.issuerInn = await _decrypt(document.issuerInn);
   }
