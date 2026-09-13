@@ -65,6 +65,13 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<Document>> getByReceiptDocumentId(int receiptDocumentId) async {
+    return documents
+        .where((d) => d.receiptDocumentId == receiptDocumentId)
+        .toList();
+  }
+
+  @override
   Future<int> count() async => documents.length;
 
   @override
