@@ -1,4 +1,5 @@
 import '../../data/models/risk_marker.dart';
+import 'risk_analysis_thresholds.dart';
 import 'safety_index.dart';
 
 /// Доменный use case проверки текста договора на маркеры риска.
@@ -12,9 +13,13 @@ class RiskAnalyzerUseCase {
   /// Калькулятор индекса безопасности по найденным рискам.
   final SafetyIndexCalculator indexCalculator;
 
+  /// Пороги чувствительности: длина совпадения и окно отрицаний.
+  final RiskAnalysisThresholds thresholds;
+
   const RiskAnalyzerUseCase(
     this.markers, {
     this.indexCalculator = const SafetyIndexCalculator(),
+    this.thresholds = const RiskAnalysisThresholds(),
   });
 
   /// Ищет все совпадения маркеров в [text] и возвращает отчёт.
@@ -56,11 +61,14 @@ class RiskAnalyzerUseCase {
   List<RiskMatch> _findMatches(_CompiledMarker entry, String text) {
     final matches = <RiskMatch>[];
     for (final match in entry.regexp.allMatches(text)) {
+      final matchedText = match.group(0) ?? '';
+      if (!thresholds.acceptsMatch(matchedText)) continue;
+      if (thresholds.isNegated(text, match.start)) continue;
       matches.add(
         RiskMatch(
           markerCode: entry.marker.code,
           severity: entry.marker.severity,
-          matchedText: match.group(0) ?? '',
+          matchedText: matchedText,
           start: match.start,
           end: match.end,
           description: entry.marker.description,
@@ -80,6 +88,7 @@ class RiskAnalyzerUseCase {
         caseSensitive: false,
         multiLine: true,
         dotAll: true,
+        unicode: true,
       );
     } catch (_) {
       return null;
