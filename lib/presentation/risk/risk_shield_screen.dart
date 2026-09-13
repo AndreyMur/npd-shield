@@ -7,6 +7,7 @@ import '../../domain/risk/risk_analyzer.dart';
 import '../../domain/risk/risk_file_limits.dart';
 import 'risk_history_screen.dart';
 import 'risk_report_view.dart';
+import 'risk_shield_info_sheet.dart';
 
 /// Экран Risk Shield: загрузка TXT-договора и автоматический анализ рисков.
 class RiskShieldScreen extends StatefulWidget {
@@ -95,6 +96,12 @@ class _RiskShieldScreenState extends State<RiskShieldScreen> {
       appBar: AppBar(
         title: const Text('Risk Shield'),
         actions: [
+          IconButton(
+            key: const Key('risk_info_button'),
+            tooltip: 'Как это работает и как подготовить договор',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => showRiskShieldInfoSheet(context),
+          ),
           if (widget.reportRepository != null)
             IconButton(
               key: const Key('risk_history_button'),
@@ -164,6 +171,20 @@ class _EmptyState extends StatelessWidget {
               'в трудовой.',
               style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              riskShieldDisclaimer,
+              key: const Key('risk_empty_disclaimer'),
+              style: theme.textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              key: const Key('risk_empty_info_button'),
+              onPressed: () => showRiskShieldInfoSheet(context),
+              icon: const Icon(Icons.help_outline, size: 18),
+              label: const Text('Как подготовить договор из PDF или DOCX'),
             ),
             if (error != null) ...[
               const SizedBox(height: 16),
