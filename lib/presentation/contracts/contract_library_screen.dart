@@ -7,7 +7,9 @@ import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contract_template_text_loader.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/risk_report_repository.dart';
 import '../../domain/contracts/template_catalog.dart';
+import '../../domain/risk/risk_analyzer.dart';
 import 'contract_wizard_screen.dart';
 import 'template_sphere_visuals.dart';
 
@@ -28,6 +30,12 @@ class ContractLibraryScreen extends StatefulWidget {
   final ContractPdfShareService? shareService;
   final Widget Function()? previewBuilder;
 
+  /// Анализатор рисков Risk Shield для автопроверки созданного договора.
+  final RiskAnalyzerUseCase? riskAnalyzer;
+
+  /// Репозиторий истории проверок Risk Shield.
+  final RiskReportRepository? riskReportRepository;
+
   const ContractLibraryScreen({
     super.key,
     required this.templateRepository,
@@ -38,6 +46,8 @@ class ContractLibraryScreen extends StatefulWidget {
     this.fontLoader,
     this.shareService,
     this.previewBuilder,
+    this.riskAnalyzer,
+    this.riskReportRepository,
   });
 
   @override
@@ -84,6 +94,8 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
           fontLoader: widget.fontLoader,
           shareService: widget.shareService,
           previewBuilder: widget.previewBuilder,
+          riskAnalyzer: widget.riskAnalyzer,
+          riskReportRepository: widget.riskReportRepository,
         ),
       ),
     );

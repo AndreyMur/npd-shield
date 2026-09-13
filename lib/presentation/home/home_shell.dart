@@ -56,11 +56,15 @@ class _HomeShellState extends State<HomeShell> {
             templateRepository: widget.templateRepository,
             draftRepository: widget.draftRepository,
             profileRepository: widget.profileRepository,
+            riskAnalyzer: widget.riskAnalyzer,
+            riskReportRepository: widget.riskReportRepository,
           ),
           ContractArchiveScreen(
             draftRepository: widget.draftRepository,
             templateRepository: widget.templateRepository,
             profileRepository: widget.profileRepository,
+            riskAnalyzer: widget.riskAnalyzer,
+            riskReportRepository: widget.riskReportRepository,
           ),
           RiskShieldScreen(
             analyzer: widget.riskAnalyzer,

@@ -7,14 +7,19 @@ import '../../../core/constants/contract_field_keys.dart';
 import '../../../core/validation/contract_input.dart';
 import '../../../data/models/contract_draft.dart';
 import '../../../data/models/contract_template.dart';
+import '../../../data/models/risk_marker.dart';
 import '../../../data/pdf/contract_pdf_font_loader.dart';
 import '../../../data/pdf/contract_pdf_service.dart';
 import '../../../data/pdf/contract_pdf_share_service.dart';
 import '../../../data/repositories/contract_draft_repository.dart';
 import '../../../data/repositories/contract_template_text_loader.dart';
 import '../../../data/repositories/contractor_profile_repository.dart';
+import '../../../data/repositories/risk_report_repository.dart';
 import '../../../domain/contracts/contract_document.dart';
 import '../../../domain/profile/contractor_profile.dart';
+import '../../../domain/risk/risk_analyzer.dart';
+import '../risk/risk_report_view.dart';
+import '../risk/risk_shield_summary_card.dart';
 import 'contract_document_preview.dart';
 import 'contract_pdf_preview_sheet.dart';
 import 'template_sphere_visuals.dart';
@@ -71,6 +76,14 @@ class ContractWizardScreen extends StatefulWidget {
   /// Интервал автосохранения черновика (по умолчанию 30 секунд).
   final Duration autosaveInterval;
 
+  /// Анализатор рисков Risk Shield. Если задан — при переходе к предпросмотру
+  /// договор автоматически проверяется на опасные формулировки.
+  final RiskAnalyzerUseCase? riskAnalyzer;
+
+  /// Репозиторий результатов проверок. Если задан — отчёт автопроверки
+  /// сохраняется в историю Risk Shield при создании договора.
+  final RiskReportRepository? riskReportRepository;
+
   const ContractWizardScreen({
     super.key,
     required this.template,
@@ -84,6 +97,8 @@ class ContractWizardScreen extends StatefulWidget {
     this.now,
     this.initialDraft,
     this.autosaveInterval = const Duration(seconds: 30),
+    this.riskAnalyzer,
+    this.riskReportRepository,
   });
 
   @override
@@ -143,6 +158,10 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   ContractStatus _initialStatus = ContractStatus.draft;
   DateTime? _lastSavedAt;
   bool _restoredSession = false;
+
+  RiskReport? _riskReport;
+  bool _analyzingRisks = false;
+  String? _riskError;
 
   @override
   void initState() {
@@ -294,6 +313,9 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
         _templateText = text;
         _loadError = null;
       });
+      if (_step == _stepsCount - 1 && _riskReport == null) {
+        _runRiskCheck();
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() => _loadError = error);
@@ -453,6 +475,9 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
       return;
     }
     setState(() => _step++);
+    if (_step == _stepsCount - 1) {
+      _runRiskCheck();
+    }
   }
 
   void _goBack() {
@@ -502,6 +527,38 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     return composeContractDocument(text, _collectValues());
   }
 
+  /// Автозапуск проверки Risk Shield после сборки договора.
+  ///
+  /// Анализируется текущий составленный документ; результат показывается в
+  /// карточке договора на шаге предпросмотра.
+  Future<void> _runRiskCheck() async {
+    final analyzer = widget.riskAnalyzer;
+    if (analyzer == null) return;
+    final document = _composeCurrent();
+    if (document == null) return;
+    setState(() {
+      _analyzingRisks = true;
+      _riskError = null;
+    });
+    try {
+      final report = await analyzer.analyze(
+        document.rawText,
+        sourceName: _pdfFileName(),
+      );
+      if (!mounted) return;
+      setState(() {
+        _riskReport = report;
+        _analyzingRisks = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _riskError = 'Не удалось выполнить проверку договора на риски.';
+        _analyzingRisks = false;
+      });
+    }
+  }
+
   String _pdfFileName() {
     final number = (_controllers[ContractFieldKeys.contractNumber]?.text ??
             '')
@@ -541,6 +598,10 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     final fileName = _pdfFileName();
     try {
       await _persistDraft();
+      final report = _riskReport;
+      if (report != null) {
+        await widget.riskReportRepository?.save(report);
+      }
       final pdf = await _generatePdf(document, fileName);
       if (!mounted) return;
       setState(() => _busy = false);
@@ -783,6 +844,10 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
           ContractDocumentPreview(document: document)
         else
           const Center(child: CircularProgressIndicator()),
+        if (widget.riskAnalyzer != null) ...[
+          const SizedBox(height: 20),
+          _buildRiskSection(theme),
+        ],
         const SizedBox(height: 20),
         FilledButton.icon(
           key: const Key('wizard_create_pdf_button'),
@@ -806,6 +871,60 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
             key: const Key('wizard_back_button'),
             onPressed: _busy ? null : _goBack,
             child: const Text('Назад'),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRiskSection(ThemeData theme) {
+    if (_analyzingRisks) {
+      return Card(
+        key: const Key('risk_contract_analyzing'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Risk Shield проверяет договор на опасные формулировки…',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final error = _riskError;
+    if (error != null) {
+      return Card(
+        key: const Key('risk_contract_error'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: RiskErrorText(error),
+        ),
+      );
+    }
+    final report = _riskReport;
+    if (report == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        RiskShieldSummaryCard(report: report),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const Key('risk_contract_recheck'),
+            onPressed: _analyzingRisks ? null : _runRiskCheck,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Проверить заново'),
           ),
         ),
       ],
