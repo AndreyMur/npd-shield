@@ -4,6 +4,7 @@ import '../../data/files/text_file_picker.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/risk_report_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../domain/risk/risk_analyzer.dart';
@@ -20,6 +21,7 @@ class HomeShell extends StatefulWidget {
   final ContractorProfileRepository profileRepository;
   final RiskAnalyzerUseCase riskAnalyzer;
   final RiskReportRepository riskReportRepository;
+  final DocumentRepository documentRepository;
   final TextFilePicker textFilePicker;
   final void Function(ThemeMode mode) onThemeModeChanged;
 
@@ -31,6 +33,7 @@ class HomeShell extends StatefulWidget {
     required this.profileRepository,
     required this.riskAnalyzer,
     required this.riskReportRepository,
+    required this.documentRepository,
     required this.textFilePicker,
     required this.onThemeModeChanged,
   });
@@ -65,6 +68,8 @@ class _HomeShellState extends State<HomeShell> {
             profileRepository: widget.profileRepository,
             riskAnalyzer: widget.riskAnalyzer,
             riskReportRepository: widget.riskReportRepository,
+            documentRepository: widget.documentRepository,
+            transactionRepository: widget.transactionRepository,
           ),
           RiskShieldScreen(
             analyzer: widget.riskAnalyzer,
