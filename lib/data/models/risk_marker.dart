@@ -130,6 +130,9 @@ class RiskReport {
 
   double safetyIndex = 0;
 
+  /// Количество найденных рисков — для списка истории проверок.
+  int get riskCount => risks.length;
+
   RiskReport({
     required this.sourceName,
     required this.textLength,

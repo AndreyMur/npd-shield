@@ -97,6 +97,16 @@ void main() {
       await repository.clear();
       expect(await repository.getAll(), isEmpty);
     });
+
+    test('riskCount отражает число сохранённых рисков', () async {
+      await repository.save(
+        report(risks: [match(), match(matchedText: 'оплачиваемый отпуск')]),
+      );
+
+      final all = await repository.getAll();
+
+      expect(all.single.riskCount, 2);
+    });
   });
 
   group('шифрование отчётов', () {
