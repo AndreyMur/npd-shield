@@ -8,6 +8,7 @@ import 'data/files/file_picker_text_file_picker.dart';
 import 'data/files/text_file_picker.dart';
 import 'data/repositories/isar_contract_draft_repository.dart';
 import 'data/repositories/isar_contract_template_repository.dart';
+import 'data/repositories/isar_document_repository.dart';
 import 'data/repositories/isar_risk_marker_repository.dart';
 import 'data/repositories/isar_risk_report_repository.dart';
 import 'data/repositories/isar_transaction_repository.dart';
@@ -27,6 +28,7 @@ Future<void> main() async {
     final templateRepository = IsarContractTemplateRepository(isar);
     await seedBuiltInTemplates(templateRepository);
     final draftRepository = IsarContractDraftRepository(isar);
+    final documentRepository = IsarDocumentRepository(isar);
     final profileRepository = SharedPrefsContractorProfileRepository();
     await profileRepository.seedDemoIfEmpty();
 
@@ -43,6 +45,7 @@ Future<void> main() async {
         profileRepository: profileRepository,
         riskAnalyzer: riskAnalyzer,
         riskReportRepository: riskReportRepository,
+        documentRepository: documentRepository,
         textFilePicker: const FilePickerTextFilePicker(),
       ),
     );
@@ -72,6 +75,7 @@ class NpdShieldApp extends StatefulWidget {
   final SharedPrefsContractorProfileRepository profileRepository;
   final RiskAnalyzerUseCase riskAnalyzer;
   final IsarRiskReportRepository riskReportRepository;
+  final IsarDocumentRepository documentRepository;
   final TextFilePicker textFilePicker;
 
   const NpdShieldApp({
@@ -82,6 +86,7 @@ class NpdShieldApp extends StatefulWidget {
     required this.profileRepository,
     required this.riskAnalyzer,
     required this.riskReportRepository,
+    required this.documentRepository,
     required this.textFilePicker,
   });
 
@@ -128,6 +133,7 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
             profileRepository: widget.profileRepository,
             riskAnalyzer: widget.riskAnalyzer,
             riskReportRepository: widget.riskReportRepository,
+            documentRepository: widget.documentRepository,
             textFilePicker: widget.textFilePicker,
             onThemeModeChanged: _setThemeMode,
           ),

@@ -3,13 +3,20 @@ import 'package:flutter/material.dart';
 import '../../core/constants/contract_field_keys.dart';
 import '../../data/models/contract_draft.dart';
 import '../../data/models/contract_template.dart';
+import '../../data/models/transaction.dart';
+import '../../data/pdf/contract_pdf_font_loader.dart';
+import '../../data/pdf/contract_pdf_share_service.dart';
+import '../../data/pdf/receipt_pdf_service.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/risk_report_repository.dart';
+import '../../data/repositories/transaction_repository.dart';
 import '../../domain/contracts/contract_search.dart';
 import '../../domain/contracts/contract_status.dart';
 import '../../domain/risk/risk_analyzer.dart';
+import '../documents/deal_completion_screen.dart';
 import 'contract_status_visuals.dart';
 import 'contract_wizard_screen.dart';
 
@@ -29,6 +36,19 @@ class ContractArchiveScreen extends StatefulWidget {
   /// Репозиторий истории проверок Risk Shield.
   final RiskReportRepository? riskReportRepository;
 
+  /// Репозиторий архива документов. Если задан — доступно завершение сделки
+  /// с автоформированием чека.
+  final DocumentRepository? documentRepository;
+
+  /// Репозиторий транзакций для записи дохода при завершении сделки.
+  final TransactionRepository? transactionRepository;
+
+  /// Необязательные зависимости экрана завершения сделки (для тестов).
+  final ReceiptPdfGenerator? receiptPdfGenerator;
+  final ContractPdfFontLoader? fontLoader;
+  final ContractPdfShareService? shareService;
+  final Widget Function()? previewBuilder;
+
   const ContractArchiveScreen({
     super.key,
     required this.draftRepository,
@@ -36,6 +56,12 @@ class ContractArchiveScreen extends StatefulWidget {
     required this.profileRepository,
     this.riskAnalyzer,
     this.riskReportRepository,
+    this.documentRepository,
+    this.transactionRepository,
+    this.receiptPdfGenerator,
+    this.fontLoader,
+    this.shareService,
+    this.previewBuilder,
   });
 
   @override
@@ -192,6 +218,42 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
     if (mounted) await _load();
   }
 
+  Future<void> _openDealCompletion(ContractDraft draft) async {
+    final documentRepository = widget.documentRepository;
+    if (documentRepository == null) {
+      _showSnack('Архив документов недоступен');
+      return;
+    }
+    final template = _templates[draft.templateId];
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => DealCompletionScreen(
+          draft: draft,
+          templateTitle: _titleOf(draft),
+          profileRepository: widget.profileRepository,
+          documentRepository: documentRepository,
+          transactionRepository: widget.transactionRepository,
+          sphere: _sphereOf(template),
+          pdfGenerator: widget.receiptPdfGenerator,
+          fontLoader: widget.fontLoader,
+          shareService: widget.shareService,
+          previewBuilder: widget.previewBuilder,
+        ),
+      ),
+    );
+    if (mounted) await _load();
+  }
+
+  /// Сопоставляет сферу шаблона со сферой транзакции дашборда.
+  static TransactionSphere? _sphereOf(Template? template) {
+    return switch (template?.sphere) {
+      TemplateSphere.it => TransactionSphere.it,
+      TemplateSphere.logistics => TransactionSphere.logistics,
+      TemplateSphere.universal => TransactionSphere.it,
+      null => null,
+    };
+  }
+
   Future<void> _duplicate(ContractDraft draft) async {
     final copy = ContractDraft(
       templateId: draft.templateId,
@@ -260,6 +322,8 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
   void _onAction(ContractDraft draft, String action) {
     if (action == 'edit') {
       _openWizard(draft);
+    } else if (action == 'complete') {
+      _openDealCompletion(draft);
     } else if (action == 'duplicate') {
       _duplicate(draft);
     } else if (action == 'delete') {
@@ -408,6 +472,9 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
                       ContractFieldKeys.contractDate] ??
                   '',
               status: draft.status,
+              canComplete:
+                  widget.documentRepository != null &&
+                  draft.status == ContractStatus.signed,
               onTap: () => _openWizard(draft),
               onAction: (action) => _onAction(draft, action),
             ),
@@ -447,6 +514,7 @@ class _ContractCard extends StatelessWidget {
   final String number;
   final String date;
   final ContractStatus status;
+  final bool canComplete;
   final VoidCallback onTap;
   final void Function(String action) onAction;
 
@@ -458,6 +526,7 @@ class _ContractCard extends StatelessWidget {
     required this.number,
     required this.date,
     required this.status,
+    required this.canComplete,
     required this.onTap,
     required this.onAction,
   });
@@ -506,6 +575,11 @@ class _ContractCard extends StatelessWidget {
                     value: 'edit',
                     child: Text('Редактировать'),
                   ),
+                  if (canComplete)
+                    const PopupMenuItem(
+                      value: 'complete',
+                      child: Text('Завершить сделку'),
+                    ),
                   const PopupMenuItem(
                     value: 'duplicate',
                     child: Text('Дублировать'),

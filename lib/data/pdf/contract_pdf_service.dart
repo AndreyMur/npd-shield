@@ -4,6 +4,14 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../domain/contracts/contract_document.dart';
 import '../../domain/contracts/protective_clauses.dart';
+import 'generated_pdf.dart';
+import 'pdf_fonts.dart';
+
+/// Результат генерации PDF договора (общий тип [GeneratedPdf]).
+typedef GeneratedContractPdf = GeneratedPdf;
+
+/// Шрифты для PDF договора (общий тип [PdfFonts]).
+typedef ContractPdfFonts = PdfFonts;
 
 /// Типографские параметры PDF-документа договора.
 ///
@@ -23,38 +31,6 @@ class ContractPdfTypography {
     this.bodyFontSize = 12,
     this.headingFontSize = 14,
     this.marginMillimeters = 20,
-  });
-}
-
-/// Шрифты для встраивания в PDF.
-///
-/// Кириллица в PDF поддерживается только встроенными TTF-шрифтами —
-/// стандартные шрифты PDF не содержат кириллических глифов.
-class ContractPdfFonts {
-  final Uint8List regular;
-  final Uint8List bold;
-
-  const ContractPdfFonts({required this.regular, required this.bold});
-}
-
-/// Результат генерации PDF.
-class GeneratedContractPdf {
-  final Uint8List bytes;
-
-  /// Количество страниц в документе.
-  final int pageCount;
-
-  /// Предлагаемое имя файла.
-  final String fileName;
-
-  /// Время генерации (для проверки нефункционального требования < 2 секунд).
-  final Duration generationTime;
-
-  GeneratedContractPdf({
-    required this.bytes,
-    required this.pageCount,
-    required this.fileName,
-    required this.generationTime,
   });
 }
 

@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'models/contract_draft.dart';
 import 'models/contract_template.dart';
+import 'models/document.dart';
 import 'models/risk_marker.dart';
 import 'models/transaction.dart';
 
@@ -26,6 +27,7 @@ class AppDatabase {
         ContractDraftSchema,
         RiskMarkerSchema,
         RiskReportSchema,
+        DocumentSchema,
       ],
       directory: isarDir,
       name: 'npd_shield',
