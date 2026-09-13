@@ -20,6 +20,9 @@ abstract class DocumentRepository {
   /// Возвращает документы, привязанные к транзакции.
   Future<List<Document>> getByTransactionId(int transactionId);
 
+  /// Возвращает документы, привязанные к чеку (например, акт к чеку).
+  Future<List<Document>> getByReceiptDocumentId(int receiptDocumentId);
+
   /// Количество документов в архиве.
   Future<int> count();
 

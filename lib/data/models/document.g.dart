@@ -47,39 +47,59 @@ const DocumentSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'date': PropertySchema(
+    r'customerSignatory': PropertySchema(
       id: 6,
+      name: r'customerSignatory',
+      type: IsarType.string,
+    ),
+    r'date': PropertySchema(
+      id: 7,
       name: r'date',
       type: IsarType.dateTime,
     ),
+    r'executorSignatory': PropertySchema(
+      id: 8,
+      name: r'executorSignatory',
+      type: IsarType.string,
+    ),
     r'issuerInn': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'issuerInn',
       type: IsarType.string,
     ),
     r'issuerName': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'issuerName',
       type: IsarType.string,
     ),
+    r'receiptDocumentId': PropertySchema(
+      id: 11,
+      name: r'receiptDocumentId',
+      type: IsarType.long,
+    ),
+    r'result': PropertySchema(
+      id: 12,
+      name: r'result',
+      type: IsarType.string,
+    ),
     r'serviceName': PropertySchema(
-      id: 9,
+      id: 13,
       name: r'serviceName',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 10,
+      id: 14,
       name: r'status',
       type: IsarType.byte,
       enumMap: _DocumentstatusEnumValueMap,
     ),
     r'transactionId': PropertySchema(
-      id: 11,
+      id: 15,
       name: r'transactionId',
       type: IsarType.long,
     ),
     r'type': PropertySchema(
-      id: 12,
+      id: 16,
       name: r'type',
       type: IsarType.byte,
       enumMap: _DocumenttypeEnumValueMap,
@@ -156,6 +176,19 @@ const DocumentSchema = CollectionSchema(
         )
       ],
     ),
+    r'receiptDocumentId': IndexSchema(
+      id: -6538797972541385235,
+      name: r'receiptDocumentId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'receiptDocumentId',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
     r'createdAt': IndexSchema(
       id: -3433535483987302584,
       name: r'createdAt',
@@ -187,8 +220,11 @@ int _documentEstimateSize(
   bytesCount += 3 + object.contractNumber.length * 3;
   bytesCount += 3 + object.counterpartyInn.length * 3;
   bytesCount += 3 + object.counterpartyName.length * 3;
+  bytesCount += 3 + object.customerSignatory.length * 3;
+  bytesCount += 3 + object.executorSignatory.length * 3;
   bytesCount += 3 + object.issuerInn.length * 3;
   bytesCount += 3 + object.issuerName.length * 3;
+  bytesCount += 3 + object.result.length * 3;
   bytesCount += 3 + object.serviceName.length * 3;
   return bytesCount;
 }
@@ -205,13 +241,17 @@ void _documentSerialize(
   writer.writeString(offsets[3], object.counterpartyInn);
   writer.writeString(offsets[4], object.counterpartyName);
   writer.writeDateTime(offsets[5], object.createdAt);
-  writer.writeDateTime(offsets[6], object.date);
-  writer.writeString(offsets[7], object.issuerInn);
-  writer.writeString(offsets[8], object.issuerName);
-  writer.writeString(offsets[9], object.serviceName);
-  writer.writeByte(offsets[10], object.status.index);
-  writer.writeLong(offsets[11], object.transactionId);
-  writer.writeByte(offsets[12], object.type.index);
+  writer.writeString(offsets[6], object.customerSignatory);
+  writer.writeDateTime(offsets[7], object.date);
+  writer.writeString(offsets[8], object.executorSignatory);
+  writer.writeString(offsets[9], object.issuerInn);
+  writer.writeString(offsets[10], object.issuerName);
+  writer.writeLong(offsets[11], object.receiptDocumentId);
+  writer.writeString(offsets[12], object.result);
+  writer.writeString(offsets[13], object.serviceName);
+  writer.writeByte(offsets[14], object.status.index);
+  writer.writeLong(offsets[15], object.transactionId);
+  writer.writeByte(offsets[16], object.type.index);
 }
 
 Document _documentDeserialize(
@@ -226,14 +266,18 @@ Document _documentDeserialize(
     contractNumber: reader.readStringOrNull(offsets[2]) ?? '',
     counterpartyInn: reader.readStringOrNull(offsets[3]) ?? '',
     counterpartyName: reader.readStringOrNull(offsets[4]) ?? '',
-    date: reader.readDateTime(offsets[6]),
-    issuerInn: reader.readStringOrNull(offsets[7]) ?? '',
-    issuerName: reader.readStringOrNull(offsets[8]) ?? '',
-    serviceName: reader.readStringOrNull(offsets[9]) ?? '',
-    status: _DocumentstatusValueEnumMap[reader.readByteOrNull(offsets[10])] ??
+    customerSignatory: reader.readStringOrNull(offsets[6]) ?? '',
+    date: reader.readDateTime(offsets[7]),
+    executorSignatory: reader.readStringOrNull(offsets[8]) ?? '',
+    issuerInn: reader.readStringOrNull(offsets[9]) ?? '',
+    issuerName: reader.readStringOrNull(offsets[10]) ?? '',
+    receiptDocumentId: reader.readLongOrNull(offsets[11]) ?? 0,
+    result: reader.readStringOrNull(offsets[12]) ?? '',
+    serviceName: reader.readStringOrNull(offsets[13]) ?? '',
+    status: _DocumentstatusValueEnumMap[reader.readByteOrNull(offsets[14])] ??
         DocumentStatus.draft,
-    transactionId: reader.readLongOrNull(offsets[11]) ?? 0,
-    type: _DocumenttypeValueEnumMap[reader.readByteOrNull(offsets[12])] ??
+    transactionId: reader.readLongOrNull(offsets[15]) ?? 0,
+    type: _DocumenttypeValueEnumMap[reader.readByteOrNull(offsets[16])] ??
         DocumentType.receipt,
   );
   object.createdAt = reader.readDateTime(offsets[5]);
@@ -261,19 +305,27 @@ P _documentDeserializeProp<P>(
     case 5:
       return (reader.readDateTime(offset)) as P;
     case 6:
-      return (reader.readDateTime(offset)) as P;
-    case 7:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 7:
+      return (reader.readDateTime(offset)) as P;
     case 8:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 9:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 10:
-      return (_DocumentstatusValueEnumMap[reader.readByteOrNull(offset)] ??
-          DocumentStatus.draft) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 11:
       return (reader.readLongOrNull(offset) ?? 0) as P;
     case 12:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 13:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 14:
+      return (_DocumentstatusValueEnumMap[reader.readByteOrNull(offset)] ??
+          DocumentStatus.draft) as P;
+    case 15:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 16:
       return (_DocumenttypeValueEnumMap[reader.readByteOrNull(offset)] ??
           DocumentType.receipt) as P;
     default:
@@ -357,6 +409,14 @@ extension DocumentQueryWhereSort on QueryBuilder<Document, Document, QWhere> {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'transactionId'),
+      );
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhere> anyReceiptDocumentId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'receiptDocumentId'),
       );
     });
   }
@@ -882,6 +942,97 @@ extension DocumentQueryWhere on QueryBuilder<Document, Document, QWhereClause> {
         lower: [lowerTransactionId],
         includeLower: includeLower,
         upper: [upperTransactionId],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> receiptDocumentIdEqualTo(
+      int receiptDocumentId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'receiptDocumentId',
+        value: [receiptDocumentId],
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause>
+      receiptDocumentIdNotEqualTo(int receiptDocumentId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'receiptDocumentId',
+              lower: [],
+              upper: [receiptDocumentId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'receiptDocumentId',
+              lower: [receiptDocumentId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'receiptDocumentId',
+              lower: [receiptDocumentId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'receiptDocumentId',
+              lower: [],
+              upper: [receiptDocumentId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause>
+      receiptDocumentIdGreaterThan(
+    int receiptDocumentId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'receiptDocumentId',
+        lower: [receiptDocumentId],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> receiptDocumentIdLessThan(
+    int receiptDocumentId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'receiptDocumentId',
+        lower: [],
+        upper: [receiptDocumentId],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> receiptDocumentIdBetween(
+    int lowerReceiptDocumentId,
+    int upperReceiptDocumentId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'receiptDocumentId',
+        lower: [lowerReceiptDocumentId],
+        includeLower: includeLower,
+        upper: [upperReceiptDocumentId],
         includeUpper: includeUpper,
       ));
     });
@@ -1558,6 +1709,142 @@ extension DocumentQueryFilter
     });
   }
 
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'customerSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'customerSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'customerSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'customerSignatory',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'customerSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'customerSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'customerSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'customerSignatory',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'customerSignatory',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      customerSignatoryIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'customerSignatory',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Document, Document, QAfterFilterCondition> dateEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -1607,6 +1894,142 @@ extension DocumentQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'executorSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'executorSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'executorSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'executorSignatory',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'executorSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'executorSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'executorSignatory',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'executorSignatory',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'executorSignatory',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      executorSignatoryIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'executorSignatory',
+        value: '',
       ));
     });
   }
@@ -1920,6 +2343,192 @@ extension DocumentQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'issuerName',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      receiptDocumentIdEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'receiptDocumentId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      receiptDocumentIdGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'receiptDocumentId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      receiptDocumentIdLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'receiptDocumentId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition>
+      receiptDocumentIdBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'receiptDocumentId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'result',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'result',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'result',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'result',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'result',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'result',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'result',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'result',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'result',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> resultIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'result',
         value: '',
       ));
     });
@@ -2297,6 +2906,18 @@ extension DocumentQuerySortBy on QueryBuilder<Document, Document, QSortBy> {
     });
   }
 
+  QueryBuilder<Document, Document, QAfterSortBy> sortByCustomerSignatory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customerSignatory', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByCustomerSignatoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customerSignatory', Sort.desc);
+    });
+  }
+
   QueryBuilder<Document, Document, QAfterSortBy> sortByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.asc);
@@ -2306,6 +2927,18 @@ extension DocumentQuerySortBy on QueryBuilder<Document, Document, QSortBy> {
   QueryBuilder<Document, Document, QAfterSortBy> sortByDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByExecutorSignatory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'executorSignatory', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByExecutorSignatoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'executorSignatory', Sort.desc);
     });
   }
 
@@ -2330,6 +2963,30 @@ extension DocumentQuerySortBy on QueryBuilder<Document, Document, QSortBy> {
   QueryBuilder<Document, Document, QAfterSortBy> sortByIssuerNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'issuerName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByReceiptDocumentId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'receiptDocumentId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByReceiptDocumentIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'receiptDocumentId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByResult() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'result', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByResultDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'result', Sort.desc);
     });
   }
 
@@ -2456,6 +3113,18 @@ extension DocumentQuerySortThenBy
     });
   }
 
+  QueryBuilder<Document, Document, QAfterSortBy> thenByCustomerSignatory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customerSignatory', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByCustomerSignatoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'customerSignatory', Sort.desc);
+    });
+  }
+
   QueryBuilder<Document, Document, QAfterSortBy> thenByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.asc);
@@ -2465,6 +3134,18 @@ extension DocumentQuerySortThenBy
   QueryBuilder<Document, Document, QAfterSortBy> thenByDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'date', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByExecutorSignatory() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'executorSignatory', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByExecutorSignatoryDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'executorSignatory', Sort.desc);
     });
   }
 
@@ -2501,6 +3182,30 @@ extension DocumentQuerySortThenBy
   QueryBuilder<Document, Document, QAfterSortBy> thenByIssuerNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'issuerName', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByReceiptDocumentId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'receiptDocumentId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByReceiptDocumentIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'receiptDocumentId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByResult() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'result', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByResultDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'result', Sort.desc);
     });
   }
 
@@ -2597,9 +3302,25 @@ extension DocumentQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Document, Document, QDistinct> distinctByCustomerSignatory(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'customerSignatory',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Document, Document, QDistinct> distinctByDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'date');
+    });
+  }
+
+  QueryBuilder<Document, Document, QDistinct> distinctByExecutorSignatory(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'executorSignatory',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -2614,6 +3335,19 @@ extension DocumentQueryWhereDistinct
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'issuerName', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Document, Document, QDistinct> distinctByReceiptDocumentId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'receiptDocumentId');
+    });
+  }
+
+  QueryBuilder<Document, Document, QDistinct> distinctByResult(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'result', caseSensitive: caseSensitive);
     });
   }
 
@@ -2687,9 +3421,21 @@ extension DocumentQueryProperty
     });
   }
 
+  QueryBuilder<Document, String, QQueryOperations> customerSignatoryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'customerSignatory');
+    });
+  }
+
   QueryBuilder<Document, DateTime, QQueryOperations> dateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'date');
+    });
+  }
+
+  QueryBuilder<Document, String, QQueryOperations> executorSignatoryProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'executorSignatory');
     });
   }
 
@@ -2702,6 +3448,18 @@ extension DocumentQueryProperty
   QueryBuilder<Document, String, QQueryOperations> issuerNameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'issuerName');
+    });
+  }
+
+  QueryBuilder<Document, int, QQueryOperations> receiptDocumentIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'receiptDocumentId');
+    });
+  }
+
+  QueryBuilder<Document, String, QQueryOperations> resultProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'result');
     });
   }
 

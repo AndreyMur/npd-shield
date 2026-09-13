@@ -96,8 +96,22 @@ class Document {
   @Index()
   int transactionId;
 
+  /// Идентификатор чека (`Document.id`), к которому привязан акт.
+  /// `0` — документ не привязан к чеку.
+  @Index()
+  int receiptDocumentId;
+
   /// Наименование услуги или работы (предмет расчёта).
   String serviceName;
+
+  /// Результат выполненных работ (для акта).
+  String result;
+
+  /// Подпись исполнителя (ФИО/должность для распечатки акта).
+  String executorSignatory;
+
+  /// Подпись заказчика (ФИО/должность для распечатки акта).
+  String customerSignatory;
 
   /// Исполнитель: ФИО (реквизит из профиля ИП).
   String issuerName;
@@ -119,7 +133,11 @@ class Document {
     this.counterpartyName = '',
     this.counterpartyInn = '',
     this.transactionId = 0,
+    this.receiptDocumentId = 0,
     this.serviceName = '',
+    this.result = '',
+    this.executorSignatory = '',
+    this.customerSignatory = '',
     this.issuerName = '',
     this.issuerInn = '',
   });

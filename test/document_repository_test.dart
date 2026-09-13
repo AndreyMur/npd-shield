@@ -35,7 +35,11 @@ void main() {
     DateTime? date,
     int contractDraftId = 0,
     int transactionId = 0,
+    int receiptDocumentId = 0,
     String serviceName = 'Разработка ПО',
+    String result = '',
+    String executorSignatory = '',
+    String customerSignatory = '',
   }) {
     return Document(
       type: type,
@@ -47,7 +51,11 @@ void main() {
       counterpartyName: counterpartyName,
       counterpartyInn: counterpartyInn,
       transactionId: transactionId,
+      receiptDocumentId: receiptDocumentId,
       serviceName: serviceName,
+      result: result,
+      executorSignatory: executorSignatory,
+      customerSignatory: customerSignatory,
       issuerName: 'Иванов Иван Иванович',
       issuerInn: '771234567890',
     );
@@ -107,6 +115,17 @@ void main() {
       expect(byTransaction.single.transactionId, 42);
     });
 
+    test('getByReceiptDocumentId находит акты, привязанные к чеку', () async {
+      await repository.save(receipt(type: DocumentType.act, receiptDocumentId: 5));
+      await repository.save(receipt(type: DocumentType.act, receiptDocumentId: 6));
+
+      final acts = await repository.getByReceiptDocumentId(5);
+
+      expect(acts, hasLength(1));
+      expect(acts.single.type, DocumentType.act);
+      expect(acts.single.receiptDocumentId, 5);
+    });
+
     test('delete и clear удаляют документы', () async {
       final id1 = await repository.save(receipt());
       await repository.save(receipt());
@@ -144,6 +163,31 @@ void main() {
       expect(loaded.serviceName, 'Разработка ПО');
       expect(loaded.issuerName, 'Иванов Иван Иванович');
       expect(loaded.issuerInn, '771234567890');
+    });
+
+    test('поля акта (результат и подписи) шифруются в базе', () async {
+      final encryptedRepo = IsarDocumentRepository(
+        isar,
+        encryption: const _PrefixEncryption(),
+      );
+      final id = await encryptedRepo.save(
+        receipt(
+          type: DocumentType.act,
+          result: 'Работы выполнены',
+          executorSignatory: 'Иванов И.И.',
+          customerSignatory: 'Петров П.П.',
+        ),
+      );
+
+      final raw = await isar.documents.where().idEqualTo(id).findFirst();
+      expect(raw!.result, startsWith('enc:'));
+      expect(raw.executorSignatory, startsWith('enc:'));
+      expect(raw.customerSignatory, startsWith('enc:'));
+
+      final loaded = await encryptedRepo.getById(id);
+      expect(loaded!.result, 'Работы выполнены');
+      expect(loaded.executorSignatory, 'Иванов И.И.');
+      expect(loaded.customerSignatory, 'Петров П.П.');
     });
   });
 }
