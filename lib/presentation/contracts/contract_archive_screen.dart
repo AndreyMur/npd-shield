@@ -6,8 +6,10 @@ import '../../data/models/contract_template.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/risk_report_repository.dart';
 import '../../domain/contracts/contract_search.dart';
 import '../../domain/contracts/contract_status.dart';
+import '../../domain/risk/risk_analyzer.dart';
 import 'contract_status_visuals.dart';
 import 'contract_wizard_screen.dart';
 
@@ -21,11 +23,19 @@ class ContractArchiveScreen extends StatefulWidget {
   final ContractTemplateRepository templateRepository;
   final ContractorProfileRepository profileRepository;
 
+  /// Анализатор рисков Risk Shield для автопроверки при редактировании.
+  final RiskAnalyzerUseCase? riskAnalyzer;
+
+  /// Репозиторий истории проверок Risk Shield.
+  final RiskReportRepository? riskReportRepository;
+
   const ContractArchiveScreen({
     super.key,
     required this.draftRepository,
     required this.templateRepository,
     required this.profileRepository,
+    this.riskAnalyzer,
+    this.riskReportRepository,
   });
 
   @override
@@ -174,6 +184,8 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
           draftRepository: widget.draftRepository,
           profileRepository: widget.profileRepository,
           initialDraft: draft,
+          riskAnalyzer: widget.riskAnalyzer,
+          riskReportRepository: widget.riskReportRepository,
         ),
       ),
     );
