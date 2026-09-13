@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npd_shield/data/models/risk_marker.dart';
 import 'package:npd_shield/data/risk_markers.dart';
+import 'package:npd_shield/domain/risk/risk_analysis_thresholds.dart';
 import 'package:npd_shield/domain/risk/risk_analyzer.dart';
 
 RiskMarker marker({
@@ -175,6 +176,64 @@ void main() {
       stopwatch.stop();
 
       expect(stopwatch.elapsedMilliseconds, lessThan(500));
+    });
+  });
+
+  group('RiskAnalysisThresholds', () {
+    test('порог длины отсекает слишком короткие совпадения', () async {
+      final analyzer = RiskAnalyzerUseCase(
+        [marker(code: 'short', pattern: 'не')],
+        thresholds: const RiskAnalysisThresholds(minMatchLength: 5),
+      );
+
+      final report = await analyzer.analyze('Здесь есть не риск.');
+
+      expect(report.risks, isEmpty);
+    });
+
+    test('окно отрицаний снимает безопасную оговорку', () async {
+      final analyzer = RiskAnalyzerUseCase([
+        marker(
+          code: 'labor',
+          pattern: r'трудовым\s+договором',
+          severity: RiskSeverity.critical,
+        ),
+      ]);
+
+      final report = await analyzer.analyze(
+        'Договор не является трудовым договором.',
+      );
+
+      expect(report.risks, isEmpty);
+    });
+
+    test('отрицание «не ниже» не снимает реальный риск', () async {
+      final analyzer = RiskAnalyzerUseCase([
+        marker(
+          code: 'mrot',
+          pattern: r'минимального\s+размера\s+оплаты\s+труда',
+          severity: RiskSeverity.critical,
+        ),
+      ]);
+
+      final report = await analyzer.analyze(
+        'Оплата труда не ниже минимального размера оплаты труда.',
+      );
+
+      expect(report.risks, hasLength(1));
+    });
+
+    test('отрицание можно отключить нулевым окном', () async {
+      final analyzer = RiskAnalyzerUseCase(
+        [marker(code: 'labor', pattern: r'трудовым\s+договором')],
+        thresholds: const RiskAnalysisThresholds(negationWindow: 0),
+      );
+
+      final report = await analyzer.analyze(
+        'Договор не является трудовым договором.',
+      );
+
+      expect(report.risks, hasLength(1));
     });
   });
 }

@@ -98,6 +98,24 @@ void main() {
       expect(await repository.getAll(), hasLength(builtInRiskMarkers.length));
     });
 
+    test('обновляет изменившиеся встроенные маркеры', () async {
+      await seedRiskMarkers(repository);
+      final descriptor = builtInRiskMarkers.first;
+      final stored = await repository.getByCode(descriptor.code);
+      await repository.put(
+        stored!
+          ..pattern = 'устаревший шаблон'
+          ..suggestion = 'устаревшая альтернатива',
+      );
+
+      final added = await seedRiskMarkers(repository);
+
+      expect(added, 0);
+      final refreshed = await repository.getByCode(descriptor.code);
+      expect(refreshed!.pattern, descriptor.pattern);
+      expect(refreshed.suggestion, descriptor.suggestion);
+    });
+
     test('встроенная база содержит все три уровня риска', () async {
       await seedRiskMarkers(repository);
 
