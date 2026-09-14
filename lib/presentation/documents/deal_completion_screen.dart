@@ -11,9 +11,12 @@ import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../domain/documents/deal_completion_service.dart';
+import '../../domain/documents/my_tax_deep_link.dart';
+import '../../domain/documents/my_tax_deep_link_service.dart';
 import '../../domain/documents/receipt.dart';
 import '../../domain/profile/contractor_profile.dart';
 import '../contracts/contract_pdf_preview_sheet.dart';
+import 'my_tax_deep_link_screen.dart';
 
 /// Экран завершения сделки: автоформирование чека по договору и экспорт PDF.
 ///
@@ -49,6 +52,9 @@ class DealCompletionScreen extends StatefulWidget {
   /// Сервис завершения сделки (автоформирование чека).
   final DealCompletionService completionService;
 
+  /// Сервис перехода в «Мой налог» по deep link.
+  final MyTaxDeepLinkService myTaxService;
+
   /// «Сейчас» для предзаполнения даты (для тестов).
   final DateTime? now;
 
@@ -65,6 +71,7 @@ class DealCompletionScreen extends StatefulWidget {
     this.shareService,
     this.previewBuilder,
     this.completionService = const DealCompletionService(),
+    this.myTaxService = const MyTaxDeepLinkService(),
     this.now,
   });
 
@@ -137,6 +144,29 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
 
   String get _contractNumber =>
       _contractFields[ContractFieldKeys.contractNumber] ?? '';
+
+  /// Собирает данные расчёта для deep link из текущих полей чека.
+  MyTaxDeepLink _currentLink() {
+    final inn = _buyerInnController.text.trim();
+    return MyTaxDeepLink(
+      amount: parseReceiptAmount(_amountController.text),
+      clientName: _buyerNameController.text.trim(),
+      clientInn: inn,
+      clientType: ClientType.fromInn(inn),
+      serviceName: _serviceController.text.trim(),
+    );
+  }
+
+  Future<void> _openMyTax() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => MyTaxDeepLinkScreen(
+          link: _currentLink(),
+          service: widget.myTaxService,
+        ),
+      ),
+    );
+  }
 
   Future<GeneratedPdf> _generatePdf(Receipt receipt, String fileName) async {
     final generator = widget.pdfGenerator;
@@ -233,7 +263,18 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Завершение сделки')),
+      appBar: AppBar(
+        title: const Text('Завершение сделки'),
+        actions: [
+          if (!_loading)
+            IconButton(
+              key: const Key('open_my_tax_button'),
+              tooltip: 'Отправить в «Мой налог»',
+              icon: const Icon(Icons.account_balance_outlined),
+              onPressed: _openMyTax,
+            ),
+        ],
+      ),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
