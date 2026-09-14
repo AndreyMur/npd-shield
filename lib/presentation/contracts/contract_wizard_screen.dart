@@ -7,6 +7,7 @@ import '../../../core/constants/contract_field_keys.dart';
 import '../../../core/validation/contract_input.dart';
 import '../../../data/models/contract_draft.dart';
 import '../../../data/models/contract_template.dart';
+import '../../../data/models/document.dart';
 import '../../../data/models/risk_marker.dart';
 import '../../../data/pdf/contract_pdf_font_loader.dart';
 import '../../../data/pdf/contract_pdf_service.dart';
@@ -14,8 +15,10 @@ import '../../../data/pdf/contract_pdf_share_service.dart';
 import '../../../data/repositories/contract_draft_repository.dart';
 import '../../../data/repositories/contract_template_text_loader.dart';
 import '../../../data/repositories/contractor_profile_repository.dart';
+import '../../../data/repositories/document_repository.dart';
 import '../../../data/repositories/risk_report_repository.dart';
 import '../../../domain/contracts/contract_document.dart';
+import '../../../domain/documents/receipt.dart';
 import '../../../domain/profile/contractor_profile.dart';
 import '../../../domain/risk/risk_analyzer.dart';
 import '../risk/risk_report_view.dart';
@@ -84,6 +87,10 @@ class ContractWizardScreen extends StatefulWidget {
   /// сохраняется в историю Risk Shield при создании договора.
   final RiskReportRepository? riskReportRepository;
 
+  /// Репозиторий архива документов. Если задан — сформированный договор
+  /// сохраняется в единый архив для последующего экспорта в PDF.
+  final DocumentRepository? documentRepository;
+
   const ContractWizardScreen({
     super.key,
     required this.template,
@@ -99,6 +106,7 @@ class ContractWizardScreen extends StatefulWidget {
     this.autosaveInterval = const Duration(seconds: 30),
     this.riskAnalyzer,
     this.riskReportRepository,
+    this.documentRepository,
   });
 
   @override
@@ -594,10 +602,12 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
       return;
     }
     setState(() => _busy = true);
-    final document = composeContractDocument(_templateText!, _collectValues());
+    final values = _collectValues();
+    final document = composeContractDocument(_templateText!, values);
     final fileName = _pdfFileName();
     try {
-      await _persistDraft();
+      final draftId = await _persistDraft();
+      await _saveContractDocument(draftId, document, values);
       final report = _riskReport;
       if (report != null) {
         await widget.riskReportRepository?.save(report);
@@ -616,6 +626,51 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     } catch (_) {
       _handleCreateError('Не удалось сохранить черновик. Попробуйте ещё раз.');
     }
+  }
+
+  /// Сохраняет сформированный договор в архив документов.
+  ///
+  /// Повторное создание PDF по тому же черновику обновляет существующую
+  /// запись договора, а не создаёт дубликат.
+  Future<void> _saveContractDocument(
+    int draftId,
+    ComposedContract document,
+    Map<String, String> values,
+  ) async {
+    final repository = widget.documentRepository;
+    if (repository == null) return;
+
+    final contract = Document(
+      type: DocumentType.contract,
+      status: DocumentStatus.generated,
+      amount: parseReceiptAmount(values[ContractFieldKeys.amount] ?? ''),
+      date:
+          parseContractDate(values[ContractFieldKeys.contractDate] ?? '') ??
+          widget.now ??
+          DateTime.now(),
+      contractDraftId: draftId,
+      contractNumber: values[ContractFieldKeys.contractNumber] ?? '',
+      counterpartyName: values[ContractFieldKeys.clientName] ?? '',
+      counterpartyInn: values[ContractFieldKeys.clientInn] ?? '',
+      serviceName: values[ContractFieldKeys.subject] ?? '',
+      issuerName: values[ContractFieldKeys.executorFullName] ?? '',
+      issuerInn: values[ContractFieldKeys.executorInn] ?? '',
+      content: document.rawText,
+    );
+
+    final existing = await repository.getByContractDraftId(draftId);
+    Document? previous;
+    for (final item in existing) {
+      if (item.type == DocumentType.contract) {
+        previous = item;
+        break;
+      }
+    }
+    if (previous != null) {
+      contract.id = previous.id;
+      contract.createdAt = previous.createdAt;
+    }
+    await repository.save(contract);
   }
 
   void _handleCreateError(String message) {

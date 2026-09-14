@@ -7,6 +7,7 @@ import '../../data/pdf/document_pdf_service.dart';
 import '../../data/pdf/generated_pdf.dart';
 import '../../data/repositories/document_repository.dart';
 import '../../domain/documents/document_archive.dart';
+import '../../domain/documents/legal_disclaimer.dart';
 import 'document_card.dart';
 import 'document_details_sheet.dart';
 
@@ -216,6 +217,7 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
       ),
       body: Column(
         children: [
+          const _DisclaimerBanner(),
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: _buildSearchField(),
@@ -481,6 +483,39 @@ class _ArchiveEntry {
       headerCount = 0;
 
   bool get isHeader => document == null;
+}
+
+/// Баннер-дисклеймер об отсутствии юридической силы документов без ЭЦП.
+class _DisclaimerBanner extends StatelessWidget {
+  const _DisclaimerBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('document_archive_disclaimer'),
+      width: double.infinity,
+      color: theme.colorScheme.surfaceContainerHighest,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              kNoLegalForceDisclaimer,
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ArchiveFilterChip extends StatelessWidget {

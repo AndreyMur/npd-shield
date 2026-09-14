@@ -4,6 +4,7 @@ import '../../core/constants/contract_field_keys.dart';
 import '../../data/models/document.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
 import '../../data/pdf/document_pdf_service.dart';
+import '../../domain/documents/legal_disclaimer.dart';
 import '../../domain/documents/receipt.dart';
 
 /// Показывает Bottom sheet с деталями документа архива и действиями.
@@ -145,8 +146,8 @@ class _DocumentDetailsSheetState extends State<DocumentDetailsSheet> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Документ не имеет юридической силы без усиленной '
-                      'электронной подписи.',
+                      kNoLegalForceDisclaimer,
+                      key: const Key('document_sheet_disclaimer'),
                       style: theme.textTheme.bodySmall,
                     ),
                   ],

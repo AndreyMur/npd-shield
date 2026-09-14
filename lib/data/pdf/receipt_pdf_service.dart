@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../../domain/documents/legal_disclaimer.dart';
 import '../../domain/documents/receipt.dart';
 import 'generated_pdf.dart';
 import 'pdf_fonts.dart';
@@ -144,7 +145,7 @@ class ReceiptPdfService {
       pw.Text(
         'Чек сформирован в приложении NPD Shield. Для придания чека '
         'юридической силы зарегистрируйте расчёт в приложении «Мой налог» '
-        'ФНС России.',
+        'ФНС России. $kNoLegalForceDisclaimer',
         style: pw.TextStyle(
           fontSize: typography.bodyFontSize - 2,
           color: PdfColors.grey700,

@@ -113,6 +113,7 @@ class IsarDocumentRepository implements DocumentRepository {
   Future<void> _encryptFields(Document document) async {
     document.counterpartyName = await _encrypt(document.counterpartyName);
     document.counterpartyInn = await _encrypt(document.counterpartyInn);
+    document.content = await _encrypt(document.content);
     document.serviceName = await _encrypt(document.serviceName);
     document.result = await _encrypt(document.result);
     document.executorSignatory = await _encrypt(document.executorSignatory);
@@ -124,6 +125,7 @@ class IsarDocumentRepository implements DocumentRepository {
   Future<void> _decryptFields(Document document) async {
     document.counterpartyName = await _decrypt(document.counterpartyName);
     document.counterpartyInn = await _decrypt(document.counterpartyInn);
+    document.content = await _decrypt(document.content);
     document.serviceName = await _decrypt(document.serviceName);
     document.result = await _decrypt(document.result);
     document.executorSignatory = await _decrypt(document.executorSignatory);

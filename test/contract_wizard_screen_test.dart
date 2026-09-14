@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npd_shield/core/constants/contract_field_keys.dart';
 import 'package:npd_shield/data/models/contract_draft.dart';
+import 'package:npd_shield/data/models/document.dart';
 import 'package:npd_shield/data/pdf/contract_pdf_service.dart';
 import 'package:npd_shield/data/pdf/contract_pdf_share_service.dart';
 import 'package:npd_shield/data/repositories/contract_template_text_loader.dart';
@@ -11,6 +12,7 @@ import 'package:npd_shield/domain/profile/contractor_profile.dart';
 import 'package:npd_shield/presentation/contracts/contract_wizard_screen.dart';
 
 import 'helpers/fake_contract_repositories.dart';
+import 'helpers/fake_document_repository.dart';
 
 const _templateText = '''
 ДОГОВОР № {{contractNumber}}
@@ -52,6 +54,7 @@ void main() {
     WidgetTester tester, {
     FakeContractorProfileRepository? profile,
     FakeContractDraftRepository? drafts,
+    FakeDocumentRepository? documents,
     bool failingRepository = false,
   }) async {
     usedProfile = profile ?? FakeContractorProfileRepository(ContractorProfile.demo);
@@ -74,6 +77,7 @@ void main() {
             templateTextLoader: const _FakeTemplateTextLoader(_templateText),
             pdfGenerator: pdfGenerator!.generate,
             shareService: shareService,
+            documentRepository: documents,
             previewBuilder: () => Container(
               key: const Key('fake_pdf_preview'),
               color: Colors.white,
@@ -299,6 +303,30 @@ void main() {
           ContractorProfile.demo.bankAccount);
     },
   );
+
+  testWidgets('сохраняет договор в архив документов для экспорта в PDF', (
+    tester,
+  ) async {
+    final documents = FakeDocumentRepository();
+    await pumpWizard(tester, documents: documents);
+    await fillClientAndSubject(tester);
+
+    final createButton = find.byKey(const Key('wizard_create_pdf_button'));
+    await tester.ensureVisible(createButton);
+    await tester.pumpAndSettle();
+    await tester.tap(createButton);
+    await tester.pumpAndSettle();
+
+    final contracts = documents.documents.where(
+      (document) => document.type == DocumentType.contract,
+    );
+    expect(contracts, hasLength(1));
+    final contract = contracts.single;
+    expect(contract.counterpartyName, 'ООО «Ромашка»');
+    expect(contract.counterpartyInn, '7701234567');
+    expect(contract.content, contains('ООО «Ромашка»'));
+    expect(contract.content, isNot(contains('{{')));
+  });
 
   testWidgets('показывает ошибку и разблокирует кнопку при сбое сохранения', (
     tester,

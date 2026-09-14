@@ -3,9 +3,14 @@ import 'package:flutter/material.dart';
 import '../../core/constants/tax_constants.dart';
 import '../../core/tax/tax_calculator.dart';
 import '../../data/models/transaction.dart';
+import '../../data/pdf/contract_pdf_font_loader.dart';
+import '../../data/pdf/contract_pdf_share_service.dart';
+import '../../data/pdf/document_pdf_service.dart';
+import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../domain/limit/limit_calculator.dart';
 import 'income_chart_card.dart';
+import 'transaction_documents_card.dart';
 
 enum DashboardFilter { all, it, logistics }
 
@@ -14,11 +19,24 @@ class DashboardScreen extends StatefulWidget {
   final DateTime? now;
   final void Function(ThemeMode mode)? onThemeModeChanged;
 
+  /// Репозиторий архива документов. Если задан — под сводкой показывается
+  /// список транзакций со значками привязанных документов.
+  final DocumentRepository? documentRepository;
+
+  /// Необязательные зависимости карточки документов (для тестов).
+  final DocumentPdfGenerator? pdfGenerator;
+  final ContractPdfShareService? shareService;
+  final ContractPdfFontLoader? fontLoader;
+
   const DashboardScreen({
     super.key,
     required this.repository,
     this.now,
     this.onThemeModeChanged,
+    this.documentRepository,
+    this.pdfGenerator,
+    this.shareService,
+    this.fontLoader,
   });
 
   @override
@@ -70,6 +88,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
               future: _load(_filter),
               filter: _filter,
               repository: widget.repository,
+              documentRepository: widget.documentRepository,
+              pdfGenerator: widget.pdfGenerator,
+              shareService: widget.shareService,
+              fontLoader: widget.fontLoader,
               now: widget.now ?? DateTime.now(),
             ),
           ),
@@ -141,6 +163,10 @@ class _DashboardView extends StatelessWidget {
   final Future<_DashboardData> future;
   final DashboardFilter filter;
   final TransactionRepository repository;
+  final DocumentRepository? documentRepository;
+  final DocumentPdfGenerator? pdfGenerator;
+  final ContractPdfShareService? shareService;
+  final ContractPdfFontLoader? fontLoader;
   final DateTime now;
 
   const _DashboardView({
@@ -148,6 +174,10 @@ class _DashboardView extends StatelessWidget {
     required this.filter,
     required this.repository,
     required this.now,
+    this.documentRepository,
+    this.pdfGenerator,
+    this.shareService,
+    this.fontLoader,
   });
 
   @override
@@ -165,6 +195,10 @@ class _DashboardView extends StatelessWidget {
           data: snapshot.data!,
           filter: filter,
           repository: repository,
+          documentRepository: documentRepository,
+          pdfGenerator: pdfGenerator,
+          shareService: shareService,
+          fontLoader: fontLoader,
           now: now,
         );
       },
@@ -176,6 +210,10 @@ class _DashboardBody extends StatelessWidget {
   final _DashboardData data;
   final DashboardFilter filter;
   final TransactionRepository repository;
+  final DocumentRepository? documentRepository;
+  final DocumentPdfGenerator? pdfGenerator;
+  final ContractPdfShareService? shareService;
+  final ContractPdfFontLoader? fontLoader;
   final DateTime now;
 
   const _DashboardBody({
@@ -183,6 +221,10 @@ class _DashboardBody extends StatelessWidget {
     required this.filter,
     required this.repository,
     required this.now,
+    this.documentRepository,
+    this.pdfGenerator,
+    this.shareService,
+    this.fontLoader,
   });
 
   @override
@@ -228,6 +270,24 @@ class _DashboardBody extends StatelessWidget {
           DashboardFilter.logistics => TransactionSphere.logistics,
         },
       ));
+
+    if (documentRepository != null) {
+      children
+        ..add(const SizedBox(height: 16))
+        ..add(TransactionDocumentsCard(
+          transactionRepository: repository,
+          documentRepository: documentRepository!,
+          pdfGenerator: pdfGenerator,
+          shareService: shareService,
+          fontLoader: fontLoader,
+          now: now,
+          sphere: switch (filter) {
+            DashboardFilter.all => null,
+            DashboardFilter.it => TransactionSphere.it,
+            DashboardFilter.logistics => TransactionSphere.logistics,
+          },
+        ));
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),

@@ -54,6 +54,7 @@ class _HomeShellState extends State<HomeShell> {
         children: [
           DashboardScreen(
             repository: widget.transactionRepository,
+            documentRepository: widget.documentRepository,
             onThemeModeChanged: widget.onThemeModeChanged,
           ),
           ContractLibraryScreen(
@@ -62,6 +63,7 @@ class _HomeShellState extends State<HomeShell> {
             profileRepository: widget.profileRepository,
             riskAnalyzer: widget.riskAnalyzer,
             riskReportRepository: widget.riskReportRepository,
+            documentRepository: widget.documentRepository,
           ),
           ContractArchiveScreen(
             draftRepository: widget.draftRepository,

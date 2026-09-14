@@ -218,6 +218,7 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
           initialDraft: draft,
           riskAnalyzer: widget.riskAnalyzer,
           riskReportRepository: widget.riskReportRepository,
+          documentRepository: widget.documentRepository,
         ),
       ),
     );

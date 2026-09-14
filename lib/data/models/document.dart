@@ -101,6 +101,11 @@ class Document {
   @Index()
   int receiptDocumentId;
 
+  /// Полный текст договора (для экспорта договора в PDF).
+  ///
+  /// Для чеков и актов остаётся пустым. Строка шифруется на уровне поля.
+  String content;
+
   /// Наименование услуги или работы (предмет расчёта).
   String serviceName;
 
@@ -134,6 +139,7 @@ class Document {
     this.counterpartyInn = '',
     this.transactionId = 0,
     this.receiptDocumentId = 0,
+    this.content = '',
     this.serviceName = '',
     this.result = '',
     this.executorSignatory = '',

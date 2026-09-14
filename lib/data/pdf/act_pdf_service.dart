@@ -3,6 +3,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../domain/documents/act.dart';
+import '../../domain/documents/legal_disclaimer.dart';
 import 'generated_pdf.dart';
 import 'pdf_fonts.dart';
 
@@ -138,9 +139,7 @@ class ActPdfService {
       pw.Divider(color: PdfColors.grey400),
       pw.SizedBox(height: 6),
       pw.Text(
-        'Акт сформирован в приложении NPD Shield. Документ не имеет '
-        'юридической силы без подписей сторон и усиленной электронной '
-        'подписи.',
+        'Акт сформирован в приложении NPD Shield. $kNoLegalForceDisclaimer',
         style: pw.TextStyle(
           fontSize: typography.bodyFontSize - 2,
           color: PdfColors.grey700,

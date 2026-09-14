@@ -7,6 +7,7 @@ import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contract_template_text_loader.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/risk_report_repository.dart';
 import '../../domain/contracts/template_catalog.dart';
 import '../../domain/risk/risk_analyzer.dart';
@@ -36,6 +37,10 @@ class ContractLibraryScreen extends StatefulWidget {
   /// Репозиторий истории проверок Risk Shield.
   final RiskReportRepository? riskReportRepository;
 
+  /// Репозиторий архива документов. Если задан — созданные договоры
+  /// сохраняются в единый архив для экспорта в PDF.
+  final DocumentRepository? documentRepository;
+
   const ContractLibraryScreen({
     super.key,
     required this.templateRepository,
@@ -48,6 +53,7 @@ class ContractLibraryScreen extends StatefulWidget {
     this.previewBuilder,
     this.riskAnalyzer,
     this.riskReportRepository,
+    this.documentRepository,
   });
 
   @override
@@ -96,6 +102,7 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
           previewBuilder: widget.previewBuilder,
           riskAnalyzer: widget.riskAnalyzer,
           riskReportRepository: widget.riskReportRepository,
+          documentRepository: widget.documentRepository,
         ),
       ),
     );
