@@ -4,6 +4,7 @@ import 'package:pdf/widgets.dart' as pw;
 
 import '../../domain/contracts/contract_document.dart';
 import '../../domain/contracts/protective_clauses.dart';
+import '../../domain/documents/legal_disclaimer.dart';
 import 'generated_pdf.dart';
 import 'pdf_fonts.dart';
 
@@ -100,7 +101,10 @@ class ContractPdfService {
           totalPages = context.pagesCount;
           return _buildPageNumber(context.pageNumber, context.pagesCount);
         },
-        build: (context) => _buildBlocks(document.blocks),
+        build: (context) => [
+          ..._buildBlocks(document.blocks),
+          _buildDisclaimer(),
+        ],
       ),
     );
 
@@ -269,6 +273,27 @@ class ContractPdfService {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Дисклеймер об отсутствии юридической силы без ЭЦП.
+  pw.Widget _buildDisclaimer() {
+    return pw.Container(
+      margin: const pw.EdgeInsets.only(top: 16),
+      padding: const pw.EdgeInsets.only(top: 6),
+      decoration: const pw.BoxDecoration(
+        border: pw.Border(
+          top: pw.BorderSide(color: PdfColors.grey400, width: 0.5),
+        ),
+      ),
+      child: pw.Text(
+        kNoLegalForceDisclaimer,
+        style: pw.TextStyle(
+          fontSize: typography.bodyFontSize - 2,
+          color: PdfColors.grey700,
+          height: 1.3,
+        ),
       ),
     );
   }

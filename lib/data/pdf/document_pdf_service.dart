@@ -1,10 +1,13 @@
 import '../../core/constants/contract_field_keys.dart';
+import '../../domain/contracts/contract_document.dart';
 import '../../domain/documents/act.dart';
 import '../../domain/documents/receipt.dart';
 import '../models/document.dart';
 import 'act_pdf_service.dart';
 import 'contract_pdf_font_loader.dart';
+import 'contract_pdf_service.dart';
 import 'generated_pdf.dart';
+import 'pdf_fonts.dart';
 import 'receipt_pdf_service.dart';
 
 /// Сигнатура генерации PDF-версии документа архива, переопределяемая в тестах.
@@ -26,7 +29,8 @@ class DocumentPdfUnsupportedException implements Exception {
 ///
 /// Для чеков и актов PDF собирается из денормализованных полей записи архива
 /// ([Receipt.fromDocument] и [Act.fromDocument]) встроенными сервисами с
-/// кириллическими шрифтами. Экспорт договоров относится к следующей фазе.
+/// кириллическими шрифтами. Договор восстанавливается из сохранённого текста
+/// ([Document.content]) и верстается сервисом договоров.
 class DocumentPdfService {
   final ContractPdfFontLoader fontLoader;
 
@@ -47,8 +51,27 @@ class DocumentPdfService {
         fonts: fonts,
         fileName: fileName,
       ),
-      DocumentType.contract => throw const DocumentPdfUnsupportedException(),
+      DocumentType.contract => _generateContract(document, fonts, fileName),
     };
+  }
+
+  /// Верстает PDF договора из сохранённого текста документа.
+  Future<GeneratedPdf> _generateContract(
+    Document document,
+    PdfFonts fonts,
+    String fileName,
+  ) {
+    final content = document.content.trim();
+    if (content.isEmpty) {
+      throw const DocumentPdfUnsupportedException(
+        'Текст договора не сохранён, экспорт невозможен.',
+      );
+    }
+    return const ContractPdfService().generateInBackground(
+      document: composeContractDocument(content, const {}),
+      fonts: fonts,
+      fileName: fileName,
+    );
   }
 }
 
