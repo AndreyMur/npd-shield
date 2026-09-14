@@ -11,6 +11,7 @@ import '../../domain/risk/risk_analyzer.dart';
 import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../documents/document_archive_screen.dart';
 import '../risk/risk_shield_screen.dart';
 
 /// Нижняя навигация приложения: дашборд, шаблоны, договоры и Risk Shield.
@@ -71,6 +72,9 @@ class _HomeShellState extends State<HomeShell> {
             documentRepository: widget.documentRepository,
             transactionRepository: widget.transactionRepository,
           ),
+          DocumentArchiveScreen(
+            documentRepository: widget.documentRepository,
+          ),
           RiskShieldScreen(
             analyzer: widget.riskAnalyzer,
             filePicker: widget.textFilePicker,
@@ -98,6 +102,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.folder_copy_outlined),
             selectedIcon: Icon(Icons.folder_copy),
             label: 'Договоры',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.folder_open_outlined),
+            selectedIcon: Icon(Icons.folder_open),
+            label: 'Документы',
           ),
           NavigationDestination(
             icon: Icon(Icons.shield_outlined),

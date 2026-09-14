@@ -59,6 +59,28 @@ class Act {
     this.customerSignatory = '',
   });
 
+  /// Восстанавливает акт из записи архива документов.
+  ///
+  /// Используется архивом для повторной генерации PDF-версии уже
+  /// сформированного акта.
+  factory Act.fromDocument(Document document) {
+    return Act(
+      sellerName: document.issuerName,
+      sellerInn: document.issuerInn,
+      worksDescription: document.serviceName,
+      amount: document.amount,
+      completionDate: document.date,
+      buyerName: document.counterpartyName,
+      buyerInn: document.counterpartyInn,
+      result: document.result,
+      contractDraftId: document.contractDraftId,
+      contractNumber: document.contractNumber,
+      receiptDocumentId: document.receiptDocumentId,
+      executorSignatory: document.executorSignatory,
+      customerSignatory: document.customerSignatory,
+    );
+  }
+
   /// Указан ли ИНН заказчика.
   bool get hasBuyerInn => buyerInn.trim().isNotEmpty;
 
