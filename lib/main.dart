@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
 import 'data/built_in_templates.dart';
 import 'data/database.dart';
+import 'data/demo_data.dart';
 import 'data/files/file_picker_text_file_picker.dart';
 import 'data/files/text_file_picker.dart';
 import 'data/notifications/firebase_push_notification_service.dart';
@@ -20,8 +21,12 @@ import 'data/repositories/isar_risk_report_repository.dart';
 import 'data/repositories/isar_transaction_repository.dart';
 import 'data/repositories/shared_prefs_contractor_profile_repository.dart';
 import 'data/risk_markers.dart';
+import 'data/services/activity_spheres_service.dart';
+import 'data/services/data_reset_service.dart';
+import 'data/services/first_run_service.dart';
 import 'domain/risk/risk_analyzer.dart';
 import 'presentation/home/home_shell.dart';
+import 'presentation/onboarding/onboarding_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,6 +49,19 @@ Future<void> main() async {
     final notificationService = FlutterLocalNotificationService();
     await _initializeNotifications(notificationService);
 
+    final firstRunService = SharedPrefsFirstRunService();
+    final activitySpheresService = SharedPrefsActivitySpheresService();
+    final dataResetService = DataResetService(
+      transactionRepository: transactionRepository,
+      documentRepository: documentRepository,
+      contractDraftRepository: draftRepository,
+      riskReportRepository: riskReportRepository,
+      notificationRepository: notificationRepository,
+      profileRepository: profileRepository,
+      activitySpheresService: activitySpheresService,
+      firstRunService: firstRunService,
+    );
+
     runApp(
       NpdShieldApp(
         transactionRepository: transactionRepository,
@@ -56,6 +74,9 @@ Future<void> main() async {
         notificationRepository: notificationRepository,
         notificationService: notificationService,
         textFilePicker: const FilePickerTextFilePicker(),
+        firstRunService: firstRunService,
+        activitySpheresService: activitySpheresService,
+        dataResetService: dataResetService,
       ),
     );
   } catch (error) {
@@ -110,6 +131,9 @@ class NpdShieldApp extends StatefulWidget {
   final NotificationRepository notificationRepository;
   final NotificationService notificationService;
   final TextFilePicker textFilePicker;
+  final FirstRunService firstRunService;
+  final ActivitySpheresService activitySpheresService;
+  final DataResetService dataResetService;
 
   const NpdShieldApp({
     super.key,
@@ -123,6 +147,9 @@ class NpdShieldApp extends StatefulWidget {
     required this.notificationRepository,
     required this.notificationService,
     required this.textFilePicker,
+    required this.firstRunService,
+    required this.activitySpheresService,
+    required this.dataResetService,
   });
 
   @override
@@ -132,10 +159,14 @@ class NpdShieldApp extends StatefulWidget {
 class _NpdShieldAppState extends State<NpdShieldApp> {
   ThemeMode _themeMode = ThemeMode.system;
 
+  /// `null` пока состояние онбординга не загружено.
+  bool? _onboardingCompleted;
+
   @override
   void initState() {
     super.initState();
     _loadTheme();
+    _loadOnboardingState();
   }
 
   Future<void> _loadTheme() async {
@@ -147,9 +178,36 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
     }
   }
 
+  Future<void> _loadOnboardingState() async {
+    bool completed;
+    try {
+      completed = await widget.firstRunService.isOnboardingCompleted();
+    } catch (_) {
+      completed = true;
+    }
+    if (mounted) setState(() => _onboardingCompleted = completed);
+  }
+
   Future<void> _setThemeMode(ThemeMode mode) async {
     setState(() => _themeMode = mode);
     await AppTheme.saveMode(mode);
+  }
+
+  Future<void> _loadDemoData() {
+    return loadDemoData(
+      transactionRepository: widget.transactionRepository,
+      notificationRepository: widget.notificationRepository,
+      profileRepository: widget.profileRepository,
+    );
+  }
+
+  Future<void> _clearAllData() async {
+    await widget.dataResetService.resetAll();
+    if (mounted) setState(() => _onboardingCompleted = false);
+  }
+
+  void _handleOnboardingCompleted() {
+    setState(() => _onboardingCompleted = true);
   }
 
   @override
@@ -161,21 +219,41 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
           themeMode: _themeMode,
           theme: AppTheme.light(lightDynamic),
           darkTheme: AppTheme.dark(darkDynamic),
-          home: HomeShell(
-            transactionRepository: widget.transactionRepository,
-            templateRepository: widget.templateRepository,
-            draftRepository: widget.draftRepository,
-            profileRepository: widget.profileRepository,
-            riskAnalyzer: widget.riskAnalyzer,
-            riskReportRepository: widget.riskReportRepository,
-            documentRepository: widget.documentRepository,
-            notificationRepository: widget.notificationRepository,
-            notificationService: widget.notificationService,
-            textFilePicker: widget.textFilePicker,
-            onThemeModeChanged: _setThemeMode,
-          ),
+          home: _buildHome(),
         );
       },
+    );
+  }
+
+  Widget _buildHome() {
+    if (_onboardingCompleted == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (!_onboardingCompleted!) {
+      return OnboardingScreen(
+        activitySpheresService: widget.activitySpheresService,
+        profileRepository: widget.profileRepository,
+        firstRunService: widget.firstRunService,
+        onLoadDemoData: _loadDemoData,
+        onCompleted: _handleOnboardingCompleted,
+      );
+    }
+    return HomeShell(
+      transactionRepository: widget.transactionRepository,
+      templateRepository: widget.templateRepository,
+      draftRepository: widget.draftRepository,
+      profileRepository: widget.profileRepository,
+      riskAnalyzer: widget.riskAnalyzer,
+      riskReportRepository: widget.riskReportRepository,
+      documentRepository: widget.documentRepository,
+      notificationRepository: widget.notificationRepository,
+      notificationService: widget.notificationService,
+      textFilePicker: widget.textFilePicker,
+      onThemeModeChanged: _setThemeMode,
+      onLoadDemoData: _loadDemoData,
+      onClearAllData: _clearAllData,
     );
   }
 }

@@ -4,7 +4,13 @@ part 'transaction.g.dart';
 
 enum TransactionSphere {
   it,
-  logistics,
+  logistics;
+
+  /// Человекочитаемое название сферы для интерфейса.
+  String get label => switch (this) {
+    TransactionSphere.it => 'IT',
+    TransactionSphere.logistics => 'Логистика',
+  };
 }
 
 @collection
