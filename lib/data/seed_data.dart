@@ -1,4 +1,6 @@
+import 'models/app_notification.dart';
 import 'models/transaction.dart';
+import 'repositories/notification_repository.dart';
 import 'repositories/transaction_repository.dart';
 
 /// Наполняет репозиторий тестовыми данными для демонстрации дашборда.
@@ -285,5 +287,51 @@ Future<void> seedDashboardData(TransactionRepository repository) async {
 
   for (final transaction in transactions) {
     await repository.add(transaction);
+  }
+}
+
+/// Наполняет центр уведомлений примерами для демонстрации, если он пуст.
+///
+/// Тексты намеренно не содержат сумм и реквизитов — только безопасные
+/// формулировки, как того требует PRD.
+Future<void> seedNotifications(
+  NotificationRepository repository, {
+  DateTime? now,
+}) async {
+  if (await repository.count() > 0) return;
+
+  final reference = now ?? DateTime.now();
+  final notifications = <AppNotification>[
+    AppNotification(
+      type: NotificationType.limit,
+      title: 'Приближение к лимиту',
+      body: 'Вы близко к лимиту 2,4 млн. Проверьте остаток в разделе дашборда.',
+      createdAt: reference.subtract(const Duration(hours: 2)),
+    ),
+    AppNotification(
+      type: NotificationType.invoice,
+      title: 'Счёт не оплачен',
+      body: 'Счёт ожидает оплаты. Отметьте оплату после перевода.',
+      createdAt: reference.subtract(const Duration(days: 1, hours: 3)),
+      payload: 'invoice:14/09',
+      actionLabel: 'Отметить как оплаченный',
+    ),
+    AppNotification(
+      type: NotificationType.anomaly,
+      title: 'Нестандартная транзакция',
+      body: 'Сумма расчёта заметно превышает обычную. Проверьте операцию.',
+      createdAt: reference.subtract(const Duration(days: 2, hours: 5)),
+    ),
+    AppNotification(
+      type: NotificationType.digest,
+      title: 'Недельная сводка',
+      body: 'Доход за неделю, налог и остаток до лимита — внутри.',
+      createdAt: reference.subtract(const Duration(days: 4)),
+      actionLabel: 'Подробнее',
+    ),
+  ];
+
+  for (final notification in notifications) {
+    await repository.save(notification);
   }
 }

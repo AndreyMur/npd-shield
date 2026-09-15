@@ -6,10 +6,16 @@ import 'data/built_in_templates.dart';
 import 'data/database.dart';
 import 'data/files/file_picker_text_file_picker.dart';
 import 'data/files/text_file_picker.dart';
+import 'data/notifications/firebase_push_notification_service.dart';
+import 'data/notifications/flutter_local_notification_service.dart';
+import 'data/notifications/notification_background_scheduler.dart';
 import 'data/repositories/isar_contract_draft_repository.dart';
 import 'data/repositories/isar_contract_template_repository.dart';
 import 'data/repositories/isar_document_repository.dart';
+import 'data/notifications/notification_service.dart';
+import 'data/repositories/isar_notification_repository.dart';
 import 'data/repositories/isar_risk_marker_repository.dart';
+import 'data/repositories/notification_repository.dart';
 import 'data/repositories/isar_risk_report_repository.dart';
 import 'data/repositories/isar_transaction_repository.dart';
 import 'data/repositories/shared_prefs_contractor_profile_repository.dart';
@@ -37,6 +43,11 @@ Future<void> main() async {
     final riskReportRepository = IsarRiskReportRepository(isar);
     final riskAnalyzer = RiskAnalyzerUseCase(await riskMarkerRepository.getAll());
 
+    final notificationRepository = IsarNotificationRepository(isar);
+    await seedNotifications(notificationRepository);
+    final notificationService = FlutterLocalNotificationService();
+    await _initializeNotifications(notificationService);
+
     runApp(
       NpdShieldApp(
         transactionRepository: transactionRepository,
@@ -46,11 +57,35 @@ Future<void> main() async {
         riskAnalyzer: riskAnalyzer,
         riskReportRepository: riskReportRepository,
         documentRepository: documentRepository,
+        notificationRepository: notificationRepository,
+        notificationService: notificationService,
         textFilePicker: const FilePickerTextFilePicker(),
       ),
     );
   } catch (error) {
     runApp(const _StartupErrorApp());
+  }
+}
+
+/// Инициализирует доставку уведомлений: локальные, push и фоновые задачи.
+///
+/// Сбой любого из каналов (например, Firebase не сконфигурирован на Windows)
+/// не должен мешать запуску приложения, поэтому ошибки здесь подавляются.
+Future<void> _initializeNotifications(
+  FlutterLocalNotificationService notificationService,
+) async {
+  try {
+    await notificationService.initialize();
+    await notificationService.requestPermission();
+
+    final pushService = FirebasePushNotificationService();
+    await pushService.initialize();
+
+    final backgroundScheduler = WorkmanagerNotificationBackgroundScheduler();
+    await backgroundScheduler.initialize();
+    await backgroundScheduler.schedulePeriodicCheck();
+  } catch (error) {
+    debugPrint('Инициализация уведомлений не удалась: $error');
   }
 }
 
@@ -76,6 +111,8 @@ class NpdShieldApp extends StatefulWidget {
   final RiskAnalyzerUseCase riskAnalyzer;
   final IsarRiskReportRepository riskReportRepository;
   final IsarDocumentRepository documentRepository;
+  final NotificationRepository notificationRepository;
+  final NotificationService notificationService;
   final TextFilePicker textFilePicker;
 
   const NpdShieldApp({
@@ -87,6 +124,8 @@ class NpdShieldApp extends StatefulWidget {
     required this.riskAnalyzer,
     required this.riskReportRepository,
     required this.documentRepository,
+    required this.notificationRepository,
+    required this.notificationService,
     required this.textFilePicker,
   });
 
@@ -134,6 +173,8 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
             riskAnalyzer: widget.riskAnalyzer,
             riskReportRepository: widget.riskReportRepository,
             documentRepository: widget.documentRepository,
+            notificationRepository: widget.notificationRepository,
+            notificationService: widget.notificationService,
             textFilePicker: widget.textFilePicker,
             onThemeModeChanged: _setThemeMode,
           ),

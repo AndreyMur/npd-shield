@@ -1,6 +1,7 @@
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'models/app_notification.dart';
 import 'models/contract_draft.dart';
 import 'models/contract_template.dart';
 import 'models/document.dart';
@@ -28,6 +29,7 @@ class AppDatabase {
         RiskMarkerSchema,
         RiskReportSchema,
         DocumentSchema,
+        AppNotificationSchema,
       ],
       directory: isarDir,
       name: 'npd_shield',
