@@ -1454,24 +1454,29 @@ const RiskReportSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'risks': PropertySchema(
+    r'riskCount': PropertySchema(
       id: 1,
+      name: r'riskCount',
+      type: IsarType.long,
+    ),
+    r'risks': PropertySchema(
+      id: 2,
       name: r'risks',
       type: IsarType.objectList,
       target: r'RiskMatch',
     ),
     r'safetyIndex': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'safetyIndex',
       type: IsarType.double,
     ),
     r'sourceName': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'sourceName',
       type: IsarType.string,
     ),
     r'textLength': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'textLength',
       type: IsarType.long,
     )
@@ -1529,15 +1534,16 @@ void _riskReportSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.createdAt);
+  writer.writeLong(offsets[1], object.riskCount);
   writer.writeObjectList<RiskMatch>(
-    offsets[1],
+    offsets[2],
     allOffsets,
     RiskMatchSchema.serialize,
     object.risks,
   );
-  writer.writeDouble(offsets[2], object.safetyIndex);
-  writer.writeString(offsets[3], object.sourceName);
-  writer.writeLong(offsets[4], object.textLength);
+  writer.writeDouble(offsets[3], object.safetyIndex);
+  writer.writeString(offsets[4], object.sourceName);
+  writer.writeLong(offsets[5], object.textLength);
 }
 
 RiskReport _riskReportDeserialize(
@@ -1548,15 +1554,15 @@ RiskReport _riskReportDeserialize(
 ) {
   final object = RiskReport(
     risks: reader.readObjectList<RiskMatch>(
-          offsets[1],
+          offsets[2],
           RiskMatchSchema.deserialize,
           allOffsets,
           RiskMatch(),
         ) ??
         const [],
-    safetyIndex: reader.readDoubleOrNull(offsets[2]) ?? 0,
-    sourceName: reader.readString(offsets[3]),
-    textLength: reader.readLong(offsets[4]),
+    safetyIndex: reader.readDoubleOrNull(offsets[3]) ?? 0,
+    sourceName: reader.readString(offsets[4]),
+    textLength: reader.readLong(offsets[5]),
   );
   object.createdAt = reader.readDateTime(offsets[0]);
   object.id = id;
@@ -1573,6 +1579,8 @@ P _riskReportDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
+      return (reader.readLong(offset)) as P;
+    case 2:
       return (reader.readObjectList<RiskMatch>(
             offset,
             RiskMatchSchema.deserialize,
@@ -1580,11 +1588,11 @@ P _riskReportDeserializeProp<P>(
             RiskMatch(),
           ) ??
           const []) as P;
-    case 2:
-      return (reader.readDoubleOrNull(offset) ?? 0) as P;
     case 3:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset) ?? 0) as P;
     case 4:
+      return (reader.readString(offset)) as P;
+    case 5:
       return (reader.readLong(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1879,6 +1887,60 @@ extension RiskReportQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'id',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<RiskReport, RiskReport, QAfterFilterCondition> riskCountEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'riskCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RiskReport, RiskReport, QAfterFilterCondition>
+      riskCountGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'riskCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RiskReport, RiskReport, QAfterFilterCondition> riskCountLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'riskCount',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<RiskReport, RiskReport, QAfterFilterCondition> riskCountBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'riskCount',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -2259,6 +2321,18 @@ extension RiskReportQuerySortBy
     });
   }
 
+  QueryBuilder<RiskReport, RiskReport, QAfterSortBy> sortByRiskCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'riskCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RiskReport, RiskReport, QAfterSortBy> sortByRiskCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'riskCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<RiskReport, RiskReport, QAfterSortBy> sortBySafetyIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'safetyIndex', Sort.asc);
@@ -2322,6 +2396,18 @@ extension RiskReportQuerySortThenBy
     });
   }
 
+  QueryBuilder<RiskReport, RiskReport, QAfterSortBy> thenByRiskCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'riskCount', Sort.asc);
+    });
+  }
+
+  QueryBuilder<RiskReport, RiskReport, QAfterSortBy> thenByRiskCountDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'riskCount', Sort.desc);
+    });
+  }
+
   QueryBuilder<RiskReport, RiskReport, QAfterSortBy> thenBySafetyIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'safetyIndex', Sort.asc);
@@ -2367,6 +2453,12 @@ extension RiskReportQueryWhereDistinct
     });
   }
 
+  QueryBuilder<RiskReport, RiskReport, QDistinct> distinctByRiskCount() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'riskCount');
+    });
+  }
+
   QueryBuilder<RiskReport, RiskReport, QDistinct> distinctBySafetyIndex() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'safetyIndex');
@@ -2398,6 +2490,12 @@ extension RiskReportQueryProperty
   QueryBuilder<RiskReport, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<RiskReport, int, QQueryOperations> riskCountProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'riskCount');
     });
   }
 
