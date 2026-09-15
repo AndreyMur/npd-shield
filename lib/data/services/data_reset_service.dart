@@ -4,6 +4,7 @@ import '../repositories/document_repository.dart';
 import '../repositories/notification_repository.dart';
 import '../repositories/risk_report_repository.dart';
 import '../repositories/transaction_repository.dart';
+import 'activity_spheres_service.dart';
 import 'first_run_service.dart';
 
 /// Полная очистка пользовательских данных.
@@ -23,6 +24,7 @@ class DataResetService {
   final RiskReportRepository riskReportRepository;
   final NotificationRepository notificationRepository;
   final ContractorProfileRepository profileRepository;
+  final ActivitySpheresService activitySpheresService;
   final FirstRunService firstRunService;
 
   DataResetService({
@@ -32,6 +34,7 @@ class DataResetService {
     required this.riskReportRepository,
     required this.notificationRepository,
     required this.profileRepository,
+    required this.activitySpheresService,
     required this.firstRunService,
   });
 
@@ -44,6 +47,7 @@ class DataResetService {
     await riskReportRepository.clear();
     await notificationRepository.clear();
     await profileRepository.clear();
+    await activitySpheresService.reset();
     await firstRunService.reset();
   }
 }

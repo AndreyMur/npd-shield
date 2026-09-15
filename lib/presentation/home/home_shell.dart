@@ -16,6 +16,7 @@ import '../dashboard/dashboard_screen.dart';
 import '../documents/document_archive_screen.dart';
 import '../notifications/notification_center_screen.dart';
 import '../risk/risk_shield_screen.dart';
+import '../settings/settings_screen.dart';
 
 /// Нижняя навигация приложения: дашборд, шаблоны, договоры и Risk Shield.
 class HomeShell extends StatefulWidget {
@@ -30,6 +31,8 @@ class HomeShell extends StatefulWidget {
   final NotificationService notificationService;
   final TextFilePicker textFilePicker;
   final void Function(ThemeMode mode) onThemeModeChanged;
+  final Future<void> Function() onLoadDemoData;
+  final Future<void> Function() onClearAllData;
 
   const HomeShell({
     super.key,
@@ -44,6 +47,8 @@ class HomeShell extends StatefulWidget {
     required this.notificationService,
     required this.textFilePicker,
     required this.onThemeModeChanged,
+    required this.onLoadDemoData,
+    required this.onClearAllData,
   });
 
   @override
@@ -112,6 +117,10 @@ class _HomeShellState extends State<HomeShell> {
               if (count != _unreadCount) setState(() => _unreadCount = count);
             },
           ),
+          SettingsScreen(
+            onLoadDemoData: widget.onLoadDemoData,
+            onClearAllData: widget.onClearAllData,
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -158,6 +167,11 @@ class _HomeShellState extends State<HomeShell> {
               child: const Icon(Icons.notifications),
             ),
             label: 'Уведомления',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Настройки',
           ),
         ],
       ),

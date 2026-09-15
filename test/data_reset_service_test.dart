@@ -9,6 +9,7 @@ import 'package:npd_shield/data/services/first_run_service.dart';
 import 'package:npd_shield/domain/profile/contractor_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'helpers/fake_activity_spheres_service.dart';
 import 'helpers/fake_contract_repositories.dart';
 import 'helpers/fake_document_repository.dart';
 import 'helpers/fake_notification_repository.dart';
@@ -24,6 +25,7 @@ void main() {
   late FakeRiskReportRepository riskReports;
   late FakeNotificationRepository notifications;
   late FakeContractorProfileRepository profile;
+  late FakeActivitySpheresService spheres;
   late SharedPrefsFirstRunService firstRun;
   late DataResetService service;
 
@@ -56,6 +58,7 @@ void main() {
       ),
     ]);
     profile = FakeContractorProfileRepository(ContractorProfile.demo);
+    spheres = FakeActivitySpheresService([TransactionSphere.it]);
     firstRun = SharedPrefsFirstRunService();
     service = DataResetService(
       transactionRepository: transactions,
@@ -64,6 +67,7 @@ void main() {
       riskReportRepository: riskReports,
       notificationRepository: notifications,
       profileRepository: profile,
+      activitySpheresService: spheres,
       firstRunService: firstRun,
     );
   });
@@ -78,6 +82,7 @@ void main() {
       expect(riskReports.reports, isEmpty);
       expect(notifications.notifications, isEmpty);
       expect(profile.profile, isNull);
+      expect(spheres.spheres, isEmpty);
     });
 
     test('resetAll возвращает состояние первого запуска', () async {
