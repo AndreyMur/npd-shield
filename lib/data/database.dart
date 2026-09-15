@@ -13,6 +13,20 @@ class AppDatabase {
 
   static late Isar instance;
 
+  /// Все коллекции приложения.
+  ///
+  /// Вынесены отдельно, чтобы тесты могли открывать ту же схему, что и
+  /// приложение, и проверять миграцию без дублирования списка.
+  static List<CollectionSchema<dynamic>> get schemas => [
+    TransactionSchema,
+    TemplateSchema,
+    ContractDraftSchema,
+    RiskMarkerSchema,
+    RiskReportSchema,
+    DocumentSchema,
+    AppNotificationSchema,
+  ];
+
   /// Открывает базу данных приложения.
   ///
   /// Миграции схемы выполняются Isar автоматически: при добавлении новых
@@ -22,15 +36,7 @@ class AppDatabase {
     final isarDir = path ?? (await getApplicationDocumentsDirectory()).path;
 
     instance = await Isar.open(
-      [
-        TransactionSchema,
-        TemplateSchema,
-        ContractDraftSchema,
-        RiskMarkerSchema,
-        RiskReportSchema,
-        DocumentSchema,
-        AppNotificationSchema,
-      ],
+      schemas,
       directory: isarDir,
       name: 'npd_shield',
     );

@@ -172,9 +172,4 @@ class FakeContractorProfileRepository implements ContractorProfileRepository {
 
   @override
   Future<void> clear() async => profile = null;
-
-  @override
-  Future<void> seedDemoIfEmpty() async {
-    profile ??= ContractorProfile.demo;
-  }
 }

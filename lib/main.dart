@@ -20,7 +20,6 @@ import 'data/repositories/isar_risk_report_repository.dart';
 import 'data/repositories/isar_transaction_repository.dart';
 import 'data/repositories/shared_prefs_contractor_profile_repository.dart';
 import 'data/risk_markers.dart';
-import 'data/seed_data.dart';
 import 'domain/risk/risk_analyzer.dart';
 import 'presentation/home/home_shell.dart';
 
@@ -29,14 +28,12 @@ Future<void> main() async {
   try {
     final isar = await AppDatabase.open();
     final transactionRepository = IsarTransactionRepository(isar);
-    await seedDashboardData(transactionRepository);
 
     final templateRepository = IsarContractTemplateRepository(isar);
     await seedBuiltInTemplates(templateRepository);
     final draftRepository = IsarContractDraftRepository(isar);
     final documentRepository = IsarDocumentRepository(isar);
     final profileRepository = SharedPrefsContractorProfileRepository();
-    await profileRepository.seedDemoIfEmpty();
 
     final riskMarkerRepository = IsarRiskMarkerRepository(isar);
     await seedRiskMarkers(riskMarkerRepository);
@@ -44,7 +41,6 @@ Future<void> main() async {
     final riskAnalyzer = RiskAnalyzerUseCase(await riskMarkerRepository.getAll());
 
     final notificationRepository = IsarNotificationRepository(isar);
-    await seedNotifications(notificationRepository);
     final notificationService = FlutterLocalNotificationService();
     await _initializeNotifications(notificationService);
 
