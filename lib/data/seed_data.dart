@@ -3,13 +3,17 @@ import 'models/transaction.dart';
 import 'repositories/notification_repository.dart';
 import 'repositories/transaction_repository.dart';
 
-/// Наполняет репозиторий тестовыми данными для демонстрации дашборда.
+/// Добавляет демонстрационные операции, показывающие возможности дашборда.
+///
 /// Данные охватывают последние 12 месяцев для хорошей визуализации графиков.
-Future<void> seedDashboardData(TransactionRepository repository) async {
-  final now = DateTime.now();
-  final currentYear = now.year;
-
-  await repository.clear();
+/// Функция ничего не очищает: демо-данные добавляются к текущим, а решение о
+/// загрузке принимает пользователь. Используется из [loadDemoData].
+Future<void> seedDemoTransactions(
+  TransactionRepository repository, {
+  DateTime? now,
+}) async {
+  final reference = now ?? DateTime.now();
+  final currentYear = reference.year;
 
   final transactions = <Transaction>[
     // IT сфера - растущий тренд с сезонностью
@@ -290,11 +294,11 @@ Future<void> seedDashboardData(TransactionRepository repository) async {
   }
 }
 
-/// Наполняет центр уведомлений примерами для демонстрации, если он пуст.
+/// Добавляет демонстрационные уведомления, если центр пуст.
 ///
 /// Тексты намеренно не содержат сумм и реквизитов — только безопасные
-/// формулировки, как того требует PRD.
-Future<void> seedNotifications(
+/// формулировки, как того требует PRD. Используется из [loadDemoData].
+Future<void> seedDemoNotifications(
   NotificationRepository repository, {
   DateTime? now,
 }) async {

@@ -42,11 +42,4 @@ class SharedPrefsContractorProfileRepository
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
   }
-
-  @override
-  Future<void> seedDemoIfEmpty() async {
-    if (await load() == null) {
-      await save(ContractorProfile.demo);
-    }
-  }
 }

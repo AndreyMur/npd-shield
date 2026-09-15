@@ -10,9 +10,4 @@ abstract class ContractorProfileRepository {
 
   /// Удаляет профиль.
   Future<void> clear();
-
-  /// Если профиль ещё не сохранён, заполняет его демонстрационными данными.
-  ///
-  /// Используется на этапе tracer-bullet, пока нет отдельного экрана профиля.
-  Future<void> seedDemoIfEmpty();
 }

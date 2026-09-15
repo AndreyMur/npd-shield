@@ -1,6 +1,15 @@
-# Seed Data - Тестовые данные для дашборда
+# Демонстрационные данные
 
-Файл `seed_data.dart` содержит функцию `seedDashboardData()`, которая наполняет базу данных тестовыми транзакциями для демонстрации возможностей дашборда.
+Файл `seed_data.dart` содержит функции `seedDemoTransactions()` и
+`seedDemoNotifications()`, которые наполняют базу тестовыми данными для
+демонстрации возможностей приложения.
+
+## Важно: данные пользователя не сбрасываются
+
+Приложение **не** загружает демо-данные автоматически при запуске. Демо
+добавляется только по явному действию пользователя через `loadDemoData()`
+(`lib/data/demo_data.dart`), и функции сида ничего не очищают — существующие
+данные сохраняются.
 
 ## Структура данных
 
@@ -10,7 +19,6 @@
 - **Общий доход за год:** ~1 098 000 ₽
 - **Доход за август:** 221 000 ₽
 - **Тренд:** Растущий с сезонными колебаниями
-- **Клиенты:** ООО "ТехноПарк", АО "СофтЛаб", ООО "Цифровые решения", и др.
 
 ### Логистика (TransactionSphere.logistics)
 - **Количество транзакций:** 18
@@ -18,55 +26,15 @@
 - **Общий доход за год:** ~835 000 ₽
 - **Доход за август:** 160 000 ₽
 - **Тренд:** Стабильный с умеренным ростом
-- **Клиенты:** ООО "ТрансЛогистика", ООО "ГрузПеревозки", АО "ЛогистикПро", и др.
-
-## Характеристики данных
-
-### Для хорошей визуализации:
-1. **Разные суммы** - от 28 000 до 95 000 ₽ для создания разнообразия на графике
-2. **Неравномерное распределение** - 2-3 транзакции в месяц для каждой сферы
-3. **Восходящий тренд** - общий доход увеличивается к августу
-4. **Сезонность** - небольшие колебания для реалистичности
-5. **Разные паттерны** - IT растет быстрее, логистика стабильнее
-
-### Покрытие периодов:
-- **12 месяцев** для годового графика
-- **4 квартала** для квартального графика
-- **8 недель** для недельного графика
-- **Текущий месяц** (Август) с несколькими транзакциями
 
 ## Использование
 
-Данные автоматически загружаются при запуске приложения в `main.dart`:
-
 ```dart
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    final isar = await AppDatabase.open();
-    final repository = IsarTransactionRepository(isar);
-    await seedDashboardData(repository); // <-- Наполнение тестовыми данными
-    runApp(NpdShieldApp(repository: repository));
-  } catch (error) {
-    runApp(const _StartupErrorApp());
-  }
-}
+await loadDemoData(
+  transactionRepository: transactionRepository,
+  notificationRepository: notificationRepository,
+  profileRepository: profileRepository,
+);
 ```
 
-## Отключение тестовых данных
-
-Для работы с реальными данными удалите вызов `seedDashboardData()` из `main.dart`:
-
-```dart
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  try {
-    final isar = await AppDatabase.open();
-    final repository = IsarTransactionRepository(isar);
-    // await seedDashboardData(repository); // <-- Закомментировать
-    runApp(NpdShieldApp(repository: repository));
-  } catch (error) {
-    runApp(const _StartupErrorApp());
-  }
-}
-```
+Профиль при загрузке демо заменяется демонстрационным (`ContractorProfile.demo`).
