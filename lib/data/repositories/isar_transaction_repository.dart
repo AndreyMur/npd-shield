@@ -2,14 +2,16 @@ import 'package:isar/isar.dart';
 
 import '../models/transaction.dart';
 import '../security/database_encryption_service.dart';
+import '../security/field_encryption_service.dart';
 import 'transaction_repository.dart';
 
 class IsarTransactionRepository implements TransactionRepository {
   final Isar isar;
   final _cache = _OptimizedCache();
-  final _encryptionService = DatabaseEncryptionService();
+  final FieldEncryptionService _encryptionService;
 
-  IsarTransactionRepository(this.isar);
+  IsarTransactionRepository(this.isar, {FieldEncryptionService? encryption})
+    : _encryptionService = encryption ?? DatabaseEncryptionService();
 
   @override
   Future<int> add(Transaction transaction) {
@@ -18,6 +20,50 @@ class IsarTransactionRepository implements TransactionRepository {
       final id = await isar.transactions.put(transaction);
       _cache.invalidate();
       return id;
+    });
+  }
+
+  @override
+  Future<int> update(Transaction transaction) {
+    return isar.writeTxn(() async {
+      await _encryptTransaction(transaction);
+      final id = await isar.transactions.put(transaction);
+      _cache.invalidate();
+      return id;
+    });
+  }
+
+  @override
+  Future<Transaction?> getById(int id) async {
+    final transaction = await isar.transactions.get(id);
+    if (transaction != null) {
+      await _decryptTransaction(transaction);
+    }
+    return transaction;
+  }
+
+  @override
+  Future<bool> delete(int id) {
+    return isar.writeTxn(() async {
+      final deleted = await isar.transactions.delete(id);
+      if (deleted) _cache.invalidate();
+      return deleted;
+    });
+  }
+
+  @override
+  Future<int> count({TransactionFilter? filter}) {
+    if (filter == null || filter.isEmpty) {
+      return isar.transactions.count();
+    }
+    return isar.txn(() async {
+      final all = await isar.transactions.where().findAll();
+      var total = 0;
+      for (final t in all) {
+        await _decryptTransaction(t);
+        if (filter.matches(t)) total++;
+      }
+      return total;
     });
   }
 
@@ -37,12 +83,13 @@ class IsarTransactionRepository implements TransactionRepository {
   }
 
   @override
-  Future<List<Transaction>> getAll() async {
+  Future<List<Transaction>> getAll({TransactionFilter? filter}) async {
     final transactions = await isar.transactions.where().findAll();
     for (final t in transactions) {
       await _decryptTransaction(t);
     }
-    return transactions;
+    if (filter == null || filter.isEmpty) return transactions;
+    return transactions.where(filter.matches).toList();
   }
 
   @override
@@ -76,17 +123,78 @@ class IsarTransactionRepository implements TransactionRepository {
 
       double month = 0;
       double year = 0;
+      double monthExpense = 0;
+      double yearExpense = 0;
       for (final t in all) {
+        final isIncome = t.type.isIncome;
         if (!t.date.isBefore(monthStart)) {
-          month += t.amount;
+          if (isIncome) {
+            month += t.amount;
+          } else {
+            monthExpense += t.amount;
+          }
         }
         if (!t.date.isBefore(yearStart)) {
-          year += t.amount;
+          if (isIncome) {
+            year += t.amount;
+          } else {
+            yearExpense += t.amount;
+          }
         }
       }
 
-      final result = IncomeSummary(month: month, year: year);
+      final result = IncomeSummary(
+        month: month,
+        year: year,
+        monthExpense: monthExpense,
+        yearExpense: yearExpense,
+      );
       _cache.setSummary(cacheKey, result);
+      return result;
+    });
+  }
+
+  @override
+  Future<PeriodSummary> getPeriodSummary({
+    DateTime? from,
+    DateTime? to,
+    TransactionSphere? sphere,
+    TransactionType? type,
+    int? clientId,
+  }) {
+    final cacheKey = _CacheKey(
+      'period:${type?.name}:$clientId',
+      sphere,
+      from ?? DateTime(1970),
+      to ?? DateTime(9999),
+    );
+
+    final cached = _cache.getPeriod(cacheKey);
+    if (cached != null) {
+      return Future.value(cached);
+    }
+
+    return isar.txn(() async {
+      final all = sphere != null
+          ? await isar.transactions.where().sphereEqualTo(sphere).findAll()
+          : await isar.transactions.where().findAll();
+
+      double income = 0;
+      double expense = 0;
+      for (final t in all) {
+        if (from != null && t.date.isBefore(from)) continue;
+        if (to != null && !t.date.isBefore(to)) continue;
+        if (type != null && t.type != type) continue;
+        if (clientId != null && t.clientId != clientId) continue;
+        if (t.type.isIncome) {
+          income += t.amount;
+        } else {
+          expense += t.amount;
+        }
+      }
+
+      final result = PeriodSummary(income: income, expense: expense);
+      _cache.setPeriod(cacheKey, result);
       return result;
     });
   }
@@ -113,6 +221,7 @@ class IsarTransactionRepository implements TransactionRepository {
 
       double total = 0;
       for (final t in all) {
+        if (!t.type.isIncome) continue;
         if (!t.date.isBefore(start) && t.date.isBefore(end)) {
           total += t.amount;
         }
@@ -152,6 +261,7 @@ class IsarTransactionRepository implements TransactionRepository {
 
       final firstIndex = bucketIndex(period, starts.first);
       for (final t in all) {
+        if (!t.type.isIncome) continue;
         final index =
             bucketIndex(period, startOfBucket(period, t.date)) - firstIndex;
         if (index >= 0 && index < starts.length) {
@@ -203,6 +313,7 @@ class _CacheKey {
 
 class _OptimizedCache {
   final _summaryCache = <String, IncomeSummary>{};
+  final _periodCache = <String, PeriodSummary>{};
   final _averageCache = <String, double>{};
   final _seriesCache = <String, List<IncomePoint>>{};
   final _stopwatch = Stopwatch();
@@ -218,6 +329,15 @@ class _OptimizedCache {
 
   void setSummary(_CacheKey key, IncomeSummary value) {
     _summaryCache[key.toCompositeKey()] = value;
+  }
+
+  PeriodSummary? getPeriod(_CacheKey key) {
+    if (!_stopwatch.isRunning) return null;
+    return _periodCache[key.toCompositeKey()];
+  }
+
+  void setPeriod(_CacheKey key, PeriodSummary value) {
+    _periodCache[key.toCompositeKey()] = value;
   }
 
   double? getAverage(_CacheKey key) {
@@ -240,6 +360,7 @@ class _OptimizedCache {
 
   void invalidate() {
     _summaryCache.clear();
+    _periodCache.clear();
     _averageCache.clear();
     _seriesCache.clear();
   }

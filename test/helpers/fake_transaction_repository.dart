@@ -4,18 +4,64 @@ import 'package:npd_shield/data/repositories/transaction_repository.dart';
 
 class FakeTransactionRepository implements TransactionRepository {
   final List<Transaction> transactions;
+  int _nextId = 1;
 
   FakeTransactionRepository([List<Transaction>? transactions])
-      : transactions = transactions ?? [];
-
-  @override
-  Future<int> add(Transaction transaction) async {
-    transactions.add(transaction);
-    return transactions.length;
+      : transactions = transactions ?? [] {
+    for (final t in this.transactions) {
+      if (t.id >= _nextId) _nextId = t.id + 1;
+    }
   }
 
   @override
-  Future<List<Transaction>> getAll() async => List.of(transactions);
+  Future<int> add(Transaction transaction) async {
+    if (transaction.id <= 0) {
+      transaction.id = _nextId++;
+    } else if (transaction.id >= _nextId) {
+      _nextId = transaction.id + 1;
+    }
+    transactions.add(transaction);
+    return transaction.id;
+  }
+
+  @override
+  Future<int> update(Transaction transaction) async {
+    final index = transactions.indexWhere((t) => t.id == transaction.id);
+    if (index >= 0) {
+      transactions[index] = transaction;
+    } else {
+      transactions.add(transaction);
+    }
+    return transaction.id;
+  }
+
+  @override
+  Future<Transaction?> getById(int id) async {
+    for (final t in transactions) {
+      if (t.id == id) return t;
+    }
+    return null;
+  }
+
+  @override
+  Future<bool> delete(int id) async {
+    final index = transactions.indexWhere((t) => t.id == id);
+    if (index < 0) return false;
+    transactions.removeAt(index);
+    return true;
+  }
+
+  @override
+  Future<int> count({TransactionFilter? filter}) async {
+    if (filter == null || filter.isEmpty) return transactions.length;
+    return transactions.where(filter.matches).length;
+  }
+
+  @override
+  Future<List<Transaction>> getAll({TransactionFilter? filter}) async {
+    if (filter == null || filter.isEmpty) return List.of(transactions);
+    return transactions.where(filter.matches).toList();
+  }
 
   @override
   Future<List<Transaction>> getAllForSphere(TransactionSphere sphere) async {
@@ -36,11 +82,59 @@ class FakeTransactionRepository implements TransactionRepository {
 
     double month = 0;
     double year = 0;
+    double monthExpense = 0;
+    double yearExpense = 0;
     for (final t in filtered) {
-      if (!t.date.isBefore(monthStart)) month += t.amount;
-      if (!t.date.isBefore(yearStart)) year += t.amount;
+      final isIncome = t.type.isIncome;
+      if (!t.date.isBefore(monthStart)) {
+        if (isIncome) {
+          month += t.amount;
+        } else {
+          monthExpense += t.amount;
+        }
+      }
+      if (!t.date.isBefore(yearStart)) {
+        if (isIncome) {
+          year += t.amount;
+        } else {
+          yearExpense += t.amount;
+        }
+      }
     }
-    return IncomeSummary(month: month, year: year);
+    return IncomeSummary(
+      month: month,
+      year: year,
+      monthExpense: monthExpense,
+      yearExpense: yearExpense,
+    );
+  }
+
+  @override
+  Future<PeriodSummary> getPeriodSummary({
+    DateTime? from,
+    DateTime? to,
+    TransactionSphere? sphere,
+    TransactionType? type,
+    int? clientId,
+  }) async {
+    final filter = TransactionFilter(
+      type: type,
+      sphere: sphere,
+      from: from,
+      to: to,
+      clientId: clientId,
+    );
+    double income = 0;
+    double expense = 0;
+    for (final t in transactions) {
+      if (!filter.matches(t)) continue;
+      if (t.type.isIncome) {
+        income += t.amount;
+      } else {
+        expense += t.amount;
+      }
+    }
+    return PeriodSummary(income: income, expense: expense);
   }
 
   @override
@@ -55,6 +149,7 @@ class FakeTransactionRepository implements TransactionRepository {
         sphere == null ? transactions : transactions.where((t) => t.sphere == sphere);
     double total = 0;
     for (final t in filtered) {
+      if (!t.type.isIncome) continue;
       if (!t.date.isBefore(start) && t.date.isBefore(end)) total += t.amount;
     }
     return total / 3;
@@ -77,6 +172,7 @@ class FakeTransactionRepository implements TransactionRepository {
         sphere == null ? transactions : transactions.where((t) => t.sphere == sphere);
     final firstIndex = bucketIndex(period, starts.first);
     for (final t in filtered) {
+      if (!t.type.isIncome) continue;
       final index = bucketIndex(period, startOfBucket(period, t.date)) - firstIndex;
       if (index >= 0 && index < starts.length) {
         amounts[index] += t.amount;
