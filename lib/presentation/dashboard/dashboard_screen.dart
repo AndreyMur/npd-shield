@@ -17,7 +17,6 @@ enum DashboardFilter { all, it, logistics }
 class DashboardScreen extends StatefulWidget {
   final TransactionRepository repository;
   final DateTime? now;
-  final void Function(ThemeMode mode)? onThemeModeChanged;
 
   /// Репозиторий архива документов. Если задан — под сводкой показывается
   /// список транзакций со значками привязанных документов.
@@ -36,7 +35,6 @@ class DashboardScreen extends StatefulWidget {
     super.key,
     required this.repository,
     this.now,
-    this.onThemeModeChanged,
     this.documentRepository,
     this.onAddOperation,
     this.pdfGenerator,
@@ -56,9 +54,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Дашборд'),
-        actions: [
-          _ThemeModeButton(onChanged: widget.onThemeModeChanged),
-        ],
       ),
       body: Column(
         children: [
@@ -664,35 +659,6 @@ class _MetricRow extends StatelessWidget {
           _formatRubles(value),
           style: color == null ? style : style!.copyWith(color: color),
           key: Key('summary_$label'),
-        ),
-      ],
-    );
-  }
-}
-
-class _ThemeModeButton extends StatelessWidget {
-  final void Function(ThemeMode mode)? onChanged;
-
-  const _ThemeModeButton({this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return PopupMenuButton<ThemeMode>(
-      tooltip: 'Тема',
-      icon: const Icon(Icons.brightness_6),
-      onSelected: onChanged,
-      itemBuilder: (context) => const [
-        PopupMenuItem(
-          value: ThemeMode.system,
-          child: Text('Системная'),
-        ),
-        PopupMenuItem(
-          value: ThemeMode.light,
-          child: Text('Светлая'),
-        ),
-        PopupMenuItem(
-          value: ThemeMode.dark,
-          child: Text('Тёмная'),
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/validation/profile_input.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
@@ -251,7 +252,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               labelText: 'ИНН',
               border: OutlineInputBorder(),
             ),
-            validator: (value) => _validateDigits(value, lengths: const [10, 12]),
+            validator: (value) =>
+                ProfileInput.validateDigits(value, lengths: const [10, 12]),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -266,7 +268,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               labelText: 'ОГРНИП',
               border: OutlineInputBorder(),
             ),
-            validator: (value) => _validateDigits(value, lengths: const [15]),
+            validator: (value) =>
+                ProfileInput.validateDigits(value, lengths: const [15]),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -303,7 +306,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               labelText: 'Расчётный счёт',
               border: OutlineInputBorder(),
             ),
-            validator: (value) => _validateDigits(value, lengths: const [20]),
+            validator: (value) =>
+                ProfileInput.validateDigits(value, lengths: const [20]),
           ),
           const SizedBox(height: 16),
           TextFormField(
@@ -318,7 +322,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               labelText: 'БИК',
               border: OutlineInputBorder(),
             ),
-            validator: (value) => _validateDigits(value, lengths: const [9]),
+            validator: (value) =>
+                ProfileInput.validateDigits(value, lengths: const [9]),
           ),
         ],
       ),
@@ -392,15 +397,5 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ],
       ),
     );
-  }
-
-  String? _validateDigits(String? value, {required List<int> lengths}) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return null;
-    if (!lengths.contains(text.length) || int.tryParse(text) == null) {
-      final expected = lengths.join(' или ');
-      return 'Введите $expected цифр';
-    }
-    return null;
   }
 }

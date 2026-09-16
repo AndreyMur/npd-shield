@@ -152,18 +152,5 @@ void main() {
       expect(find.byKey(const Key('limit_progress')), findsOneWidget);
       expect(find.byKey(const Key('limit_text')), findsOneWidget);
     });
-
-    testWidgets('смена темы', (tester) async {
-      final repo = FakeTransactionRepository([]);
-
-      await pumpDashboard(tester, repo, now: DateTime(2026, 8, 31));
-
-      await tester.tap(find.byIcon(Icons.brightness_6));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Системная'), findsOneWidget);
-      expect(find.text('Светлая'), findsOneWidget);
-      expect(find.text('Тёмная'), findsOneWidget);
-    });
   });
 }
