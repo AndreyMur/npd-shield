@@ -3,6 +3,7 @@ import 'package:npd_shield/data/models/app_notification.dart';
 import 'package:npd_shield/data/models/client.dart';
 import 'package:npd_shield/data/models/contract_draft.dart';
 import 'package:npd_shield/data/models/document.dart';
+import 'package:npd_shield/data/models/invoice.dart';
 import 'package:npd_shield/data/models/risk_marker.dart';
 import 'package:npd_shield/data/models/transaction.dart';
 import 'package:npd_shield/data/services/data_reset_service.dart';
@@ -14,6 +15,7 @@ import 'helpers/fake_activity_spheres_service.dart';
 import 'helpers/fake_client_repository.dart';
 import 'helpers/fake_contract_repositories.dart';
 import 'helpers/fake_document_repository.dart';
+import 'helpers/fake_invoice_repository.dart';
 import 'helpers/fake_notification_repository.dart';
 import 'helpers/fake_risk_report_repository.dart';
 import 'helpers/fake_transaction_repository.dart';
@@ -24,6 +26,7 @@ void main() {
   late FakeTransactionRepository transactions;
   late FakeClientRepository clients;
   late FakeDocumentRepository documents;
+  late FakeInvoiceRepository invoices;
   late FakeContractDraftRepository drafts;
   late FakeRiskReportRepository riskReports;
   late FakeNotificationRepository notifications;
@@ -45,6 +48,14 @@ void main() {
     ]);
     documents = FakeDocumentRepository([
       Document(type: DocumentType.receipt, amount: 1000, date: DateTime(2026, 9, 1)),
+    ]);
+    invoices = FakeInvoiceRepository([
+      Invoice(
+        number: '14/09',
+        amount: 50000,
+        issuedAt: DateTime(2026, 9, 1),
+        dueDate: DateTime(2026, 9, 10),
+      ),
     ]);
     clients = FakeClientRepository([
       Client(name: 'ООО Ромашка', inn: '7701234567'),
@@ -70,6 +81,7 @@ void main() {
       transactionRepository: transactions,
       clientRepository: clients,
       documentRepository: documents,
+      invoiceRepository: invoices,
       contractDraftRepository: drafts,
       riskReportRepository: riskReports,
       notificationRepository: notifications,
@@ -86,6 +98,7 @@ void main() {
       expect(transactions.transactions, isEmpty);
       expect(clients.clients, isEmpty);
       expect(documents.documents, isEmpty);
+      expect(invoices.invoices, isEmpty);
       expect(drafts.drafts, isEmpty);
       expect(riskReports.reports, isEmpty);
       expect(notifications.notifications, isEmpty);
