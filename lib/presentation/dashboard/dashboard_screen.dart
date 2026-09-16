@@ -23,6 +23,10 @@ class DashboardScreen extends StatefulWidget {
   /// список транзакций со значками привязанных документов.
   final DocumentRepository? documentRepository;
 
+  /// Открывает форму создания операции. Если задан, пустое состояние
+  /// показывает кнопку «Добавить операцию».
+  final VoidCallback? onAddOperation;
+
   /// Необязательные зависимости карточки документов (для тестов).
   final DocumentPdfGenerator? pdfGenerator;
   final ContractPdfShareService? shareService;
@@ -34,6 +38,7 @@ class DashboardScreen extends StatefulWidget {
     this.now,
     this.onThemeModeChanged,
     this.documentRepository,
+    this.onAddOperation,
     this.pdfGenerator,
     this.shareService,
     this.fontLoader,
@@ -89,6 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               filter: _filter,
               repository: widget.repository,
               documentRepository: widget.documentRepository,
+              onAddOperation: widget.onAddOperation,
               pdfGenerator: widget.pdfGenerator,
               shareService: widget.shareService,
               fontLoader: widget.fontLoader,
@@ -100,47 +106,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Future<_DashboardData> _load(DashboardFilter filter) {
+  Future<_DashboardData> _load(DashboardFilter filter) async {
     final now = widget.now ?? DateTime.now();
+    final transactionCount = await widget.repository.count();
     switch (filter) {
       case DashboardFilter.all:
-        return Future.wait([
+        final values = await Future.wait([
           widget.repository.getIncomeSummary(now: now),
           widget.repository
               .getIncomeSummary(sphere: TransactionSphere.it, now: now),
           widget.repository
               .getIncomeSummary(sphere: TransactionSphere.logistics, now: now),
           widget.repository.getAverageMonthlyIncome(now: now),
-        ]).then((values) => _DashboardData(
-              total: values[0] as IncomeSummary,
-              it: values[1] as IncomeSummary,
-              logistics: values[2] as IncomeSummary,
-              averageMonthlyIncome: values[3] as double,
-            ));
+        ]);
+        return _DashboardData(
+          total: values[0] as IncomeSummary,
+          it: values[1] as IncomeSummary,
+          logistics: values[2] as IncomeSummary,
+          averageMonthlyIncome: values[3] as double,
+          transactionCount: transactionCount,
+        );
       case DashboardFilter.it:
-        return Future.wait([
+        final values = await Future.wait([
           widget.repository
               .getIncomeSummary(sphere: TransactionSphere.it, now: now),
           widget.repository.getAverageMonthlyIncome(
             sphere: TransactionSphere.it,
             now: now,
           ),
-        ]).then((values) => _DashboardData(
-              total: values[0] as IncomeSummary,
-              averageMonthlyIncome: values[1] as double,
-            ));
+        ]);
+        return _DashboardData(
+          total: values[0] as IncomeSummary,
+          averageMonthlyIncome: values[1] as double,
+          transactionCount: transactionCount,
+        );
       case DashboardFilter.logistics:
-        return Future.wait([
+        final values = await Future.wait([
           widget.repository
               .getIncomeSummary(sphere: TransactionSphere.logistics, now: now),
           widget.repository.getAverageMonthlyIncome(
             sphere: TransactionSphere.logistics,
             now: now,
           ),
-        ]).then((values) => _DashboardData(
-              total: values[0] as IncomeSummary,
-              averageMonthlyIncome: values[1] as double,
-            ));
+        ]);
+        return _DashboardData(
+          total: values[0] as IncomeSummary,
+          averageMonthlyIncome: values[1] as double,
+          transactionCount: transactionCount,
+        );
     }
   }
 }
@@ -150,12 +163,14 @@ class _DashboardData {
   final IncomeSummary? it;
   final IncomeSummary? logistics;
   final double averageMonthlyIncome;
+  final int transactionCount;
 
   const _DashboardData({
     this.total,
     this.it,
     this.logistics,
     this.averageMonthlyIncome = 0,
+    this.transactionCount = 0,
   });
 }
 
@@ -164,6 +179,7 @@ class _DashboardView extends StatelessWidget {
   final DashboardFilter filter;
   final TransactionRepository repository;
   final DocumentRepository? documentRepository;
+  final VoidCallback? onAddOperation;
   final DocumentPdfGenerator? pdfGenerator;
   final ContractPdfShareService? shareService;
   final ContractPdfFontLoader? fontLoader;
@@ -175,6 +191,7 @@ class _DashboardView extends StatelessWidget {
     required this.repository,
     required this.now,
     this.documentRepository,
+    this.onAddOperation,
     this.pdfGenerator,
     this.shareService,
     this.fontLoader,
@@ -196,6 +213,7 @@ class _DashboardView extends StatelessWidget {
           filter: filter,
           repository: repository,
           documentRepository: documentRepository,
+          onAddOperation: onAddOperation,
           pdfGenerator: pdfGenerator,
           shareService: shareService,
           fontLoader: fontLoader,
@@ -211,6 +229,7 @@ class _DashboardBody extends StatelessWidget {
   final DashboardFilter filter;
   final TransactionRepository repository;
   final DocumentRepository? documentRepository;
+  final VoidCallback? onAddOperation;
   final DocumentPdfGenerator? pdfGenerator;
   final ContractPdfShareService? shareService;
   final ContractPdfFontLoader? fontLoader;
@@ -222,6 +241,7 @@ class _DashboardBody extends StatelessWidget {
     required this.repository,
     required this.now,
     this.documentRepository,
+    this.onAddOperation,
     this.pdfGenerator,
     this.shareService,
     this.fontLoader,
@@ -229,6 +249,13 @@ class _DashboardBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (data.transactionCount == 0) {
+      return ListView(
+        padding: const EdgeInsets.all(16),
+        children: [_EmptyState(onAddOperation: onAddOperation)],
+      );
+    }
+
     final title = switch (filter) {
       DashboardFilter.all => 'Все сферы',
       DashboardFilter.it => 'IT',
@@ -238,6 +265,8 @@ class _DashboardBody extends StatelessWidget {
     final total = data.total!;
     final children = <Widget>[
       _TotalCard(title: title, summary: total),
+      const SizedBox(height: 16),
+      _ProfitCard(summary: total),
       const SizedBox(height: 16),
       _LimitCard(
         usedAmount: total.year,
@@ -421,7 +450,117 @@ class _SphereCard extends StatelessWidget {
             const SizedBox(height: 12),
             _MetricRow(label: 'Доход за месяц', value: summary.month),
             const SizedBox(height: 8),
+            _MetricRow(
+              label: 'Расход за месяц',
+              value: summary.monthExpense,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 8),
+            _MetricRow(
+              label: 'Прибыль за месяц',
+              value: summary.monthProfit,
+              color: summary.monthProfit < 0
+                  ? theme.colorScheme.error
+                  : _profitGreen,
+            ),
+            const SizedBox(height: 8),
             _MetricRow(label: 'Доход за год', value: summary.year),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Карточка прибыли: доход, расход и прибыль за месяц, прибыль за год.
+class _ProfitCard extends StatelessWidget {
+  final IncomeSummary summary;
+
+  const _ProfitCard({required this.summary});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final profitColor = summary.monthProfit < 0
+        ? theme.colorScheme.error
+        : _profitGreen;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Прибыль', style: theme.textTheme.titleLarge),
+            const SizedBox(height: 12),
+            _MetricRow(label: 'Доход за месяц', value: summary.month),
+            const SizedBox(height: 8),
+            _MetricRow(
+              label: 'Расход за месяц',
+              value: summary.monthExpense,
+              color: theme.colorScheme.error,
+            ),
+            const SizedBox(height: 8),
+            _MetricRow(
+              label: 'Прибыль за месяц',
+              value: summary.monthProfit,
+              color: profitColor,
+            ),
+            const Divider(height: 24),
+            _MetricRow(
+              label: 'Прибыль за год',
+              value: summary.yearProfit,
+              color: summary.yearProfit < 0
+                  ? theme.colorScheme.error
+                  : _profitGreen,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Пустое состояние дашборда, когда операций ещё нет.
+class _EmptyState extends StatelessWidget {
+  final VoidCallback? onAddOperation;
+
+  const _EmptyState({this.onAddOperation});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        child: Column(
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 48,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Пока нет операций',
+              key: const Key('dashboard_empty'),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Добавьте первый доход или расход, чтобы увидеть прибыль, '
+              'налог и лимит НПД.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium,
+            ),
+            if (onAddOperation != null) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                key: const Key('dashboard_add_operation'),
+                onPressed: onAddOperation,
+                icon: const Icon(Icons.add),
+                label: const Text('Добавить операцию'),
+              ),
+            ],
           ],
         ),
       ),
@@ -509,19 +648,21 @@ class _LimitCard extends StatelessWidget {
 class _MetricRow extends StatelessWidget {
   final String label;
   final double value;
+  final Color? color;
 
-  const _MetricRow({required this.label, required this.value});
+  const _MetricRow({required this.label, required this.value, this.color});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final style = theme.textTheme.titleMedium;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: theme.textTheme.bodyMedium),
         Text(
           _formatRubles(value),
-          style: theme.textTheme.titleMedium,
+          style: color == null ? style : style!.copyWith(color: color),
           key: Key('summary_$label'),
         ),
       ],
@@ -557,6 +698,9 @@ class _ThemeModeButton extends StatelessWidget {
     );
   }
 }
+
+/// Цвет положительной прибыли.
+const _profitGreen = Color(0xFF2E7D32);
 
 String _formatRubles(double value) {
   final fixed = value.toStringAsFixed(2);
