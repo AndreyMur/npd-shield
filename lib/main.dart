@@ -251,6 +251,8 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
       notificationRepository: widget.notificationRepository,
       notificationService: widget.notificationService,
       textFilePicker: widget.textFilePicker,
+      activitySpheresService: widget.activitySpheresService,
+      themeMode: _themeMode,
       onThemeModeChanged: _setThemeMode,
       onLoadDemoData: _loadDemoData,
       onClearAllData: _clearAllData,

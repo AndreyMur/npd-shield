@@ -9,6 +9,7 @@ import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/risk_report_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
+import '../../data/services/activity_spheres_service.dart';
 import '../../domain/risk/risk_analyzer.dart';
 import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
@@ -36,6 +37,8 @@ class HomeShell extends StatefulWidget {
   final NotificationRepository notificationRepository;
   final NotificationService notificationService;
   final TextFilePicker textFilePicker;
+  final ActivitySpheresService activitySpheresService;
+  final ThemeMode themeMode;
   final void Function(ThemeMode mode) onThemeModeChanged;
   final Future<void> Function() onLoadDemoData;
   final Future<void> Function() onClearAllData;
@@ -52,6 +55,8 @@ class HomeShell extends StatefulWidget {
     required this.notificationRepository,
     required this.notificationService,
     required this.textFilePicker,
+    required this.activitySpheresService,
+    required this.themeMode,
     required this.onThemeModeChanged,
     required this.onLoadDemoData,
     required this.onClearAllData,
@@ -115,7 +120,6 @@ class _HomeShellState extends State<HomeShell> {
       DashboardScreen(
         repository: widget.transactionRepository,
         documentRepository: widget.documentRepository,
-        onThemeModeChanged: widget.onThemeModeChanged,
         onAddOperation: _openAddOperation,
       ),
       OperationsScreen(repository: widget.transactionRepository),
@@ -154,6 +158,10 @@ class _HomeShellState extends State<HomeShell> {
       SettingsScreen(
         onLoadDemoData: widget.onLoadDemoData,
         onClearAllData: widget.onClearAllData,
+        profileRepository: widget.profileRepository,
+        activitySpheresService: widget.activitySpheresService,
+        themeMode: widget.themeMode,
+        onThemeModeChanged: widget.onThemeModeChanged,
       ),
     ];
   }

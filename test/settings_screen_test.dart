@@ -1,22 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:npd_shield/data/models/transaction.dart';
+import 'package:npd_shield/domain/profile/contractor_profile.dart';
 import 'package:npd_shield/presentation/settings/settings_screen.dart';
 
+import 'helpers/fake_activity_spheres_service.dart';
+import 'helpers/fake_contract_repositories.dart';
+
 void main() {
+  late FakeContractorProfileRepository profile;
+  late FakeActivitySpheresService spheres;
+
+  setUp(() {
+    profile = FakeContractorProfileRepository();
+    spheres = FakeActivitySpheresService([TransactionSphere.it]);
+  });
+
   Future<void> pumpSettings(
     WidgetTester tester, {
-    required Future<void> Function() onLoadDemoData,
-    required Future<void> Function() onClearAllData,
+    Future<void> Function()? onLoadDemoData,
+    Future<void> Function()? onClearAllData,
+    ThemeMode themeMode = ThemeMode.system,
+    ValueChanged<ThemeMode>? onThemeModeChanged,
   }) async {
-    tester.view.physicalSize = const Size(1000, 2000);
+    tester.view.physicalSize = const Size(1000, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(
       MaterialApp(
         home: SettingsScreen(
-          onLoadDemoData: onLoadDemoData,
-          onClearAllData: onClearAllData,
+          onLoadDemoData: onLoadDemoData ?? () async {},
+          onClearAllData: onClearAllData ?? () async {},
+          profileRepository: profile,
+          activitySpheresService: spheres,
+          themeMode: themeMode,
+          onThemeModeChanged: onThemeModeChanged ?? (_) {},
         ),
       ),
     );
@@ -27,11 +46,7 @@ void main() {
     tester,
   ) async {
     var cleared = 0;
-    await pumpSettings(
-      tester,
-      onLoadDemoData: () async {},
-      onClearAllData: () async => cleared++,
-    );
+    await pumpSettings(tester, onClearAllData: () async => cleared++);
 
     await tester.tap(find.byKey(const Key('settings_clear_data')));
     await tester.pumpAndSettle();
@@ -46,11 +61,7 @@ void main() {
 
   testWidgets('отмена подтверждения не очищает данные', (tester) async {
     var cleared = 0;
-    await pumpSettings(
-      tester,
-      onLoadDemoData: () async {},
-      onClearAllData: () async => cleared++,
-    );
+    await pumpSettings(tester, onClearAllData: () async => cleared++);
 
     await tester.tap(find.byKey(const Key('settings_clear_data')));
     await tester.pumpAndSettle();
@@ -65,11 +76,7 @@ void main() {
     tester,
   ) async {
     var loads = 0;
-    await pumpSettings(
-      tester,
-      onLoadDemoData: () async => loads++,
-      onClearAllData: () async {},
-    );
+    await pumpSettings(tester, onLoadDemoData: () async => loads++);
 
     await tester.tap(find.byKey(const Key('settings_load_demo')));
     await tester.pumpAndSettle();
@@ -84,11 +91,7 @@ void main() {
 
   testWidgets('отмена подтверждения не загружает демо', (tester) async {
     var loads = 0;
-    await pumpSettings(
-      tester,
-      onLoadDemoData: () async => loads++,
-      onClearAllData: () async {},
-    );
+    await pumpSettings(tester, onLoadDemoData: () async => loads++);
 
     await tester.tap(find.byKey(const Key('settings_load_demo')));
     await tester.pumpAndSettle();
@@ -96,5 +99,74 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(loads, 0);
+  });
+
+  testWidgets('показывает сохранённое ФИО и открывает редактор профиля', (
+    tester,
+  ) async {
+    profile.profile = const ContractorProfile(
+      fullName: 'Иванов Иван Иванович',
+      inn: '771234567890',
+      ogrnip: '321770012345678',
+      registrationAddress: 'г. Москва',
+      bankName: 'Банк',
+      bankAccount: '40817810000000001234',
+      bankBik: '044525974',
+    );
+    await pumpSettings(tester);
+
+    expect(find.text('Иванов Иван Иванович'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('settings_profile')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Профиль ИП'), findsWidgets);
+    expect(find.byKey(const Key('profile_full_name')), findsOneWidget);
+  });
+
+  testWidgets('выбор темы вызывает onThemeModeChanged', (tester) async {
+    final changes = <ThemeMode>[];
+    await pumpSettings(tester, onThemeModeChanged: changes.add);
+
+    await tester.tap(find.byKey(const Key('settings_theme_dark')));
+    await tester.pumpAndSettle();
+
+    expect(changes, [ThemeMode.dark]);
+  });
+
+  testWidgets('переключение сфер сохраняет выбор', (tester) async {
+    await pumpSettings(tester);
+
+    expect(spheres.spheres, [TransactionSphere.it]);
+
+    await tester.tap(find.byKey(const Key('settings_sphere_logistics')));
+    await tester.pumpAndSettle();
+
+    expect(spheres.spheres, containsAll([TransactionSphere.it, TransactionSphere.logistics]));
+
+    await tester.tap(find.byKey(const Key('settings_sphere_it')));
+    await tester.pumpAndSettle();
+
+    expect(spheres.spheres, [TransactionSphere.logistics]);
+  });
+
+  testWidgets('нельзя убрать последнюю сферу деятельности', (tester) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_sphere_it')));
+    await tester.pumpAndSettle();
+
+    expect(spheres.spheres, [TransactionSphere.it]);
+    expect(find.text('Нужна хотя бы одна сфера деятельности'), findsOneWidget);
+  });
+
+  testWidgets('открывает диалог «О приложении»', (tester) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_about')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('NPD Shield'), findsWidgets);
+    expect(find.text('Версия 1.0.0'), findsOneWidget);
   });
 }
