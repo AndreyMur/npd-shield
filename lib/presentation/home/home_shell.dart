@@ -15,10 +15,16 @@ import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../documents/document_archive_screen.dart';
 import '../notifications/notification_center_screen.dart';
+import '../operations/operations_screen.dart';
+import '../operations/transaction_form_screen.dart';
 import '../risk/risk_shield_screen.dart';
 import '../settings/settings_screen.dart';
 
-/// Нижняя навигация приложения: дашборд, шаблоны, договоры и Risk Shield.
+/// Навигационная оболочка приложения: дашборд, операции, шаблоны, договоры,
+/// документы, Risk Shield, уведомления и настройки.
+///
+/// На узких экранах (мобильные) используется нижняя панель, на широких
+/// (десктоп) — боковая навигация.
 class HomeShell extends StatefulWidget {
   final TransactionRepository transactionRepository;
   final ContractTemplateRepository templateRepository;
@@ -56,6 +62,12 @@ class HomeShell extends StatefulWidget {
 }
 
 class _HomeShellState extends State<HomeShell> {
+  /// Индекс раздела «Уведомления» в списке разделов.
+  static const _notificationsIndex = 6;
+
+  /// Ширина, с которой включается боковая навигация.
+  static const _wideBreakpoint = 900.0;
+
   int _selectedIndex = 0;
   int _unreadCount = 0;
 
@@ -74,106 +86,162 @@ class _HomeShellState extends State<HomeShell> {
     }
   }
 
+  void _select(int index) {
+    setState(() => _selectedIndex = index);
+    if (index == _notificationsIndex) _refreshUnreadCount();
+  }
+
+  Future<void> _openAddOperation() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => TransactionFormScreen(
+          repository: widget.transactionRepository,
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Widget _badge(IconData icon) {
+    return Badge(
+      isLabelVisible: _unreadCount > 0,
+      label: Text('$_unreadCount'),
+      child: Icon(icon),
+    );
+  }
+
+  List<Widget> _screens() {
+    return [
+      DashboardScreen(
+        repository: widget.transactionRepository,
+        documentRepository: widget.documentRepository,
+        onThemeModeChanged: widget.onThemeModeChanged,
+        onAddOperation: _openAddOperation,
+      ),
+      OperationsScreen(repository: widget.transactionRepository),
+      ContractLibraryScreen(
+        templateRepository: widget.templateRepository,
+        draftRepository: widget.draftRepository,
+        profileRepository: widget.profileRepository,
+        riskAnalyzer: widget.riskAnalyzer,
+        riskReportRepository: widget.riskReportRepository,
+        documentRepository: widget.documentRepository,
+      ),
+      ContractArchiveScreen(
+        draftRepository: widget.draftRepository,
+        templateRepository: widget.templateRepository,
+        profileRepository: widget.profileRepository,
+        riskAnalyzer: widget.riskAnalyzer,
+        riskReportRepository: widget.riskReportRepository,
+        documentRepository: widget.documentRepository,
+        transactionRepository: widget.transactionRepository,
+      ),
+      DocumentArchiveScreen(
+        documentRepository: widget.documentRepository,
+      ),
+      RiskShieldScreen(
+        analyzer: widget.riskAnalyzer,
+        filePicker: widget.textFilePicker,
+        reportRepository: widget.riskReportRepository,
+      ),
+      NotificationCenterScreen(
+        repository: widget.notificationRepository,
+        notificationService: widget.notificationService,
+        onUnreadCountChanged: (count) {
+          if (count != _unreadCount) setState(() => _unreadCount = count);
+        },
+      ),
+      SettingsScreen(
+        onLoadDemoData: widget.onLoadDemoData,
+        onClearAllData: widget.onClearAllData,
+      ),
+    ];
+  }
+
+  List<NavigationDestination> _destinations() {
+    return [
+      const NavigationDestination(
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard),
+        label: 'Дашборд',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.swap_vert_outlined),
+        selectedIcon: Icon(Icons.swap_vert),
+        label: 'Операции',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.description_outlined),
+        selectedIcon: Icon(Icons.description),
+        label: 'Шаблоны',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.folder_copy_outlined),
+        selectedIcon: Icon(Icons.folder_copy),
+        label: 'Договоры',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.folder_open_outlined),
+        selectedIcon: Icon(Icons.folder_open),
+        label: 'Документы',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.shield_outlined),
+        selectedIcon: Icon(Icons.shield),
+        label: 'Проверка',
+      ),
+      NavigationDestination(
+        icon: _badge(Icons.notifications_outlined),
+        selectedIcon: _badge(Icons.notifications),
+        label: 'Уведомления',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.settings_outlined),
+        selectedIcon: Icon(Icons.settings),
+        label: 'Настройки',
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screens = _screens();
+    final destinations = _destinations();
+    final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+
+    if (wide) {
+      return Scaffold(
+        body: Row(
+          children: [
+            NavigationRail(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: _select,
+              labelType: NavigationRailLabelType.all,
+              scrollable: true,
+              destinations: [
+                for (final destination in destinations)
+                  NavigationRailDestination(
+                    icon: destination.icon,
+                    selectedIcon: destination.selectedIcon,
+                    label: Text(destination.label),
+                  ),
+              ],
+            ),
+            const VerticalDivider(width: 1),
+            Expanded(
+              child: IndexedStack(index: _selectedIndex, children: screens),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: [
-          DashboardScreen(
-            repository: widget.transactionRepository,
-            documentRepository: widget.documentRepository,
-            onThemeModeChanged: widget.onThemeModeChanged,
-          ),
-          ContractLibraryScreen(
-            templateRepository: widget.templateRepository,
-            draftRepository: widget.draftRepository,
-            profileRepository: widget.profileRepository,
-            riskAnalyzer: widget.riskAnalyzer,
-            riskReportRepository: widget.riskReportRepository,
-            documentRepository: widget.documentRepository,
-          ),
-          ContractArchiveScreen(
-            draftRepository: widget.draftRepository,
-            templateRepository: widget.templateRepository,
-            profileRepository: widget.profileRepository,
-            riskAnalyzer: widget.riskAnalyzer,
-            riskReportRepository: widget.riskReportRepository,
-            documentRepository: widget.documentRepository,
-            transactionRepository: widget.transactionRepository,
-          ),
-          DocumentArchiveScreen(
-            documentRepository: widget.documentRepository,
-          ),
-          RiskShieldScreen(
-            analyzer: widget.riskAnalyzer,
-            filePicker: widget.textFilePicker,
-            reportRepository: widget.riskReportRepository,
-          ),
-          NotificationCenterScreen(
-            repository: widget.notificationRepository,
-            notificationService: widget.notificationService,
-            onUnreadCountChanged: (count) {
-              if (count != _unreadCount) setState(() => _unreadCount = count);
-            },
-          ),
-          SettingsScreen(
-            onLoadDemoData: widget.onLoadDemoData,
-            onClearAllData: widget.onClearAllData,
-          ),
-        ],
-      ),
+      body: IndexedStack(index: _selectedIndex, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
-          if (index == 5) _refreshUnreadCount();
-        },
-        destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Дашборд',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.description_outlined),
-            selectedIcon: Icon(Icons.description),
-            label: 'Шаблоны',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.folder_copy_outlined),
-            selectedIcon: Icon(Icons.folder_copy),
-            label: 'Договоры',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.folder_open_outlined),
-            selectedIcon: Icon(Icons.folder_open),
-            label: 'Документы',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.shield_outlined),
-            selectedIcon: Icon(Icons.shield),
-            label: 'Проверка',
-          ),
-          NavigationDestination(
-            icon: Badge(
-              isLabelVisible: _unreadCount > 0,
-              label: Text('$_unreadCount'),
-              child: const Icon(Icons.notifications_outlined),
-            ),
-            selectedIcon: Badge(
-              isLabelVisible: _unreadCount > 0,
-              label: Text('$_unreadCount'),
-              child: const Icon(Icons.notifications),
-            ),
-            label: 'Уведомления',
-          ),
-          const NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Настройки',
-          ),
-        ],
+        onDestinationSelected: _select,
+        destinations: destinations,
       ),
     );
   }
