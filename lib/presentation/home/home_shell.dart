@@ -7,6 +7,7 @@ import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/document_repository.dart';
+import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/notification_repository.dart';
 import '../../data/repositories/risk_report_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -17,6 +18,7 @@ import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../documents/document_archive_screen.dart';
+import '../invoices/invoices_screen.dart';
 import '../notifications/notification_center_screen.dart';
 import '../operations/operations_screen.dart';
 import '../operations/transaction_form_screen.dart';
@@ -31,6 +33,7 @@ import '../settings/settings_screen.dart';
 class HomeShell extends StatefulWidget {
   final TransactionRepository transactionRepository;
   final ClientRepository clientRepository;
+  final InvoiceRepository invoiceRepository;
   final ContractTemplateRepository templateRepository;
   final ContractDraftRepository draftRepository;
   final ContractorProfileRepository profileRepository;
@@ -50,6 +53,7 @@ class HomeShell extends StatefulWidget {
     super.key,
     required this.transactionRepository,
     required this.clientRepository,
+    required this.invoiceRepository,
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
@@ -72,7 +76,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   /// Индекс раздела «Уведомления» в списке разделов.
-  static const _notificationsIndex = 7;
+  static const _notificationsIndex = 8;
 
   /// Ширина, с которой включается боковая навигация.
   static const _wideBreakpoint = 900.0;
@@ -136,6 +140,10 @@ class _HomeShellState extends State<HomeShell> {
         transactionRepository: widget.transactionRepository,
         documentRepository: widget.documentRepository,
       ),
+      InvoicesScreen(
+        repository: widget.invoiceRepository,
+        clientRepository: widget.clientRepository,
+      ),
       ContractLibraryScreen(
         templateRepository: widget.templateRepository,
         draftRepository: widget.draftRepository,
@@ -197,6 +205,11 @@ class _HomeShellState extends State<HomeShell> {
         icon: Icon(Icons.people_outline),
         selectedIcon: Icon(Icons.people),
         label: 'Клиенты',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.receipt_long_outlined),
+        selectedIcon: Icon(Icons.receipt_long),
+        label: 'Счета',
       ),
       const NavigationDestination(
         icon: Icon(Icons.description_outlined),
