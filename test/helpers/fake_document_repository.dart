@@ -72,6 +72,13 @@ class FakeDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<Document>> getByClientId(int clientId) async {
+    final result = documents.where((d) => d.clientId == clientId).toList();
+    result.sort((a, b) => b.date.compareTo(a.date));
+    return result;
+  }
+
+  @override
   Future<int> count() async => documents.length;
 
   @override

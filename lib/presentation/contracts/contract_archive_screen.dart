@@ -8,6 +8,7 @@ import '../../data/pdf/act_pdf_service.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
 import '../../data/pdf/receipt_pdf_service.dart';
+import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
@@ -45,6 +46,9 @@ class ContractArchiveScreen extends StatefulWidget {
   /// Репозиторий транзакций для записи дохода при завершении сделки.
   final TransactionRepository? transactionRepository;
 
+  /// Справочник клиентов. Если задан — заказчика можно выбрать из него.
+  final ClientRepository? clientRepository;
+
   /// Необязательные зависимости экрана завершения сделки (для тестов).
   final ReceiptPdfGenerator? receiptPdfGenerator;
   final ContractPdfFontLoader? fontLoader;
@@ -63,6 +67,7 @@ class ContractArchiveScreen extends StatefulWidget {
     this.riskReportRepository,
     this.documentRepository,
     this.transactionRepository,
+    this.clientRepository,
     this.receiptPdfGenerator,
     this.fontLoader,
     this.shareService,
@@ -219,6 +224,7 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
           riskAnalyzer: widget.riskAnalyzer,
           riskReportRepository: widget.riskReportRepository,
           documentRepository: widget.documentRepository,
+          clientRepository: widget.clientRepository,
         ),
       ),
     );
@@ -240,6 +246,7 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
           profileRepository: widget.profileRepository,
           documentRepository: documentRepository,
           transactionRepository: widget.transactionRepository,
+          clientRepository: widget.clientRepository,
           sphere: _sphereOf(template),
           pdfGenerator: widget.receiptPdfGenerator,
           fontLoader: widget.fontLoader,

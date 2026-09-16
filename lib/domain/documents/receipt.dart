@@ -26,6 +26,10 @@ class Receipt {
   /// Привязка к транзакции (`Transaction.id`); `0` — без привязки.
   final int transactionId;
 
+  /// Привязка к карточке клиента из справочника (`Client.id`); `0` — без
+  /// привязки.
+  final int clientId;
+
   const Receipt({
     required this.sellerName,
     required this.sellerInn,
@@ -37,6 +41,7 @@ class Receipt {
     this.contractDraftId = 0,
     this.contractNumber = '',
     this.transactionId = 0,
+    this.clientId = 0,
   });
 
   /// Восстанавливает чек из записи архива документов.
@@ -55,6 +60,7 @@ class Receipt {
       contractDraftId: document.contractDraftId,
       contractNumber: document.contractNumber,
       transactionId: document.transactionId,
+      clientId: document.clientId,
     );
   }
 
@@ -79,6 +85,7 @@ class Receipt {
       counterpartyName: buyerName,
       counterpartyInn: buyerInn,
       transactionId: transactionId,
+      clientId: clientId,
       serviceName: serviceName,
       issuerName: sellerName,
       issuerInn: sellerInn,
@@ -114,6 +121,7 @@ class ReceiptGenerator {
     Transaction? transaction,
     int contractDraftId = 0,
     int transactionId = 0,
+    int clientId = 0,
     DateTime? date,
   }) {
     final contractAmount = parseReceiptAmount(
@@ -153,6 +161,7 @@ class ReceiptGenerator {
       contractDraftId: contractDraftId,
       contractNumber: contractFields[ContractFieldKeys.contractNumber] ?? '',
       transactionId: transactionId,
+      clientId: clientId,
     );
   }
 

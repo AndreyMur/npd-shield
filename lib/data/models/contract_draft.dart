@@ -66,6 +66,12 @@ class ContractDraft {
   @enumerated
   ContractStatus status = ContractStatus.draft;
 
+  /// Идентификатор клиента (`Client.id`) из справочника, выбранного заказчиком.
+  /// `0` — заказчик не выбран из справочника. Удаление клиента не затрагивает
+  /// договор: связь остаётся в истории.
+  @Index()
+  int clientId = 0;
+
   /// Дата создания черновика.
   @Index()
   DateTime createdAt = DateTime.now();
@@ -74,5 +80,6 @@ class ContractDraft {
     required this.templateId,
     required this.filledFields,
     this.status = ContractStatus.draft,
+    this.clientId = 0,
   });
 }

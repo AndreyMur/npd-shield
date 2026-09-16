@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/contract_template.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
+import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contract_template_text_loader.dart';
@@ -41,6 +42,9 @@ class ContractLibraryScreen extends StatefulWidget {
   /// сохраняются в единый архив для экспорта в PDF.
   final DocumentRepository? documentRepository;
 
+  /// Справочник клиентов. Если задан — заказчика можно выбрать из него.
+  final ClientRepository? clientRepository;
+
   const ContractLibraryScreen({
     super.key,
     required this.templateRepository,
@@ -54,6 +58,7 @@ class ContractLibraryScreen extends StatefulWidget {
     this.riskAnalyzer,
     this.riskReportRepository,
     this.documentRepository,
+    this.clientRepository,
   });
 
   @override
@@ -103,6 +108,7 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
           riskAnalyzer: widget.riskAnalyzer,
           riskReportRepository: widget.riskReportRepository,
           documentRepository: widget.documentRepository,
+          clientRepository: widget.clientRepository,
         ),
       ),
     );

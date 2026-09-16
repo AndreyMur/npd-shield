@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/files/text_file_picker.dart';
 import '../../data/notifications/notification_service.dart';
+import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/contract_draft_repository.dart';
 import '../../data/repositories/contract_template_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
@@ -11,6 +12,7 @@ import '../../data/repositories/risk_report_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
 import '../../domain/risk/risk_analyzer.dart';
+import '../clients/clients_screen.dart';
 import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
@@ -28,6 +30,7 @@ import '../settings/settings_screen.dart';
 /// (десктоп) — боковая навигация.
 class HomeShell extends StatefulWidget {
   final TransactionRepository transactionRepository;
+  final ClientRepository clientRepository;
   final ContractTemplateRepository templateRepository;
   final ContractDraftRepository draftRepository;
   final ContractorProfileRepository profileRepository;
@@ -46,6 +49,7 @@ class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
     required this.transactionRepository,
+    required this.clientRepository,
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
@@ -68,7 +72,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   /// Индекс раздела «Уведомления» в списке разделов.
-  static const _notificationsIndex = 6;
+  static const _notificationsIndex = 7;
 
   /// Ширина, с которой включается боковая навигация.
   static const _wideBreakpoint = 900.0;
@@ -101,6 +105,7 @@ class _HomeShellState extends State<HomeShell> {
       MaterialPageRoute(
         builder: (_) => TransactionFormScreen(
           repository: widget.transactionRepository,
+          clientRepository: widget.clientRepository,
         ),
       ),
     );
@@ -122,7 +127,15 @@ class _HomeShellState extends State<HomeShell> {
         documentRepository: widget.documentRepository,
         onAddOperation: _openAddOperation,
       ),
-      OperationsScreen(repository: widget.transactionRepository),
+      OperationsScreen(
+        repository: widget.transactionRepository,
+        clientRepository: widget.clientRepository,
+      ),
+      ClientsScreen(
+        repository: widget.clientRepository,
+        transactionRepository: widget.transactionRepository,
+        documentRepository: widget.documentRepository,
+      ),
       ContractLibraryScreen(
         templateRepository: widget.templateRepository,
         draftRepository: widget.draftRepository,
@@ -130,6 +143,7 @@ class _HomeShellState extends State<HomeShell> {
         riskAnalyzer: widget.riskAnalyzer,
         riskReportRepository: widget.riskReportRepository,
         documentRepository: widget.documentRepository,
+        clientRepository: widget.clientRepository,
       ),
       ContractArchiveScreen(
         draftRepository: widget.draftRepository,
@@ -139,6 +153,7 @@ class _HomeShellState extends State<HomeShell> {
         riskReportRepository: widget.riskReportRepository,
         documentRepository: widget.documentRepository,
         transactionRepository: widget.transactionRepository,
+        clientRepository: widget.clientRepository,
       ),
       DocumentArchiveScreen(
         documentRepository: widget.documentRepository,
@@ -177,6 +192,11 @@ class _HomeShellState extends State<HomeShell> {
         icon: Icon(Icons.swap_vert_outlined),
         selectedIcon: Icon(Icons.swap_vert),
         label: 'Операции',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.people_outline),
+        selectedIcon: Icon(Icons.people),
+        label: 'Клиенты',
       ),
       const NavigationDestination(
         icon: Icon(Icons.description_outlined),

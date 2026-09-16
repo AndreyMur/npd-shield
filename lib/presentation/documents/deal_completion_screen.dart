@@ -7,6 +7,7 @@ import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
 import '../../data/pdf/generated_pdf.dart';
 import '../../data/pdf/receipt_pdf_service.dart';
+import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -15,6 +16,7 @@ import '../../domain/documents/my_tax_deep_link.dart';
 import '../../domain/documents/my_tax_deep_link_service.dart';
 import '../../domain/documents/receipt.dart';
 import '../../domain/profile/contractor_profile.dart';
+import '../clients/client_picker.dart';
 import '../contracts/contract_pdf_preview_sheet.dart';
 import 'my_tax_deep_link_screen.dart';
 
@@ -36,6 +38,9 @@ class DealCompletionScreen extends StatefulWidget {
 
   /// Сфера сделки для записи транзакции.
   final TransactionSphere? sphere;
+
+  /// Справочник клиентов. Если задан — покупателя можно выбрать из него.
+  final ClientRepository? clientRepository;
 
   /// Генератор PDF чека (по умолчанию — встроенный с Roboto).
   final ReceiptPdfGenerator? pdfGenerator;
@@ -66,6 +71,7 @@ class DealCompletionScreen extends StatefulWidget {
     required this.documentRepository,
     this.transactionRepository,
     this.sphere,
+    this.clientRepository,
     this.pdfGenerator,
     this.fontLoader,
     this.shareService,
@@ -95,6 +101,9 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
   bool _loading = true;
   bool _busy = false;
   bool _recordIncome = true;
+
+  /// Идентификатор покупателя, выбранного из справочника; `0` — не выбран.
+  int _clientId = 0;
 
   @override
   void initState() {
@@ -168,6 +177,29 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
     );
   }
 
+  /// Открывает справочник и подставляет реквизиты выбранного покупателя.
+  Future<void> _pickClient() async {
+    final repository = widget.clientRepository;
+    if (repository == null) return;
+    final client = await showClientPicker(
+      context,
+      repository: repository,
+      title: 'Выбор покупателя',
+    );
+    if (client == null || !mounted) return;
+    setState(() {
+      _clientId = client.id;
+      _buyerNameController.text = client.name;
+      _buyerInnController.text = client.inn;
+    });
+  }
+
+  /// Сбрасывает связь со справочником при ручном изменении покупателя.
+  void _clearClientSelection() {
+    if (_clientId == 0) return;
+    setState(() => _clientId = 0);
+  }
+
   Future<GeneratedPdf> _generatePdf(Receipt receipt, String fileName) async {
     final generator = widget.pdfGenerator;
     if (generator != null) return generator(receipt, fileName);
@@ -213,6 +245,7 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
           sphere: widget.sphere ?? TransactionSphere.it,
           clientName: _buyerNameController.text.trim(),
           clientInn: _buyerInnController.text.trim(),
+          clientId: _clientId == 0 ? null : _clientId,
         );
         transactionId = await widget.transactionRepository!.add(transaction);
       }
@@ -228,6 +261,7 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
         contractDraftId: widget.draft.id,
         contractNumber: _contractNumber,
         transactionId: transactionId,
+        clientId: _clientId,
       );
 
       final completed = await widget.completionService.saveReceipt(
@@ -315,10 +349,24 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
                         border: OutlineInputBorder(),
                       ),
                     ),
+                    if (widget.clientRepository != null) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        key: const Key('receipt_pick_client_button'),
+                        onPressed: _pickClient,
+                        icon: const Icon(Icons.people_outline, size: 18),
+                        label: Text(
+                          _clientId == 0
+                              ? 'Выбрать покупателя из справочника'
+                              : 'Покупатель из справочника',
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     TextFormField(
                       key: const Key('receipt_buyer_name_field'),
                       controller: _buyerNameController,
+                      onChanged: (_) => _clearClientSelection(),
                       decoration: const InputDecoration(
                         labelText: 'Покупатель (заказчик)',
                         border: OutlineInputBorder(),
@@ -328,6 +376,7 @@ class _DealCompletionScreenState extends State<DealCompletionScreen> {
                     TextFormField(
                       key: const Key('receipt_buyer_inn_field'),
                       controller: _buyerInnController,
+                      onChanged: (_) => _clearClientSelection(),
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
                         labelText: 'ИНН покупателя',
