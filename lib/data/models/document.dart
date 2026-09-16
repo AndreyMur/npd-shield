@@ -96,6 +96,12 @@ class Document {
   @Index()
   int transactionId;
 
+  /// Идентификатор клиента (`Client.id`) из справочника, к которому привязан
+  /// документ. `0` — документ не привязан к карточке клиента. Удаление клиента
+  /// не удаляет документ: связь остаётся в истории.
+  @Index()
+  int clientId;
+
   /// Идентификатор чека (`Document.id`), к которому привязан акт.
   /// `0` — документ не привязан к чеку.
   @Index()
@@ -138,6 +144,7 @@ class Document {
     this.counterpartyName = '',
     this.counterpartyInn = '',
     this.transactionId = 0,
+    this.clientId = 0,
     this.receiptDocumentId = 0,
     this.content = '',
     this.serviceName = '',

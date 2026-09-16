@@ -10,6 +10,7 @@ import 'data/files/text_file_picker.dart';
 import 'data/notifications/firebase_push_notification_service.dart';
 import 'data/notifications/flutter_local_notification_service.dart';
 import 'data/notifications/notification_background_scheduler.dart';
+import 'data/repositories/isar_client_repository.dart';
 import 'data/repositories/isar_contract_draft_repository.dart';
 import 'data/repositories/isar_contract_template_repository.dart';
 import 'data/repositories/isar_document_repository.dart';
@@ -33,6 +34,7 @@ Future<void> main() async {
   try {
     final isar = await AppDatabase.open();
     final transactionRepository = IsarTransactionRepository(isar);
+    final clientRepository = IsarClientRepository(isar);
 
     final templateRepository = IsarContractTemplateRepository(isar);
     await seedBuiltInTemplates(templateRepository);
@@ -53,6 +55,7 @@ Future<void> main() async {
     final activitySpheresService = SharedPrefsActivitySpheresService();
     final dataResetService = DataResetService(
       transactionRepository: transactionRepository,
+      clientRepository: clientRepository,
       documentRepository: documentRepository,
       contractDraftRepository: draftRepository,
       riskReportRepository: riskReportRepository,

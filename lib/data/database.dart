@@ -2,6 +2,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'models/app_notification.dart';
+import 'models/client.dart';
 import 'models/contract_draft.dart';
 import 'models/contract_template.dart';
 import 'models/document.dart';
@@ -19,6 +20,7 @@ class AppDatabase {
   /// приложение, и проверять миграцию без дублирования списка.
   static List<CollectionSchema<dynamic>> get schemas => [
     TransactionSchema,
+    ClientSchema,
     TemplateSchema,
     ContractDraftSchema,
     RiskMarkerSchema,

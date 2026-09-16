@@ -1,3 +1,4 @@
+import '../repositories/client_repository.dart';
 import '../repositories/contract_draft_repository.dart';
 import '../repositories/contractor_profile_repository.dart';
 import '../repositories/document_repository.dart';
@@ -15,10 +16,11 @@ import 'first_run_service.dart';
 /// затрагиваются: они поставляются вместе с приложением и не являются данными
 /// пользователя.
 ///
-/// Справочник клиентов и счета появятся в следующих фазах; их репозитории
-/// нужно будет добавить сюда, чтобы очистка оставалась полной.
+/// Счета появятся в следующих фазах; их репозиторий нужно будет добавить сюда,
+/// чтобы очистка оставалась полной.
 class DataResetService {
   final TransactionRepository transactionRepository;
+  final ClientRepository clientRepository;
   final DocumentRepository documentRepository;
   final ContractDraftRepository contractDraftRepository;
   final RiskReportRepository riskReportRepository;
@@ -29,6 +31,7 @@ class DataResetService {
 
   DataResetService({
     required this.transactionRepository,
+    required this.clientRepository,
     required this.documentRepository,
     required this.contractDraftRepository,
     required this.riskReportRepository,
@@ -42,6 +45,7 @@ class DataResetService {
   /// первого запуска.
   Future<void> resetAll() async {
     await transactionRepository.clear();
+    await clientRepository.clear();
     await documentRepository.clear();
     await contractDraftRepository.clear();
     await riskReportRepository.clear();

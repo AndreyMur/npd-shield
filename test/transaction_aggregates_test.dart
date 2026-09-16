@@ -87,10 +87,10 @@ void main() {
 
     test('income used for limit and tax excludes expenses', () async {
       await repository.add(
-        tx(amount: 1_000_000, type: TransactionType.income, date: DateTime(2026, 8, 5)),
+        tx(amount: 1000000, type: TransactionType.income, date: DateTime(2026, 8, 5)),
       );
       await repository.add(
-        tx(amount: 900_000, type: TransactionType.expense, date: DateTime(2026, 8, 6)),
+        tx(amount: 900000, type: TransactionType.expense, date: DateTime(2026, 8, 6)),
       );
 
       final summary = await repository.getIncomeSummary(now: now);
@@ -101,10 +101,10 @@ void main() {
       );
       final tax = const TaxCalculator().calculate(income: summary.year);
 
-      expect(limit.usedAmount, 1_000_000);
-      expect(tax.income, 1_000_000);
-      expect(tax.accruedTax, 1_000_000 * TaxConstants.rate);
-      expect(summary.year, isNot(1_900_000));
+      expect(limit.usedAmount, 1000000);
+      expect(tax.income, 1000000);
+      expect(tax.accruedTax, 1000000 * TaxConstants.rate);
+      expect(summary.year, isNot(1900000));
     });
 
     test('is zero when there are no operations', () async {
