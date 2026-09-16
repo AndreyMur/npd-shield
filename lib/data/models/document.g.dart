@@ -22,89 +22,94 @@ const DocumentSchema = CollectionSchema(
       name: r'amount',
       type: IsarType.double,
     ),
-    r'content': PropertySchema(
+    r'clientId': PropertySchema(
       id: 1,
+      name: r'clientId',
+      type: IsarType.long,
+    ),
+    r'content': PropertySchema(
+      id: 2,
       name: r'content',
       type: IsarType.string,
     ),
     r'contractDraftId': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'contractDraftId',
       type: IsarType.long,
     ),
     r'contractNumber': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'contractNumber',
       type: IsarType.string,
     ),
     r'counterpartyInn': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'counterpartyInn',
       type: IsarType.string,
     ),
     r'counterpartyName': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'counterpartyName',
       type: IsarType.string,
     ),
     r'createdAt': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'customerSignatory': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'customerSignatory',
       type: IsarType.string,
     ),
     r'date': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'date',
       type: IsarType.dateTime,
     ),
     r'executorSignatory': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'executorSignatory',
       type: IsarType.string,
     ),
     r'issuerInn': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'issuerInn',
       type: IsarType.string,
     ),
     r'issuerName': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'issuerName',
       type: IsarType.string,
     ),
     r'receiptDocumentId': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'receiptDocumentId',
       type: IsarType.long,
     ),
     r'result': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'result',
       type: IsarType.string,
     ),
     r'serviceName': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'serviceName',
       type: IsarType.string,
     ),
     r'status': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'status',
       type: IsarType.byte,
       enumMap: _DocumentstatusEnumValueMap,
     ),
     r'transactionId': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'transactionId',
       type: IsarType.long,
     ),
     r'type': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'type',
       type: IsarType.byte,
       enumMap: _DocumenttypeEnumValueMap,
@@ -181,6 +186,19 @@ const DocumentSchema = CollectionSchema(
         )
       ],
     ),
+    r'clientId': IndexSchema(
+      id: 2639372232964765565,
+      name: r'clientId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'clientId',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
     r'receiptDocumentId': IndexSchema(
       id: -6538797972541385235,
       name: r'receiptDocumentId',
@@ -242,23 +260,24 @@ void _documentSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDouble(offsets[0], object.amount);
-  writer.writeString(offsets[1], object.content);
-  writer.writeLong(offsets[2], object.contractDraftId);
-  writer.writeString(offsets[3], object.contractNumber);
-  writer.writeString(offsets[4], object.counterpartyInn);
-  writer.writeString(offsets[5], object.counterpartyName);
-  writer.writeDateTime(offsets[6], object.createdAt);
-  writer.writeString(offsets[7], object.customerSignatory);
-  writer.writeDateTime(offsets[8], object.date);
-  writer.writeString(offsets[9], object.executorSignatory);
-  writer.writeString(offsets[10], object.issuerInn);
-  writer.writeString(offsets[11], object.issuerName);
-  writer.writeLong(offsets[12], object.receiptDocumentId);
-  writer.writeString(offsets[13], object.result);
-  writer.writeString(offsets[14], object.serviceName);
-  writer.writeByte(offsets[15], object.status.index);
-  writer.writeLong(offsets[16], object.transactionId);
-  writer.writeByte(offsets[17], object.type.index);
+  writer.writeLong(offsets[1], object.clientId);
+  writer.writeString(offsets[2], object.content);
+  writer.writeLong(offsets[3], object.contractDraftId);
+  writer.writeString(offsets[4], object.contractNumber);
+  writer.writeString(offsets[5], object.counterpartyInn);
+  writer.writeString(offsets[6], object.counterpartyName);
+  writer.writeDateTime(offsets[7], object.createdAt);
+  writer.writeString(offsets[8], object.customerSignatory);
+  writer.writeDateTime(offsets[9], object.date);
+  writer.writeString(offsets[10], object.executorSignatory);
+  writer.writeString(offsets[11], object.issuerInn);
+  writer.writeString(offsets[12], object.issuerName);
+  writer.writeLong(offsets[13], object.receiptDocumentId);
+  writer.writeString(offsets[14], object.result);
+  writer.writeString(offsets[15], object.serviceName);
+  writer.writeByte(offsets[16], object.status.index);
+  writer.writeLong(offsets[17], object.transactionId);
+  writer.writeByte(offsets[18], object.type.index);
 }
 
 Document _documentDeserialize(
@@ -269,26 +288,27 @@ Document _documentDeserialize(
 ) {
   final object = Document(
     amount: reader.readDouble(offsets[0]),
-    content: reader.readStringOrNull(offsets[1]) ?? '',
-    contractDraftId: reader.readLongOrNull(offsets[2]) ?? 0,
-    contractNumber: reader.readStringOrNull(offsets[3]) ?? '',
-    counterpartyInn: reader.readStringOrNull(offsets[4]) ?? '',
-    counterpartyName: reader.readStringOrNull(offsets[5]) ?? '',
-    customerSignatory: reader.readStringOrNull(offsets[7]) ?? '',
-    date: reader.readDateTime(offsets[8]),
-    executorSignatory: reader.readStringOrNull(offsets[9]) ?? '',
-    issuerInn: reader.readStringOrNull(offsets[10]) ?? '',
-    issuerName: reader.readStringOrNull(offsets[11]) ?? '',
-    receiptDocumentId: reader.readLongOrNull(offsets[12]) ?? 0,
-    result: reader.readStringOrNull(offsets[13]) ?? '',
-    serviceName: reader.readStringOrNull(offsets[14]) ?? '',
-    status: _DocumentstatusValueEnumMap[reader.readByteOrNull(offsets[15])] ??
+    clientId: reader.readLongOrNull(offsets[1]) ?? 0,
+    content: reader.readStringOrNull(offsets[2]) ?? '',
+    contractDraftId: reader.readLongOrNull(offsets[3]) ?? 0,
+    contractNumber: reader.readStringOrNull(offsets[4]) ?? '',
+    counterpartyInn: reader.readStringOrNull(offsets[5]) ?? '',
+    counterpartyName: reader.readStringOrNull(offsets[6]) ?? '',
+    customerSignatory: reader.readStringOrNull(offsets[8]) ?? '',
+    date: reader.readDateTime(offsets[9]),
+    executorSignatory: reader.readStringOrNull(offsets[10]) ?? '',
+    issuerInn: reader.readStringOrNull(offsets[11]) ?? '',
+    issuerName: reader.readStringOrNull(offsets[12]) ?? '',
+    receiptDocumentId: reader.readLongOrNull(offsets[13]) ?? 0,
+    result: reader.readStringOrNull(offsets[14]) ?? '',
+    serviceName: reader.readStringOrNull(offsets[15]) ?? '',
+    status: _DocumentstatusValueEnumMap[reader.readByteOrNull(offsets[16])] ??
         DocumentStatus.draft,
-    transactionId: reader.readLongOrNull(offsets[16]) ?? 0,
-    type: _DocumenttypeValueEnumMap[reader.readByteOrNull(offsets[17])] ??
+    transactionId: reader.readLongOrNull(offsets[17]) ?? 0,
+    type: _DocumenttypeValueEnumMap[reader.readByteOrNull(offsets[18])] ??
         DocumentType.receipt,
   );
-  object.createdAt = reader.readDateTime(offsets[6]);
+  object.createdAt = reader.readDateTime(offsets[7]);
   object.id = id;
   return object;
 }
@@ -303,39 +323,41 @@ P _documentDeserializeProp<P>(
     case 0:
       return (reader.readDouble(offset)) as P;
     case 1:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 2:
       return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 3:
+    case 2:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 3:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 4:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 5:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 6:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 7:
-      return (reader.readStringOrNull(offset) ?? '') as P;
-    case 8:
       return (reader.readDateTime(offset)) as P;
-    case 9:
+    case 8:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 9:
+      return (reader.readDateTime(offset)) as P;
     case 10:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 11:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 12:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
-    case 13:
       return (reader.readStringOrNull(offset) ?? '') as P;
+    case 13:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 14:
       return (reader.readStringOrNull(offset) ?? '') as P;
     case 15:
+      return (reader.readStringOrNull(offset) ?? '') as P;
+    case 16:
       return (_DocumentstatusValueEnumMap[reader.readByteOrNull(offset)] ??
           DocumentStatus.draft) as P;
-    case 16:
-      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 17:
+      return (reader.readLongOrNull(offset) ?? 0) as P;
+    case 18:
       return (_DocumenttypeValueEnumMap[reader.readByteOrNull(offset)] ??
           DocumentType.receipt) as P;
     default:
@@ -419,6 +441,14 @@ extension DocumentQueryWhereSort on QueryBuilder<Document, Document, QWhere> {
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'transactionId'),
+      );
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhere> anyClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'clientId'),
       );
     });
   }
@@ -957,6 +987,96 @@ extension DocumentQueryWhere on QueryBuilder<Document, Document, QWhereClause> {
     });
   }
 
+  QueryBuilder<Document, Document, QAfterWhereClause> clientIdEqualTo(
+      int clientId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'clientId',
+        value: [clientId],
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> clientIdNotEqualTo(
+      int clientId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [],
+              upper: [clientId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [clientId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [clientId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [],
+              upper: [clientId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> clientIdGreaterThan(
+    int clientId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'clientId',
+        lower: [clientId],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> clientIdLessThan(
+    int clientId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'clientId',
+        lower: [],
+        upper: [clientId],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterWhereClause> clientIdBetween(
+    int lowerClientId,
+    int upperClientId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'clientId',
+        lower: [lowerClientId],
+        includeLower: includeLower,
+        upper: [upperClientId],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Document, Document, QAfterWhereClause> receiptDocumentIdEqualTo(
       int receiptDocumentId) {
     return QueryBuilder.apply(this, (query) {
@@ -1199,6 +1319,59 @@ extension DocumentQueryFilter
         upper: upper,
         includeUpper: includeUpper,
         epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> clientIdEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'clientId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> clientIdGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'clientId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> clientIdLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'clientId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterFilterCondition> clientIdBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'clientId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -2986,6 +3159,18 @@ extension DocumentQuerySortBy on QueryBuilder<Document, Document, QSortBy> {
     });
   }
 
+  QueryBuilder<Document, Document, QAfterSortBy> sortByClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> sortByClientIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Document, Document, QAfterSortBy> sortByContent() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'content', Sort.asc);
@@ -3202,6 +3387,18 @@ extension DocumentQuerySortThenBy
   QueryBuilder<Document, Document, QAfterSortBy> thenByAmountDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'amount', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Document, Document, QAfterSortBy> thenByClientIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.desc);
     });
   }
 
@@ -3430,6 +3627,12 @@ extension DocumentQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Document, Document, QDistinct> distinctByClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'clientId');
+    });
+  }
+
   QueryBuilder<Document, Document, QDistinct> distinctByContent(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -3559,6 +3762,12 @@ extension DocumentQueryProperty
   QueryBuilder<Document, double, QQueryOperations> amountProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'amount');
+    });
+  }
+
+  QueryBuilder<Document, int, QQueryOperations> clientIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'clientId');
     });
   }
 
