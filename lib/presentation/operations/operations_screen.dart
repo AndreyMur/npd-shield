@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
 import '../../data/models/transaction.dart';
+import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../domain/documents/receipt.dart';
 import 'transaction_form_screen.dart';
@@ -29,12 +30,16 @@ enum _PeriodPreset {
 class OperationsScreen extends StatefulWidget {
   final TransactionRepository repository;
 
+  /// Справочник клиентов. Если задан — контрагента можно выбрать из него.
+  final ClientRepository? clientRepository;
+
   /// «Сейчас» для стабильности тестов.
   final DateTime? now;
 
   const OperationsScreen({
     super.key,
     required this.repository,
+    this.clientRepository,
     this.now,
   });
 
@@ -164,6 +169,7 @@ class _OperationsScreenState extends State<OperationsScreen> {
       MaterialPageRoute(
         builder: (_) => TransactionFormScreen(
           repository: widget.repository,
+          clientRepository: widget.clientRepository,
           transaction: transaction,
           now: widget.now,
         ),

@@ -17,25 +17,30 @@ const ContractDraftSchema = CollectionSchema(
   name: r'ContractDraft',
   id: -2159838432924785604,
   properties: {
-    r'createdAt': PropertySchema(
+    r'clientId': PropertySchema(
       id: 0,
+      name: r'clientId',
+      type: IsarType.long,
+    ),
+    r'createdAt': PropertySchema(
+      id: 1,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'filledFields': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'filledFields',
       type: IsarType.objectList,
       target: r'DraftFieldValue',
     ),
     r'status': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'status',
       type: IsarType.byte,
       enumMap: _ContractDraftstatusEnumValueMap,
     ),
     r'templateId': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'templateId',
       type: IsarType.string,
     )
@@ -67,6 +72,19 @@ const ContractDraftSchema = CollectionSchema(
       properties: [
         IndexPropertySchema(
           name: r'status',
+          type: IndexType.value,
+          caseSensitive: false,
+        )
+      ],
+    ),
+    r'clientId': IndexSchema(
+      id: 2639372232964765565,
+      name: r'clientId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'clientId',
           type: IndexType.value,
           caseSensitive: false,
         )
@@ -119,15 +137,16 @@ void _contractDraftSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
+  writer.writeLong(offsets[0], object.clientId);
+  writer.writeDateTime(offsets[1], object.createdAt);
   writer.writeObjectList<DraftFieldValue>(
-    offsets[1],
+    offsets[2],
     allOffsets,
     DraftFieldValueSchema.serialize,
     object.filledFields,
   );
-  writer.writeByte(offsets[2], object.status.index);
-  writer.writeString(offsets[3], object.templateId);
+  writer.writeByte(offsets[3], object.status.index);
+  writer.writeString(offsets[4], object.templateId);
 }
 
 ContractDraft _contractDraftDeserialize(
@@ -137,19 +156,20 @@ ContractDraft _contractDraftDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = ContractDraft(
+    clientId: reader.readLongOrNull(offsets[0]) ?? 0,
     filledFields: reader.readObjectList<DraftFieldValue>(
-          offsets[1],
+          offsets[2],
           DraftFieldValueSchema.deserialize,
           allOffsets,
           DraftFieldValue(),
         ) ??
         [],
     status:
-        _ContractDraftstatusValueEnumMap[reader.readByteOrNull(offsets[2])] ??
+        _ContractDraftstatusValueEnumMap[reader.readByteOrNull(offsets[3])] ??
             ContractStatus.draft,
-    templateId: reader.readString(offsets[3]),
+    templateId: reader.readString(offsets[4]),
   );
-  object.createdAt = reader.readDateTime(offsets[0]);
+  object.createdAt = reader.readDateTime(offsets[1]);
   object.id = id;
   return object;
 }
@@ -162,8 +182,10 @@ P _contractDraftDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readLongOrNull(offset) ?? 0) as P;
     case 1:
+      return (reader.readDateTime(offset)) as P;
+    case 2:
       return (reader.readObjectList<DraftFieldValue>(
             offset,
             DraftFieldValueSchema.deserialize,
@@ -171,10 +193,10 @@ P _contractDraftDeserializeProp<P>(
             DraftFieldValue(),
           ) ??
           []) as P;
-    case 2:
+    case 3:
       return (_ContractDraftstatusValueEnumMap[reader.readByteOrNull(offset)] ??
           ContractStatus.draft) as P;
-    case 3:
+    case 4:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -217,6 +239,14 @@ extension ContractDraftQueryWhereSort
     return QueryBuilder.apply(this, (query) {
       return query.addWhereClause(
         const IndexWhereClause.any(indexName: r'status'),
+      );
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterWhere> anyClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(
+        const IndexWhereClause.any(indexName: r'clientId'),
       );
     });
   }
@@ -437,6 +467,98 @@ extension ContractDraftQueryWhere
     });
   }
 
+  QueryBuilder<ContractDraft, ContractDraft, QAfterWhereClause> clientIdEqualTo(
+      int clientId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'clientId',
+        value: [clientId],
+      ));
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterWhereClause>
+      clientIdNotEqualTo(int clientId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [],
+              upper: [clientId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [clientId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [clientId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'clientId',
+              lower: [],
+              upper: [clientId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterWhereClause>
+      clientIdGreaterThan(
+    int clientId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'clientId',
+        lower: [clientId],
+        includeLower: include,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterWhereClause>
+      clientIdLessThan(
+    int clientId, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'clientId',
+        lower: [],
+        upper: [clientId],
+        includeUpper: include,
+      ));
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterWhereClause> clientIdBetween(
+    int lowerClientId,
+    int upperClientId, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'clientId',
+        lower: [lowerClientId],
+        includeLower: includeLower,
+        upper: [upperClientId],
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<ContractDraft, ContractDraft, QAfterWhereClause>
       createdAtEqualTo(DateTime createdAt) {
     return QueryBuilder.apply(this, (query) {
@@ -533,6 +655,62 @@ extension ContractDraftQueryWhere
 
 extension ContractDraftQueryFilter
     on QueryBuilder<ContractDraft, ContractDraft, QFilterCondition> {
+  QueryBuilder<ContractDraft, ContractDraft, QAfterFilterCondition>
+      clientIdEqualTo(int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'clientId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterFilterCondition>
+      clientIdGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'clientId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterFilterCondition>
+      clientIdLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'clientId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterFilterCondition>
+      clientIdBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'clientId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<ContractDraft, ContractDraft, QAfterFilterCondition>
       createdAtEqualTo(DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -940,6 +1118,19 @@ extension ContractDraftQueryLinks
 
 extension ContractDraftQuerySortBy
     on QueryBuilder<ContractDraft, ContractDraft, QSortBy> {
+  QueryBuilder<ContractDraft, ContractDraft, QAfterSortBy> sortByClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterSortBy>
+      sortByClientIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.desc);
+    });
+  }
+
   QueryBuilder<ContractDraft, ContractDraft, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -981,6 +1172,19 @@ extension ContractDraftQuerySortBy
 
 extension ContractDraftQuerySortThenBy
     on QueryBuilder<ContractDraft, ContractDraft, QSortThenBy> {
+  QueryBuilder<ContractDraft, ContractDraft, QAfterSortBy> thenByClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ContractDraft, ContractDraft, QAfterSortBy>
+      thenByClientIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'clientId', Sort.desc);
+    });
+  }
+
   QueryBuilder<ContractDraft, ContractDraft, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1034,6 +1238,12 @@ extension ContractDraftQuerySortThenBy
 
 extension ContractDraftQueryWhereDistinct
     on QueryBuilder<ContractDraft, ContractDraft, QDistinct> {
+  QueryBuilder<ContractDraft, ContractDraft, QDistinct> distinctByClientId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'clientId');
+    });
+  }
+
   QueryBuilder<ContractDraft, ContractDraft, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
@@ -1059,6 +1269,12 @@ extension ContractDraftQueryProperty
   QueryBuilder<ContractDraft, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<ContractDraft, int, QQueryOperations> clientIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'clientId');
     });
   }
 

@@ -96,6 +96,19 @@ class IsarDocumentRepository implements DocumentRepository {
   }
 
   @override
+  Future<List<Document>> getByClientId(int clientId) async {
+    final documents = await isar.documents
+        .filter()
+        .clientIdEqualTo(clientId)
+        .sortByDateDesc()
+        .findAll();
+    for (final document in documents) {
+      await _decryptFields(document);
+    }
+    return documents;
+  }
+
+  @override
   Future<int> count() {
     return isar.documents.where().count();
   }

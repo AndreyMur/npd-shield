@@ -10,6 +10,7 @@ import 'data/files/text_file_picker.dart';
 import 'data/notifications/firebase_push_notification_service.dart';
 import 'data/notifications/flutter_local_notification_service.dart';
 import 'data/notifications/notification_background_scheduler.dart';
+import 'data/repositories/client_repository.dart';
 import 'data/repositories/isar_client_repository.dart';
 import 'data/repositories/isar_contract_draft_repository.dart';
 import 'data/repositories/isar_contract_template_repository.dart';
@@ -68,6 +69,7 @@ Future<void> main() async {
     runApp(
       NpdShieldApp(
         transactionRepository: transactionRepository,
+        clientRepository: clientRepository,
         templateRepository: templateRepository,
         draftRepository: draftRepository,
         profileRepository: profileRepository,
@@ -125,6 +127,7 @@ class _StartupErrorApp extends StatelessWidget {
 
 class NpdShieldApp extends StatefulWidget {
   final IsarTransactionRepository transactionRepository;
+  final ClientRepository clientRepository;
   final IsarContractTemplateRepository templateRepository;
   final IsarContractDraftRepository draftRepository;
   final SharedPrefsContractorProfileRepository profileRepository;
@@ -141,6 +144,7 @@ class NpdShieldApp extends StatefulWidget {
   const NpdShieldApp({
     super.key,
     required this.transactionRepository,
+    required this.clientRepository,
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
@@ -245,6 +249,7 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
     }
     return HomeShell(
       transactionRepository: widget.transactionRepository,
+      clientRepository: widget.clientRepository,
       templateRepository: widget.templateRepository,
       draftRepository: widget.draftRepository,
       profileRepository: widget.profileRepository,

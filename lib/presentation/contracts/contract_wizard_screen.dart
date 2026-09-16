@@ -12,6 +12,7 @@ import '../../../data/models/risk_marker.dart';
 import '../../../data/pdf/contract_pdf_font_loader.dart';
 import '../../../data/pdf/contract_pdf_service.dart';
 import '../../../data/pdf/contract_pdf_share_service.dart';
+import '../../../data/repositories/client_repository.dart';
 import '../../../data/repositories/contract_draft_repository.dart';
 import '../../../data/repositories/contract_template_text_loader.dart';
 import '../../../data/repositories/contractor_profile_repository.dart';
@@ -21,6 +22,7 @@ import '../../../domain/contracts/contract_document.dart';
 import '../../../domain/documents/receipt.dart';
 import '../../../domain/profile/contractor_profile.dart';
 import '../../../domain/risk/risk_analyzer.dart';
+import '../clients/client_picker.dart';
 import '../risk/risk_report_view.dart';
 import '../risk/risk_shield_summary_card.dart';
 import 'contract_document_preview.dart';
@@ -91,6 +93,9 @@ class ContractWizardScreen extends StatefulWidget {
   /// сохраняется в единый архив для последующего экспорта в PDF.
   final DocumentRepository? documentRepository;
 
+  /// Справочник клиентов. Если задан — заказчика можно выбрать из него.
+  final ClientRepository? clientRepository;
+
   const ContractWizardScreen({
     super.key,
     required this.template,
@@ -107,6 +112,7 @@ class ContractWizardScreen extends StatefulWidget {
     this.riskAnalyzer,
     this.riskReportRepository,
     this.documentRepository,
+    this.clientRepository,
   });
 
   @override
@@ -146,6 +152,9 @@ class _WizardStep {
 class _ContractWizardScreenState extends State<ContractWizardScreen> {
   static const _stepsCount = 5;
 
+  /// Индекс шага «Заказчик», где доступен выбор из справочника.
+  static const _clientStepIndex = 2;
+
   final _formKey = GlobalKey<FormState>();
 
   late final List<_WizardStep> _steps;
@@ -163,6 +172,9 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   Timer? _autosaveTimer;
   bool _savingDraft = false;
   int _draftId = 0;
+
+  /// Идентификатор заказчика, выбранного из справочника; `0` — не выбран.
+  int _clientId = 0;
   ContractStatus _initialStatus = ContractStatus.draft;
   DateTime? _lastSavedAt;
   bool _restoredSession = false;
@@ -233,6 +245,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
 
   void _applyDraft(ContractDraft draft) {
     _draftId = draft.id;
+    _clientId = draft.clientId;
     _initialStatus = draft.status;
     final fields = contractFieldsToMap(draft.filledFields);
     for (final key in _allFieldKeys) {
@@ -263,6 +276,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
       templateId: widget.template.code,
       filledFields: contractFieldsFromMap(_collectValues()),
       status: status ?? _initialStatus,
+      clientId: _clientId,
     );
     draft.id = _draftId;
     final id = await widget.draftRepository.save(draft);
@@ -311,6 +325,29 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   void _setController(String key, String value) {
     if (value.isEmpty) return;
     _controllers[key]?.text = value;
+  }
+
+  /// Открывает справочник и подставляет реквизиты выбранного заказчика.
+  Future<void> _pickClient() async {
+    final repository = widget.clientRepository;
+    if (repository == null) return;
+    final client = await showClientPicker(
+      context,
+      repository: repository,
+      title: 'Выбор заказчика',
+    );
+    if (client == null || !mounted) return;
+    setState(() {
+      _clientId = client.id;
+      _controllers[ContractFieldKeys.clientName]?.text = client.name;
+      _controllers[ContractFieldKeys.clientInn]?.text = client.inn;
+    });
+  }
+
+  /// Сбрасывает связь со справочником при ручном изменении заказчика.
+  void _clearClientSelection() {
+    if (_clientId == 0) return;
+    setState(() => _clientId = 0);
   }
 
   Future<void> _loadTemplateText() async {
@@ -652,6 +689,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
       contractNumber: values[ContractFieldKeys.contractNumber] ?? '',
       counterpartyName: values[ContractFieldKeys.clientName] ?? '',
       counterpartyInn: values[ContractFieldKeys.clientInn] ?? '',
+      clientId: _clientId,
       serviceName: values[ContractFieldKeys.subject] ?? '',
       issuerName: values[ContractFieldKeys.executorFullName] ?? '',
       issuerInn: values[ContractFieldKeys.executorInn] ?? '',
@@ -871,6 +909,19 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
           const SizedBox(height: 4),
           Text(step.description, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 16),
+          if (_step == _clientStepIndex && widget.clientRepository != null) ...[
+            OutlinedButton.icon(
+              key: const Key('wizard_pick_client_button'),
+              onPressed: _pickClient,
+              icon: const Icon(Icons.people_outline, size: 18),
+              label: Text(
+                _clientId == 0
+                    ? 'Выбрать заказчика из справочника'
+                    : 'Заказчик из справочника',
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           for (final field in step.fields) ...[
             _buildField(field),
             const SizedBox(height: 12),
@@ -1030,6 +1081,9 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
       keyboardType: field.keyboardType,
       maxLines: field.maxLines,
       autofocus: isFirst,
+      onChanged: field.key == ContractFieldKeys.clientName
+          ? (_) => _clearClientSelection()
+          : null,
       inputFormatters: const [ContractInputFormatter()],
       textInputAction: isMultiline
           ? TextInputAction.newline

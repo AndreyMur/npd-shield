@@ -31,6 +31,7 @@ class DealCompletionService {
     int contractDraftId = 0,
     Transaction? transaction,
     int transactionId = 0,
+    int clientId = 0,
     DateTime? date,
   }) async {
     final receipt = generator.generate(
@@ -39,6 +40,7 @@ class DealCompletionService {
       transaction: transaction,
       contractDraftId: contractDraftId,
       transactionId: transactionId,
+      clientId: clientId,
       date: date,
     );
     return saveReceipt(receipt: receipt, documentRepository: documentRepository);

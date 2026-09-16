@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
 import '../../data/models/transaction.dart';
+import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../domain/documents/receipt.dart';
+import '../clients/client_picker.dart';
 
 /// Форма создания и редактирования операции (дохода или расхода).
 ///
@@ -14,6 +16,9 @@ import '../../domain/documents/receipt.dart';
 class TransactionFormScreen extends StatefulWidget {
   final TransactionRepository repository;
 
+  /// Справочник клиентов. Если задан — контрагента можно выбрать из него.
+  final ClientRepository? clientRepository;
+
   /// Редактируемая операция. `null` — создание новой.
   final Transaction? transaction;
 
@@ -23,6 +28,7 @@ class TransactionFormScreen extends StatefulWidget {
   const TransactionFormScreen({
     super.key,
     required this.repository,
+    this.clientRepository,
     this.transaction,
     this.now,
   });
@@ -44,6 +50,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   late TransactionType _type;
   late TransactionSphere _sphere;
   DateTime _date = DateTime.now();
+
+  /// Идентификатор клиента, выбранного из справочника; `null` — контрагент
+  /// введён вручную или не указан.
+  int? _selectedClientId;
   bool _saving = false;
 
   bool get _isEditing => widget.transaction != null;
@@ -57,6 +67,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     _type = transaction?.type ?? TransactionType.income;
     _sphere = transaction?.sphere ?? TransactionSphere.it;
     _date = transaction?.date ?? now;
+    _selectedClientId = transaction?.clientId;
 
     _amountController = TextEditingController(
       text: transaction == null || transaction.amount == 0
@@ -110,7 +121,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       category: _categoryController.text.trim(),
       clientName: _clientNameController.text.trim(),
       clientInn: _clientInnController.text.trim(),
-      clientId: widget.transaction?.clientId,
+      clientId: _selectedClientId,
       comment: _commentController.text.trim(),
     );
 
@@ -135,6 +146,24 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     }
   }
 
+  Future<void> _pickClient() async {
+    final repository = widget.clientRepository;
+    if (repository == null) return;
+    final client = await showClientPicker(context, repository: repository);
+    if (client == null || !mounted) return;
+    setState(() {
+      _selectedClientId = client.id;
+      _clientNameController.text = client.name;
+      _clientInnController.text = client.inn;
+    });
+  }
+
+  /// Сбрасывает связь со справочником при ручном изменении контрагента.
+  void _clearClientSelection() {
+    if (_selectedClientId == null) return;
+    setState(() => _selectedClientId = null);
+  }
+
   String? _amountValidator(String? value) {
     final amount = parseReceiptAmount(value ?? '');
     if (amount <= 0) return 'Укажите сумму больше нуля';
@@ -146,6 +175,31 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       return 'Укажите дату в формате ДД.ММ.ГГГГ';
     }
     return null;
+  }
+
+  Widget _buildClientPickerRow() {
+    final selected = _selectedClientId != null;
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            key: const Key('transaction_pick_client_button'),
+            onPressed: _pickClient,
+            icon: const Icon(Icons.people_outline, size: 18),
+            label: Text(
+              selected ? 'Клиент из справочника' : 'Выбрать из справочника',
+            ),
+          ),
+        ),
+        if (selected)
+          IconButton(
+            key: const Key('transaction_clear_client_button'),
+            tooltip: 'Отвязать клиента',
+            icon: const Icon(Icons.close),
+            onPressed: () => setState(() => _selectedClientId = null),
+          ),
+      ],
+    );
   }
 
   @override
@@ -245,11 +299,16 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
+            if (widget.clientRepository != null) ...[
+              const SizedBox(height: 4),
+              _buildClientPickerRow(),
+            ],
             const SizedBox(height: 12),
             TextFormField(
               key: const Key('transaction_client_name_field'),
               controller: _clientNameController,
               textCapitalization: TextCapitalization.words,
+              onChanged: (_) => _clearClientSelection(),
               decoration: const InputDecoration(
                 labelText: 'Контрагент',
                 hintText: 'Наименование или ФИО',
@@ -261,6 +320,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               key: const Key('transaction_client_inn_field'),
               controller: _clientInnController,
               keyboardType: TextInputType.number,
+              onChanged: (_) => _clearClientSelection(),
               decoration: const InputDecoration(
                 labelText: 'ИНН контрагента',
                 border: OutlineInputBorder(),
