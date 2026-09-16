@@ -16,6 +16,7 @@ import 'data/repositories/isar_contract_draft_repository.dart';
 import 'data/repositories/isar_contract_template_repository.dart';
 import 'data/repositories/isar_document_repository.dart';
 import 'data/notifications/notification_service.dart';
+import 'data/repositories/isar_invoice_repository.dart';
 import 'data/repositories/isar_notification_repository.dart';
 import 'data/repositories/isar_risk_marker_repository.dart';
 import 'data/repositories/notification_repository.dart';
@@ -36,6 +37,7 @@ Future<void> main() async {
     final isar = await AppDatabase.open();
     final transactionRepository = IsarTransactionRepository(isar);
     final clientRepository = IsarClientRepository(isar);
+    final invoiceRepository = IsarInvoiceRepository(isar, transactionRepository);
 
     final templateRepository = IsarContractTemplateRepository(isar);
     await seedBuiltInTemplates(templateRepository);
@@ -58,6 +60,7 @@ Future<void> main() async {
       transactionRepository: transactionRepository,
       clientRepository: clientRepository,
       documentRepository: documentRepository,
+      invoiceRepository: invoiceRepository,
       contractDraftRepository: draftRepository,
       riskReportRepository: riskReportRepository,
       notificationRepository: notificationRepository,

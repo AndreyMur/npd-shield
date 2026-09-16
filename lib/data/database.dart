@@ -6,6 +6,7 @@ import 'models/client.dart';
 import 'models/contract_draft.dart';
 import 'models/contract_template.dart';
 import 'models/document.dart';
+import 'models/invoice.dart';
 import 'models/risk_marker.dart';
 import 'models/transaction.dart';
 
@@ -27,6 +28,7 @@ class AppDatabase {
     RiskReportSchema,
     DocumentSchema,
     AppNotificationSchema,
+    InvoiceSchema,
   ];
 
   /// Открывает базу данных приложения.
