@@ -1,13 +1,20 @@
 import 'package:npd_shield/data/models/invoice.dart';
 import 'package:npd_shield/data/models/transaction.dart';
 import 'package:npd_shield/data/repositories/invoice_repository.dart';
+import 'package:npd_shield/data/repositories/transaction_repository.dart';
 
 /// Фейковый репозиторий счетов для widget- и unit-тестов.
+///
+/// Если передан [transactionRepository], полная оплата создаёт доход-операцию
+/// так же, как настоящий репозиторий, — это позволяет проверять интеграцию
+/// отметки оплаты со списком доходов в виджет-тестах.
 class FakeInvoiceRepository implements InvoiceRepository {
   final List<Invoice> invoices;
+  final TransactionRepository? transactionRepository;
   int _nextId = 1;
 
-  FakeInvoiceRepository([List<Invoice>? invoices]) : invoices = invoices ?? [] {
+  FakeInvoiceRepository([List<Invoice>? invoices, this.transactionRepository])
+      : invoices = invoices ?? [] {
     for (final invoice in this.invoices) {
       if (invoice.id >= _nextId) _nextId = invoice.id + 1;
     }
@@ -99,12 +106,42 @@ class FakeInvoiceRepository implements InvoiceRepository {
     if (invoice == null) {
       throw StateError('Счёт $id не найден');
     }
+    if (invoice.status == InvoiceStatus.cancelled) {
+      throw StateError('Нельзя оплатить отменённый счёт');
+    }
+    if (invoice.isFullyPaid) return invoice;
+
     final requested = amount ?? invoice.outstanding;
+    if (requested <= 0) {
+      throw ArgumentError.value(
+        amount,
+        'amount',
+        'Сумма оплаты должна быть больше нуля',
+      );
+    }
+
     invoice.paidAmount += requested > invoice.outstanding
         ? invoice.outstanding
         : requested;
     invoice.paidAt = paidAt ?? DateTime.now();
-    if (invoice.isFullyPaid) invoice.status = InvoiceStatus.paid;
+    if (invoice.isFullyPaid) {
+      invoice.status = InvoiceStatus.paid;
+      final transactions = transactionRepository;
+      if (invoice.transactionId == 0 && transactions != null) {
+        invoice.transactionId = await transactions.add(
+          Transaction(
+            amount: invoice.amount,
+            date: invoice.paidAt ?? DateTime.now(),
+            sphere: sphere,
+            clientName: invoice.clientName,
+            clientInn: invoice.clientInn,
+            clientId: invoice.clientId == 0 ? null : invoice.clientId,
+            category: category,
+            comment: comment,
+          ),
+        );
+      }
+    }
     await update(invoice);
     return invoice;
   }

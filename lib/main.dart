@@ -17,6 +17,7 @@ import 'data/repositories/isar_contract_template_repository.dart';
 import 'data/repositories/isar_document_repository.dart';
 import 'data/notifications/notification_service.dart';
 import 'data/repositories/isar_invoice_repository.dart';
+import 'data/repositories/invoice_repository.dart';
 import 'data/repositories/isar_notification_repository.dart';
 import 'data/repositories/isar_risk_marker_repository.dart';
 import 'data/repositories/notification_repository.dart';
@@ -73,6 +74,7 @@ Future<void> main() async {
       NpdShieldApp(
         transactionRepository: transactionRepository,
         clientRepository: clientRepository,
+        invoiceRepository: invoiceRepository,
         templateRepository: templateRepository,
         draftRepository: draftRepository,
         profileRepository: profileRepository,
@@ -131,6 +133,7 @@ class _StartupErrorApp extends StatelessWidget {
 class NpdShieldApp extends StatefulWidget {
   final IsarTransactionRepository transactionRepository;
   final ClientRepository clientRepository;
+  final InvoiceRepository invoiceRepository;
   final IsarContractTemplateRepository templateRepository;
   final IsarContractDraftRepository draftRepository;
   final SharedPrefsContractorProfileRepository profileRepository;
@@ -148,6 +151,7 @@ class NpdShieldApp extends StatefulWidget {
     super.key,
     required this.transactionRepository,
     required this.clientRepository,
+    required this.invoiceRepository,
     required this.templateRepository,
     required this.draftRepository,
     required this.profileRepository,
@@ -253,6 +257,7 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
     return HomeShell(
       transactionRepository: widget.transactionRepository,
       clientRepository: widget.clientRepository,
+      invoiceRepository: widget.invoiceRepository,
       templateRepository: widget.templateRepository,
       draftRepository: widget.draftRepository,
       profileRepository: widget.profileRepository,
