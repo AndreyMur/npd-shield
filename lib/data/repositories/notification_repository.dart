@@ -8,6 +8,12 @@ abstract class NotificationRepository {
   /// Возвращает уведомление по идентификатору или `null`.
   Future<AppNotification?> getById(int id);
 
+  /// Возвращает уведомление с указанным [dedupeKey] или `null`.
+  ///
+  /// Используется движком уведомлений для проверки, не сформировано ли уже
+  /// уведомление по этому же событию.
+  Future<AppNotification?> findByDedupeKey(String dedupeKey);
+
   /// Возвращает все уведомления, самые новые — первыми.
   Future<List<AppNotification>> getAll();
 

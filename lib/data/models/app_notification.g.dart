@@ -32,39 +32,44 @@ const AppNotificationSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'hasAction': PropertySchema(
+    r'dedupeKey': PropertySchema(
       id: 3,
+      name: r'dedupeKey',
+      type: IsarType.string,
+    ),
+    r'hasAction': PropertySchema(
+      id: 4,
       name: r'hasAction',
       type: IsarType.bool,
     ),
     r'isRead': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'isRead',
       type: IsarType.bool,
     ),
     r'payload': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'payload',
       type: IsarType.string,
     ),
     r'readAt': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'readAt',
       type: IsarType.dateTime,
     ),
     r'status': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'status',
       type: IsarType.byte,
       enumMap: _AppNotificationstatusEnumValueMap,
     ),
     r'title': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'type',
       type: IsarType.byte,
       enumMap: _AppNotificationtypeEnumValueMap,
@@ -114,6 +119,19 @@ const AppNotificationSchema = CollectionSchema(
           caseSensitive: false,
         )
       ],
+    ),
+    r'dedupeKey': IndexSchema(
+      id: -6620796718844543204,
+      name: r'dedupeKey',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'dedupeKey',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
     )
   },
   links: {},
@@ -132,6 +150,12 @@ int _appNotificationEstimateSize(
   var bytesCount = offsets.last;
   bytesCount += 3 + object.actionLabel.length * 3;
   bytesCount += 3 + object.body.length * 3;
+  {
+    final value = object.dedupeKey;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.payload.length * 3;
   bytesCount += 3 + object.title.length * 3;
   return bytesCount;
@@ -146,13 +170,14 @@ void _appNotificationSerialize(
   writer.writeString(offsets[0], object.actionLabel);
   writer.writeString(offsets[1], object.body);
   writer.writeDateTime(offsets[2], object.createdAt);
-  writer.writeBool(offsets[3], object.hasAction);
-  writer.writeBool(offsets[4], object.isRead);
-  writer.writeString(offsets[5], object.payload);
-  writer.writeDateTime(offsets[6], object.readAt);
-  writer.writeByte(offsets[7], object.status.index);
-  writer.writeString(offsets[8], object.title);
-  writer.writeByte(offsets[9], object.type.index);
+  writer.writeString(offsets[3], object.dedupeKey);
+  writer.writeBool(offsets[4], object.hasAction);
+  writer.writeBool(offsets[5], object.isRead);
+  writer.writeString(offsets[6], object.payload);
+  writer.writeDateTime(offsets[7], object.readAt);
+  writer.writeByte(offsets[8], object.status.index);
+  writer.writeString(offsets[9], object.title);
+  writer.writeByte(offsets[10], object.type.index);
 }
 
 AppNotification _appNotificationDeserialize(
@@ -165,14 +190,16 @@ AppNotification _appNotificationDeserialize(
     actionLabel: reader.readStringOrNull(offsets[0]) ?? '',
     body: reader.readString(offsets[1]),
     createdAt: reader.readDateTime(offsets[2]),
-    payload: reader.readStringOrNull(offsets[5]) ?? '',
-    readAt: reader.readDateTimeOrNull(offsets[6]),
+    dedupeKey: reader.readStringOrNull(offsets[3]),
+    payload: reader.readStringOrNull(offsets[6]) ?? '',
+    readAt: reader.readDateTimeOrNull(offsets[7]),
     status:
-        _AppNotificationstatusValueEnumMap[reader.readByteOrNull(offsets[7])] ??
+        _AppNotificationstatusValueEnumMap[reader.readByteOrNull(offsets[8])] ??
             NotificationStatus.unread,
-    title: reader.readString(offsets[8]),
-    type: _AppNotificationtypeValueEnumMap[reader.readByteOrNull(offsets[9])] ??
-        NotificationType.limit,
+    title: reader.readString(offsets[9]),
+    type:
+        _AppNotificationtypeValueEnumMap[reader.readByteOrNull(offsets[10])] ??
+            NotificationType.limit,
   );
   object.id = id;
   return object;
@@ -192,20 +219,22 @@ P _appNotificationDeserializeProp<P>(
     case 2:
       return (reader.readDateTime(offset)) as P;
     case 3:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 4:
       return (reader.readBool(offset)) as P;
     case 5:
-      return (reader.readStringOrNull(offset) ?? '') as P;
+      return (reader.readBool(offset)) as P;
     case 6:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset) ?? '') as P;
     case 7:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 8:
       return (_AppNotificationstatusValueEnumMap[
               reader.readByteOrNull(offset)] ??
           NotificationStatus.unread) as P;
-    case 8:
-      return (reader.readString(offset)) as P;
     case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
       return (_AppNotificationtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           NotificationType.limit) as P;
     default:
@@ -627,6 +656,73 @@ extension AppNotificationQueryWhere
       ));
     });
   }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterWhereClause>
+      dedupeKeyIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'dedupeKey',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterWhereClause>
+      dedupeKeyIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'dedupeKey',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterWhereClause>
+      dedupeKeyEqualTo(String? dedupeKey) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'dedupeKey',
+        value: [dedupeKey],
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterWhereClause>
+      dedupeKeyNotEqualTo(String? dedupeKey) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dedupeKey',
+              lower: [],
+              upper: [dedupeKey],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dedupeKey',
+              lower: [dedupeKey],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dedupeKey',
+              lower: [dedupeKey],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'dedupeKey',
+              lower: [],
+              upper: [dedupeKey],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension AppNotificationQueryFilter
@@ -955,6 +1051,160 @@ extension AppNotificationQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'dedupeKey',
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'dedupeKey',
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dedupeKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'dedupeKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'dedupeKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'dedupeKey',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'dedupeKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'dedupeKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'dedupeKey',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'dedupeKey',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'dedupeKey',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterFilterCondition>
+      dedupeKeyIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'dedupeKey',
+        value: '',
       ));
     });
   }
@@ -1544,6 +1794,20 @@ extension AppNotificationQuerySortBy
   }
 
   QueryBuilder<AppNotification, AppNotification, QAfterSortBy>
+      sortByDedupeKey() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dedupeKey', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterSortBy>
+      sortByDedupeKeyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dedupeKey', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterSortBy>
       sortByHasAction() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasAction', Sort.asc);
@@ -1680,6 +1944,20 @@ extension AppNotificationQuerySortThenBy
   }
 
   QueryBuilder<AppNotification, AppNotification, QAfterSortBy>
+      thenByDedupeKey() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dedupeKey', Sort.asc);
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterSortBy>
+      thenByDedupeKeyDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'dedupeKey', Sort.desc);
+    });
+  }
+
+  QueryBuilder<AppNotification, AppNotification, QAfterSortBy>
       thenByHasAction() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'hasAction', Sort.asc);
@@ -1807,6 +2085,13 @@ extension AppNotificationQueryWhereDistinct
     });
   }
 
+  QueryBuilder<AppNotification, AppNotification, QDistinct> distinctByDedupeKey(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'dedupeKey', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<AppNotification, AppNotification, QDistinct>
       distinctByHasAction() {
     return QueryBuilder.apply(this, (query) {
@@ -1878,6 +2163,12 @@ extension AppNotificationQueryProperty
       createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<AppNotification, String?, QQueryOperations> dedupeKeyProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'dedupeKey');
     });
   }
 

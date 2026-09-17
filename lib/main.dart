@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
@@ -15,6 +17,7 @@ import 'data/files/text_file_picker.dart';
 import 'data/notifications/firebase_push_notification_service.dart';
 import 'data/notifications/flutter_local_notification_service.dart';
 import 'data/notifications/notification_background_scheduler.dart';
+import 'data/notifications/notification_check_runner.dart';
 import 'data/repositories/client_repository.dart';
 import 'data/repositories/isar_client_repository.dart';
 import 'data/repositories/isar_contract_draft_repository.dart';
@@ -26,6 +29,7 @@ import 'data/repositories/invoice_repository.dart';
 import 'data/repositories/isar_notification_repository.dart';
 import 'data/repositories/isar_risk_marker_repository.dart';
 import 'data/repositories/notification_repository.dart';
+import 'data/repositories/notification_settings_repository.dart';
 import 'data/repositories/isar_risk_report_repository.dart';
 import 'data/repositories/isar_transaction_repository.dart';
 import 'data/repositories/shared_prefs_contractor_profile_repository.dart';
@@ -57,6 +61,8 @@ Future<void> main() async {
     final riskAnalyzer = RiskAnalyzerUseCase(await riskMarkerRepository.getAll());
 
     final notificationRepository = IsarNotificationRepository(isar);
+    final notificationSettingsRepository =
+        SharedPrefsNotificationSettingsRepository();
     final notificationService = FlutterLocalNotificationService();
     await _initializeNotifications(notificationService);
 
@@ -102,8 +108,45 @@ Future<void> main() async {
         dataResetService: dataResetService,
       ),
     );
+
+    // Проверка условий уведомлений при запуске: на настольных платформах
+    // фоновые задачи workmanager недоступны, поэтому это основной путь
+    // формирования уведомлений. Выполняется после старта, не блокируя UI.
+    unawaited(
+      _runStartupNotificationCheck(
+        transactionRepository: transactionRepository,
+        invoiceRepository: invoiceRepository,
+        notificationRepository: notificationRepository,
+        settingsRepository: notificationSettingsRepository,
+        notificationService: notificationService,
+      ),
+    );
   } catch (error) {
     runApp(const _StartupErrorApp());
+  }
+}
+
+/// Прогоняет проверку уведомлений при запуске приложения.
+///
+/// Ошибки подавляются: сбой проверки не должен мешать работе приложения.
+Future<void> _runStartupNotificationCheck({
+  required IsarTransactionRepository transactionRepository,
+  required IsarInvoiceRepository invoiceRepository,
+  required IsarNotificationRepository notificationRepository,
+  required SharedPrefsNotificationSettingsRepository settingsRepository,
+  required FlutterLocalNotificationService notificationService,
+}) async {
+  try {
+    final runner = NotificationCheckRunner(
+      transactionRepository: transactionRepository,
+      invoiceRepository: invoiceRepository,
+      notificationRepository: notificationRepository,
+      settingsRepository: settingsRepository,
+      notificationService: notificationService,
+    );
+    await runner.run();
+  } catch (error) {
+    debugPrint('Проверка уведомлений при запуске не удалась: $error');
   }
 }
 

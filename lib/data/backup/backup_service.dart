@@ -592,6 +592,7 @@ class BackupService implements BackupGateway {
     'createdAt': n.createdAt.toIso8601String(),
     'payload': n.payload,
     'actionLabel': n.actionLabel,
+    'dedupeKey': n.dedupeKey,
     'readAt': n.readAt?.toIso8601String(),
   };
 
@@ -608,6 +609,7 @@ class BackupService implements BackupGateway {
       ),
       payload: _asString(json['payload']),
       actionLabel: _asString(json['actionLabel']),
+      dedupeKey: json['dedupeKey'] is String ? json['dedupeKey'] as String : null,
       readAt: _asDateOrNull(json['readAt']),
     );
     notification.id = _asId(json['id']);
