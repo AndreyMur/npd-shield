@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/client.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../domain/documents/my_tax_deep_link.dart';
@@ -122,34 +124,28 @@ class _ClientFormScreenState extends State<ClientFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            TextFormField(
+            AppTextFormField(
               key: const Key('client_name_field'),
               controller: _nameController,
               validator: _nameValidator,
               textCapitalization: TextCapitalization.words,
-              decoration: const InputDecoration(
-                labelText: 'Наименование или ФИО',
-                hintText: 'ООО «Ромашка» или Иванов Иван Иванович',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Наименование или ФИО',
+              hint: 'ООО «Ромашка» или Иванов Иван Иванович',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('client_inn_field'),
               controller: _innController,
               validator: _innValidator,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'ИНН',
-                helperText: '10 цифр — юрлицо, 12 — физлицо',
-                border: OutlineInputBorder(),
-              ),
+              label: 'ИНН',
+              helper: '10 цифр — юрлицо, 12 — физлицо',
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             Text('Тип клиента', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             SegmentedButton<ClientType>(
               key: const Key('client_type_selector'),
               segments: [
@@ -168,37 +164,33 @@ class _ClientFormScreenState extends State<ClientFormScreen> {
               onSelectionChanged: (selection) =>
                   setState(() => _type = selection.first),
             ),
-            const SizedBox(height: 20),
-            TextFormField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextFormField(
               key: const Key('client_contacts_field'),
               controller: _contactsController,
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Контакты',
-                hintText: 'Телефон, почта, контактное лицо',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Контакты',
+              hint: 'Телефон, почта, контактное лицо',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('client_notes_field'),
               controller: _notesController,
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Заметки',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Заметки',
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
               key: const Key('client_save_button'),
+              label: _isEditing ? 'Сохранить' : 'Добавить клиента',
+              icon: Icons.check,
+              expanded: true,
+              loading: _saving,
               onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.check),
-              label: Text(_isEditing ? 'Сохранить' : 'Добавить клиента'),
             ),
           ],
         ),

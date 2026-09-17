@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/app_notification.dart';
 import '../../data/notifications/notification_service.dart';
 import '../../data/repositories/notification_repository.dart';
@@ -278,10 +280,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
   Widget _buildTypeFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        0,
+      ),
       child: Row(
         children: [
-          _FilterChip(
+          AppFilterChip(
             key: const Key('notification_type_filter_all'),
             label: 'Все',
             selected: _typeFilter == null,
@@ -289,8 +296,8 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
           ),
           for (final type in NotificationType.values)
             Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _FilterChip(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: AppFilterChip(
                 key: Key('notification_type_filter_${type.name}'),
                 label: type.label,
                 selected: _typeFilter == type,
@@ -305,26 +312,37 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
   Widget _buildStatusFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
+      ),
       child: Row(
         children: [
-          _FilterChip(
+          AppFilterChip(
             key: const Key('notification_status_filter_all'),
             label: 'Все статусы',
             selected: _statusFilter == null,
             onSelected: () => _selectStatus(null),
           ),
-          _FilterChip(
-            key: const Key('notification_status_filter_unread'),
-            label: 'Непрочитанные',
-            selected: _statusFilter == NotificationStatus.unread,
-            onSelected: () => _selectStatus(NotificationStatus.unread),
+          Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.xs),
+            child: AppFilterChip(
+              key: const Key('notification_status_filter_unread'),
+              label: 'Непрочитанные',
+              selected: _statusFilter == NotificationStatus.unread,
+              onSelected: () => _selectStatus(NotificationStatus.unread),
+            ),
           ),
-          _FilterChip(
-            key: const Key('notification_status_filter_read'),
-            label: 'Прочитанные',
-            selected: _statusFilter == NotificationStatus.read,
-            onSelected: () => _selectStatus(NotificationStatus.read),
+          Padding(
+            padding: const EdgeInsets.only(left: AppSpacing.xs),
+            child: AppFilterChip(
+              key: const Key('notification_status_filter_read'),
+              label: 'Прочитанные',
+              selected: _statusFilter == NotificationStatus.read,
+              onSelected: () => _selectStatus(NotificationStatus.read),
+            ),
           ),
         ],
       ),
@@ -334,15 +352,22 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
   Widget _buildDateFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        AppSpacing.xs,
+      ),
       child: Row(
         children: [
           for (final filter in NotificationDateFilter.values)
             Padding(
               padding: EdgeInsets.only(
-                left: filter == NotificationDateFilter.all ? 0 : 8,
+                left: filter == NotificationDateFilter.all
+                    ? 0
+                    : AppSpacing.xs,
               ),
-              child: _FilterChip(
+              child: AppFilterChip(
                 key: Key('notification_date_filter_${filter.name}'),
                 label: filter.label,
                 selected: _dateFilter == filter,
@@ -356,31 +381,27 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(semanticLabel: 'Загрузка уведомлений');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить уведомления'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('notification_center_retry'),
-              onPressed: _load,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить уведомления',
+        retryKey: const Key('notification_center_retry'),
+        onRetry: _load,
       );
     }
     final entries = _buildEntries();
     if (entries.isEmpty) {
-      return Center(
-        child: Text(
-          _notifications.isEmpty ? 'Уведомлений пока нет' : 'Ничего не найдено',
-          key: const Key('notification_center_empty'),
-        ),
+      final isEmpty = _notifications.isEmpty;
+      return AppEmptyState(
+        key: const Key('notification_center_empty'),
+        icon: isEmpty
+            ? Icons.notifications_none_outlined
+            : Icons.search_off,
+        title: isEmpty ? 'Уведомлений пока нет' : 'Ничего не найдено',
+        message: isEmpty
+            ? 'Здесь появятся напоминания о лимите, счетах и аномалиях.'
+            : null,
       );
     }
     return RefreshIndicator(
@@ -388,13 +409,18 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
       child: ListView.builder(
         key: const Key('notification_center_list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         itemCount: entries.length,
         itemBuilder: (context, index) {
           final entry = entries[index];
           if (entry.group != null) return _buildGroupHeader(entry.group!);
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: _buildCard(entry.notification!),
           );
         },
@@ -417,9 +443,15 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   Widget _buildGroupHeader(NotificationGroup group) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Padding(
       key: Key('notification_group_${group.group.name}'),
-      padding: const EdgeInsets.fromLTRB(4, 12, 4, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxs,
+        AppSpacing.sm,
+        AppSpacing.xxs,
+        AppSpacing.xs,
+      ),
       child: Semantics(
         header: true,
         child: Row(
@@ -432,7 +464,7 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
             ),
             Text(
               '${group.notifications.length}',
-              style: theme.textTheme.labelSmall,
+              style: theme.textTheme.labelSmall?.copyWith(color: tokens.muted),
             ),
           ],
         ),
@@ -463,26 +495,4 @@ class _CenterEntry {
   const _CenterEntry(this.notification) : group = null;
 
   const _CenterEntry.group(this.group) : notification = null;
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-    );
-  }
 }

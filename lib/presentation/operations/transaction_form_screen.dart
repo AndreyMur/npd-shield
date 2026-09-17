@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -182,13 +184,14 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
+          child: AppButton(
             key: const Key('transaction_pick_client_button'),
+            label: selected
+                ? 'Клиент из справочника'
+                : 'Выбрать из справочника',
+            icon: Icons.people_outline,
+            variant: AppButtonVariant.secondary,
             onPressed: _pickClient,
-            icon: const Icon(Icons.people_outline, size: 18),
-            label: Text(
-              selected ? 'Клиент из справочника' : 'Выбрать из справочника',
-            ),
           ),
         ),
         if (selected)
@@ -212,10 +215,10 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             Text('Тип операции', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             SegmentedButton<TransactionType>(
               key: const Key('transaction_type_selector'),
               segments: [
@@ -234,42 +237,36 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               onSelectionChanged: (selection) =>
                   setState(() => _type = selection.first),
             ),
-            const SizedBox(height: 20),
-            TextFormField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextFormField(
               key: const Key('transaction_amount_field'),
               controller: _amountController,
               validator: _amountValidator,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Сумма, ₽',
-                hintText: 'Например, 15000',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Сумма, ₽',
+              hint: 'Например, 15000',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('transaction_date_field'),
               controller: _dateController,
               validator: _dateValidator,
-              decoration: InputDecoration(
-                labelText: 'Дата',
-                hintText: 'ДД.ММ.ГГГГ',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  key: const Key('transaction_date_picker'),
-                  tooltip: 'Выбрать дату',
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  onPressed: _pickDate,
-                ),
+              label: 'Дата',
+              hint: 'ДД.ММ.ГГГГ',
+              suffixIcon: IconButton(
+                key: const Key('transaction_date_picker'),
+                tooltip: 'Выбрать дату',
+                icon: const Icon(Icons.calendar_today_outlined),
+                onPressed: _pickDate,
               ),
               onChanged: (value) {
                 final parsed = parseContractDate(value);
                 if (parsed != null) setState(() => _date = parsed);
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             Text('Сфера деятельности', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             SegmentedButton<TransactionSphere>(
               key: const Key('transaction_sphere_selector'),
               segments: [
@@ -288,62 +285,52 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
               onSelectionChanged: (selection) =>
                   setState(() => _sphere = selection.first),
             ),
-            const SizedBox(height: 20),
-            TextFormField(
+            const SizedBox(height: AppSpacing.lg),
+            AppTextFormField(
               key: const Key('transaction_category_field'),
               controller: _categoryController,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Категория',
-                hintText: 'Например, Материалы',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Категория',
+              hint: 'Например, Материалы',
             ),
             if (widget.clientRepository != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               _buildClientPickerRow(),
             ],
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('transaction_client_name_field'),
               controller: _clientNameController,
               textCapitalization: TextCapitalization.words,
               onChanged: (_) => _clearClientSelection(),
-              decoration: const InputDecoration(
-                labelText: 'Контрагент',
-                hintText: 'Наименование или ФИО',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Контрагент',
+              hint: 'Наименование или ФИО',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('transaction_client_inn_field'),
               controller: _clientInnController,
               keyboardType: TextInputType.number,
               onChanged: (_) => _clearClientSelection(),
-              decoration: const InputDecoration(
-                labelText: 'ИНН контрагента',
-                border: OutlineInputBorder(),
-              ),
+              label: 'ИНН контрагента',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('transaction_comment_field'),
               controller: _commentController,
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Комментарий',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Комментарий',
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
               key: const Key('transaction_save_button'),
+              label: _isEditing ? 'Сохранить' : 'Добавить операцию',
+              icon: Icons.check,
+              expanded: true,
+              loading: _saving,
               onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.check),
-              label: Text(_isEditing ? 'Сохранить' : 'Добавить операцию'),
             ),
           ],
         ),

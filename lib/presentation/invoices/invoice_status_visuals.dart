@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/app_chip.dart';
 import '../../data/models/invoice.dart';
 
 /// Цвет и иконка, которыми статус счёта отображается в интерфейсе.
@@ -21,26 +23,26 @@ InvoiceStatusVisuals invoiceStatusVisuals(
   BuildContext context,
   InvoiceStatus status,
 ) {
-  final scheme = Theme.of(context).colorScheme;
+  final tokens = AppTokens.of(context);
   return switch (status) {
     InvoiceStatus.draft => InvoiceStatusVisuals(
-      color: scheme.outline,
+      color: tokens.muted,
       icon: Icons.edit_note_outlined,
     ),
     InvoiceStatus.sent => InvoiceStatusVisuals(
-      color: scheme.primary,
+      color: tokens.primary,
       icon: Icons.send_outlined,
     ),
-    InvoiceStatus.paid => const InvoiceStatusVisuals(
-      color: Color(0xFF2E7D32),
+    InvoiceStatus.paid => InvoiceStatusVisuals(
+      color: tokens.success,
       icon: Icons.check_circle_outline,
     ),
     InvoiceStatus.overdue => InvoiceStatusVisuals(
-      color: scheme.error,
+      color: tokens.destructive,
       icon: Icons.warning_amber_rounded,
     ),
     InvoiceStatus.cancelled => InvoiceStatusVisuals(
-      color: scheme.outline,
+      color: tokens.muted,
       icon: Icons.block_outlined,
     ),
   };
@@ -55,19 +57,10 @@ class InvoiceStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visuals = invoiceStatusVisuals(context, status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: visuals.color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status.label,
-        style: Theme.of(context).textTheme.labelSmall!.copyWith(
-          color: visuals.color,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+    return AppStatusChip(
+      label: status.label,
+      color: visuals.color,
+      icon: visuals.icon,
     );
   }
 }

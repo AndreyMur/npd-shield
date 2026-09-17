@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/invoice.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/invoice_repository.dart';
@@ -196,7 +198,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
             child: _buildSummary(),
           ),
           Expanded(child: _buildList()),
@@ -207,88 +214,71 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Widget _buildSummary() {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final overdue = _overdue;
-    return Card(
+    return AppCard(
       key: const Key('invoices_summary'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Дебиторская задолженность',
-              style: theme.textTheme.bodyMedium!.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+      semanticLabel:
+          'Дебиторская задолженность '
+          '${formatReceiptAmount(_outstandingTotal)}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Дебиторская задолженность',
+            style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            formatReceiptAmount(_outstandingTotal),
+            key: const Key('invoices_outstanding_total'),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: tokens.primary,
             ),
-            const SizedBox(height: 4),
-            Text(
-              formatReceiptAmount(_outstandingTotal),
-              key: const Key('invoices_outstanding_total'),
-              style: theme.textTheme.headlineSmall!.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          ),
+          if (overdue.count > 0) ...[
+            const SizedBox(height: AppSpacing.sm),
+            StatusBanner(
+              key: const Key('invoices_overdue_summary'),
+              type: StatusBannerType.danger,
+              message:
+                  'Просрочено ${overdue.count} · '
+                  '${formatReceiptAmount(overdue.amount)}',
             ),
-            if (overdue.count > 0) ...[
-              const SizedBox(height: 8),
-              Row(
-                key: const Key('invoices_overdue_summary'),
-                children: [
-                  Icon(
-                    Icons.warning_amber_rounded,
-                    size: 18,
-                    color: theme.colorScheme.error,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Просрочено ${overdue.count} · '
-                      '${formatReceiptAmount(overdue.amount)}',
-                      style: theme.textTheme.bodyMedium!.copyWith(
-                        color: theme.colorScheme.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildList() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(semanticLabel: 'Загрузка счетов');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить счета'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('invoices_retry'),
-              onPressed: _reload,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить счета',
+        retryKey: const Key('invoices_retry'),
+        onRetry: _reload,
       );
     }
     if (_invoices.isEmpty) {
-      return const Center(
-        child: Text(
-          'Счетов пока нет',
-          key: Key('invoices_empty'),
-        ),
+      return const AppEmptyState(
+        key: Key('invoices_empty'),
+        icon: Icons.receipt_long_outlined,
+        title: 'Счетов пока нет',
+        message: 'Выставьте первый счёт и следите за оплатой.',
       );
     }
     return ListView.builder(
       key: const Key('invoices_list'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        88,
+      ),
       itemCount: _invoices.length,
       itemBuilder: (context, index) => _buildTile(_invoices[index]),
     );
@@ -296,6 +286,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   Widget _buildTile(Invoice invoice) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final status = invoice.effectiveStatus(now: _now);
     final visuals = invoiceStatusVisuals(context, status);
     final overdue = status == InvoiceStatus.overdue;
@@ -311,97 +302,101 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
       subtitleParts.add('Оплачено ${formatReceiptAmount(invoice.paidAmount)}');
     }
 
-    return Card(
-      key: Key('invoice_entry_${invoice.id}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      color: overdue
-          ? theme.colorScheme.errorContainer.withValues(alpha: 0.3)
-          : null,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: AppCard(
+        key: Key('invoice_entry_${invoice.id}'),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.xxs,
+          AppSpacing.sm,
+        ),
+        borderColor: overdue ? tokens.destructive.withValues(alpha: 0.5) : null,
+        semanticLabel:
+            'Счёт № ${invoice.number}. ${status.label}. '
+            '${formatReceiptAmount(invoice.amount)}. '
+            '${client.isEmpty ? 'Без клиента' : client}.',
         onTap: () => _openForm(invoice: invoice),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                backgroundColor: visuals.color.withValues(alpha: 0.12),
-                child: Icon(visuals.icon, color: visuals.color),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Счёт № ${invoice.number}',
-                            style: theme.textTheme.titleMedium,
-                          ),
-                        ),
-                        InvoiceStatusChip(
-                          key: Key('invoice_status_${invoice.id}'),
-                          status: status,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      client.isEmpty ? 'Без клиента' : client,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    Text(
-                      subtitleParts.join(' · '),
-                      style: theme.textTheme.bodySmall!.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(
+              backgroundColor: visuals.color.withValues(alpha: 0.12),
+              child: Icon(visuals.icon, color: visuals.color),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    formatReceiptAmount(invoice.amount),
-                    key: Key('invoice_amount_${invoice.id}'),
-                    style: theme.textTheme.titleMedium!.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  PopupMenuButton<_InvoiceAction>(
-                    key: Key('invoice_menu_${invoice.id}'),
-                    tooltip: 'Действия',
-                    onSelected: (action) {
-                      switch (action) {
-                        case _InvoiceAction.markPaid:
-                          _markPaid(invoice);
-                        case _InvoiceAction.delete:
-                          _delete(invoice);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      if (canPay)
-                        PopupMenuItem(
-                          key: Key('invoice_mark_paid_${invoice.id}'),
-                          value: _InvoiceAction.markPaid,
-                          child: const Text('Отметить оплаченным'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Счёт № ${invoice.number}',
+                          style: theme.textTheme.titleMedium,
                         ),
-                      PopupMenuItem(
-                        key: Key('invoice_delete_${invoice.id}'),
-                        value: _InvoiceAction.delete,
-                        child: const Text('Удалить'),
+                      ),
+                      InvoiceStatusChip(
+                        key: Key('invoice_status_${invoice.id}'),
+                        status: status,
                       ),
                     ],
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    client.isEmpty ? 'Без клиента' : client,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  Text(
+                    subtitleParts.join(' · '),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  formatReceiptAmount(invoice.amount),
+                  key: Key('invoice_amount_${invoice.id}'),
+                  style: theme.textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                PopupMenuButton<_InvoiceAction>(
+                  key: Key('invoice_menu_${invoice.id}'),
+                  tooltip: 'Действия',
+                  onSelected: (action) {
+                    switch (action) {
+                      case _InvoiceAction.markPaid:
+                        _markPaid(invoice);
+                      case _InvoiceAction.delete:
+                        _delete(invoice);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    if (canPay)
+                      PopupMenuItem(
+                        key: Key('invoice_mark_paid_${invoice.id}'),
+                        value: _InvoiceAction.markPaid,
+                        child: const Text('Отметить оплаченным'),
+                      ),
+                    PopupMenuItem(
+                      key: Key('invoice_delete_${invoice.id}'),
+                      value: _InvoiceAction.delete,
+                      child: const Text('Удалить'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

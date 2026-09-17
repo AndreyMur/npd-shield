@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/client.dart';
 import '../../data/models/document.dart';
 import '../../data/models/transaction.dart';
@@ -109,12 +111,17 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         children: [
           _buildInfoCard(),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
           _buildOperationsSection(),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
           _buildDocumentsSection(),
         ],
       ),
@@ -131,58 +138,59 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
       if (_client.notes.trim().isNotEmpty) 'Заметки': _client.notes.trim(),
     };
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  child: Icon(
-                    _client.type == ClientType.legal
-                        ? Icons.business_outlined
-                        : Icons.person_outline,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    _client.name,
-                    key: const Key('client_details_name'),
-                    style: theme.textTheme.titleLarge,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            for (final entry in details.entries)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: 90,
-                      child: Text(
-                        entry.key,
-                        style: theme.textTheme.bodyMedium!.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        entry.value,
-                        style: theme.textTheme.bodyMedium,
-                      ),
-                    ),
-                  ],
+    final tokens = AppTokens.of(context);
+    final isLegal = _client.type == ClientType.legal;
+    final accent = isLegal ? tokens.primary : tokens.sphereLogistics;
+    return AppCard(
+      semanticLabel: 'Карточка клиента ${_client.name}',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: accent.withValues(alpha: 0.12),
+                child: Icon(
+                  isLegal ? Icons.business_outlined : Icons.person_outline,
+                  color: accent,
                 ),
               ),
-          ],
-        ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  _client.name,
+                  key: const Key('client_details_name'),
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final entry in details.entries)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 90,
+                    child: Text(
+                      entry.key,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: tokens.muted,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      entry.value,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -193,18 +201,24 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Операции', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         if (_loading)
-          const Center(child: Padding(
-            padding: EdgeInsets.all(16),
-            child: CircularProgressIndicator(),
-          ))
+          const AppLoadingState(
+            itemCount: 2,
+            semanticLabel: 'Загрузка операций клиента',
+          )
         else if (_error != null)
-          _ErrorBox(onRetry: _reload)
+          AppErrorState(
+            message: 'Не удалось загрузить историю',
+            retryKey: const Key('client_details_retry'),
+            onRetry: _reload,
+          )
         else if (_transactions.isEmpty)
-          _EmptyBox(
-            key: const Key('client_details_operations_empty'),
-            message: 'Операций с этим клиентом пока нет',
+          const AppEmptyState(
+            key: Key('client_details_operations_empty'),
+            compact: true,
+            icon: Icons.receipt_long_outlined,
+            title: 'Операций с этим клиентом пока нет',
           )
         else
           for (final transaction in _transactions)
@@ -219,15 +233,17 @@ class _ClientDetailsScreenState extends State<ClientDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Документы', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         if (_loading)
           const SizedBox.shrink()
         else if (_error != null)
           const SizedBox.shrink()
         else if (_documents.isEmpty)
-          _EmptyBox(
-            key: const Key('client_details_documents_empty'),
-            message: 'Документов по этому клиенту пока нет',
+          const AppEmptyState(
+            key: Key('client_details_documents_empty'),
+            compact: true,
+            icon: Icons.description_outlined,
+            title: 'Документов по этому клиенту пока нет',
           )
         else
           for (final document in _documents) _DocumentTile(document: document),
@@ -244,29 +260,48 @@ class _TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final isIncome = transaction.type.isIncome;
-    final color = isIncome
-        ? const Color(0xFF2E7D32)
-        : theme.colorScheme.error;
-    return Card(
-      key: Key('client_details_operation_${transaction.id}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(
-          isIncome ? Icons.trending_up : Icons.trending_down,
-          color: color,
-        ),
-        title: Text(
-          '${isIncome ? '+' : '−'}${formatReceiptAmount(transaction.amount)}',
-          style: theme.textTheme.titleMedium!.copyWith(color: color),
-        ),
-        subtitle: Text(
-          [
-            formatContractDate(transaction.date),
-            transaction.sphere.label,
-            if (transaction.category.trim().isNotEmpty)
-              transaction.category.trim(),
-          ].join(' · '),
+    final color = isIncome ? tokens.success : tokens.destructive;
+    final subtitle = [
+      formatContractDate(transaction.date),
+      transaction.sphere.label,
+      if (transaction.category.trim().isNotEmpty)
+        transaction.category.trim(),
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: AppCard(
+        key: Key('client_details_operation_${transaction.id}'),
+        semanticLabel:
+            '${isIncome ? 'Доход' : 'Расход'} '
+            '${formatReceiptAmount(transaction.amount)}. $subtitle',
+        child: Row(
+          children: [
+            Icon(
+              isIncome ? Icons.trending_up : Icons.trending_down,
+              color: color,
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${isIncome ? '+' : '−'}${formatReceiptAmount(transaction.amount)}',
+                    style: theme.textTheme.titleMedium!.copyWith(color: color),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -280,63 +315,41 @@ class _DocumentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      key: Key('client_details_document_${document.id}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const Icon(Icons.description_outlined),
-        title: Text(
-          '${document.type.label} · ${formatReceiptAmount(document.amount)}',
-        ),
-        subtitle: Text(
-          [
-            formatContractDate(document.date),
-            if (document.contractNumber.trim().isNotEmpty)
-              '№ ${document.contractNumber.trim()}',
-          ].join(' · '),
-        ),
-      ),
-    );
-  }
-}
-
-class _EmptyBox extends StatelessWidget {
-  final String message;
-
-  const _EmptyBox({super.key, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          message,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ),
-    );
-  }
-}
-
-class _ErrorBox extends StatelessWidget {
-  final VoidCallback onRetry;
-
-  const _ErrorBox({required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final subtitle = [
+      formatContractDate(document.date),
+      if (document.contractNumber.trim().isNotEmpty)
+        '№ ${document.contractNumber.trim()}',
+    ].join(' · ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: AppCard(
+        key: Key('client_details_document_${document.id}'),
+        semanticLabel:
+            '${document.type.label} '
+            '${formatReceiptAmount(document.amount)}. $subtitle',
+        child: Row(
           children: [
-            const Text('Не удалось загрузить историю'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('client_details_retry'),
-              onPressed: onRetry,
-              child: const Text('Повторить'),
+            Icon(Icons.description_outlined, color: tokens.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${document.type.label} · ${formatReceiptAmount(document.amount)}',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

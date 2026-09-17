@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/invoice.dart';
 import '../../data/models/transaction.dart';
 import '../../domain/documents/receipt.dart';
@@ -77,66 +79,77 @@ class _InvoicePaymentDialogState extends State<_InvoicePaymentDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final partial = parseReceiptAmount(_amountController.text) < _outstanding;
     return AlertDialog(
       title: const Text('Оплата счёта'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Остаток к оплате: ${formatReceiptAmount(_outstanding)}',
-            key: const Key('invoice_payment_outstanding'),
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            key: const Key('invoice_payment_amount_field'),
-            controller: _amountController,
-            autofocus: true,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (_) => setState(() => _error = null),
-            decoration: InputDecoration(
-              labelText: 'Сумма платежа, ₽',
-              border: const OutlineInputBorder(),
-              errorText: _error,
-            ),
-          ),
-          if (partial) ...[
-            const SizedBox(height: 8),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             Text(
-              'Частичная оплата: остаток уменьшится',
-              key: const Key('invoice_payment_partial_hint'),
-              style: theme.textTheme.bodySmall!.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              'Остаток к оплате: ${formatReceiptAmount(_outstanding)}',
+              key: const Key('invoice_payment_outstanding'),
+              style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextField(
+              key: const Key('invoice_payment_amount_field'),
+              controller: _amountController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
               ),
+              onChanged: (_) => setState(() => _error = null),
+              label: 'Сумма платежа, ₽',
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                _error!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: tokens.destructive,
+                ),
+              ),
+            ],
+            if (partial) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Частичная оплата: остаток уменьшится',
+                key: const Key('invoice_payment_partial_hint'),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: tokens.muted,
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            Text('Сфера дохода', style: theme.textTheme.titleSmall),
+            const SizedBox(height: AppSpacing.xs),
+            SegmentedButton<TransactionSphere>(
+              key: const Key('invoice_payment_sphere_selector'),
+              segments: [
+                for (final sphere in TransactionSphere.values)
+                  ButtonSegment(value: sphere, label: Text(sphere.label)),
+              ],
+              selected: {_sphere},
+              onSelectionChanged: (selection) =>
+                  setState(() => _sphere = selection.first),
             ),
           ],
-          const SizedBox(height: 16),
-          Text('Сфера дохода', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
-          SegmentedButton<TransactionSphere>(
-            key: const Key('invoice_payment_sphere_selector'),
-            segments: [
-              for (final sphere in TransactionSphere.values)
-                ButtonSegment(value: sphere, label: Text(sphere.label)),
-            ],
-            selected: {_sphere},
-            onSelectionChanged: (selection) =>
-                setState(() => _sphere = selection.first),
-          ),
-        ],
+        ),
       ),
       actions: [
-        TextButton(
+        AppButton(
           key: const Key('invoice_payment_cancel'),
+          label: 'Отмена',
+          variant: AppButtonVariant.text,
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Отмена'),
         ),
-        FilledButton(
+        AppButton(
           key: const Key('invoice_payment_confirm'),
+          label: 'Отметить оплату',
           onPressed: _confirm,
-          child: const Text('Отметить оплату'),
         ),
       ],
     );

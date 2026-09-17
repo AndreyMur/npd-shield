@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/document.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
@@ -219,20 +221,26 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
         children: [
           const _DisclaimerBanner(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
             child: _buildSearchField(),
           ),
           _buildTypeFilters(),
           _buildStatusFilters(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              0,
+            ),
             child: Row(
               children: [
-                Icon(
-                  Icons.sort,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                Icon(Icons.sort, size: 16, color: AppTokens.of(context).muted),
                 const SizedBox(width: 6),
                 Text(
                   _sort.label,
@@ -242,7 +250,7 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xxs),
           Expanded(child: _buildBody()),
         ],
       ),
@@ -262,28 +270,25 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
         _setQuery(value);
       },
       fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-        return TextField(
+        return AppTextField(
           key: const Key('document_search_field'),
           controller: controller,
           focusNode: focusNode,
           onChanged: _setQuery,
           onSubmitted: (_) => onFieldSubmitted(),
-          decoration: InputDecoration(
-            hintText: 'Поиск по контрагенту, сумме, дате',
-            prefixIcon: const Icon(Icons.search),
-            border: const OutlineInputBorder(),
-            suffixIcon: controller.text.isEmpty
-                ? null
-                : IconButton(
-                    key: const Key('document_search_clear'),
-                    tooltip: 'Очистить поиск',
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      controller.clear();
-                      _setQuery('');
-                    },
-                  ),
-          ),
+          hint: 'Поиск по контрагенту, сумме, дате',
+          prefixIcon: const Icon(Icons.search),
+          suffixIcon: controller.text.isEmpty
+              ? null
+              : IconButton(
+                  key: const Key('document_search_clear'),
+                  tooltip: 'Очистить поиск',
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    controller.clear();
+                    _setQuery('');
+                  },
+                ),
         );
       },
       optionsViewBuilder: (context, onSelected, options) {
@@ -317,12 +322,13 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
   }
 
   Widget _buildTypeFilters() {
+    final tokens = AppTokens.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Row(
         children: [
-          _ArchiveFilterChip(
+          AppFilterChip(
             key: const Key('document_type_filter_all'),
             label: 'Все',
             selected: _filter.type == null,
@@ -330,11 +336,21 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
           ),
           for (final type in DocumentType.values)
             Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _ArchiveFilterChip(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: AppFilterChip(
                 key: Key('document_type_filter_${type.name}'),
                 label: type.label,
                 selected: _filter.type == type,
+                accent: type == DocumentType.contract
+                    ? tokens.sphereIt
+                    : type == DocumentType.act
+                        ? tokens.warning
+                        : tokens.success,
+                icon: type == DocumentType.contract
+                    ? Icons.description_outlined
+                    : type == DocumentType.act
+                        ? Icons.assignment_turned_in_outlined
+                        : Icons.receipt_long_outlined,
                 onSelected: () => _selectType(type),
               ),
             ),
@@ -346,10 +362,15 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
   Widget _buildStatusFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
+      ),
       child: Row(
         children: [
-          _ArchiveFilterChip(
+          AppFilterChip(
             key: const Key('document_status_filter_all'),
             label: 'Все статусы',
             selected: _filter.status == null,
@@ -357,8 +378,8 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
           ),
           for (final status in DocumentStatus.values)
             Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _ArchiveFilterChip(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: AppFilterChip(
                 key: Key('document_status_filter_${status.name}'),
                 label: status.label,
                 selected: _filter.status == status,
@@ -372,31 +393,25 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(semanticLabel: 'Загрузка документов');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить документы'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('document_archive_retry'),
-              onPressed: _load,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить документы',
+        retryKey: const Key('document_archive_retry'),
+        onRetry: _load,
       );
     }
     final entries = _entries;
     if (entries.isEmpty) {
-      return Center(
-        child: Text(
-          _documents.isEmpty ? 'Документов пока нет' : 'Ничего не найдено',
-          key: const Key('document_archive_empty'),
-        ),
+      final isEmpty = _documents.isEmpty;
+      return AppEmptyState(
+        key: const Key('document_archive_empty'),
+        icon: isEmpty ? Icons.folder_open_outlined : Icons.search_off,
+        title: isEmpty ? 'Документов пока нет' : 'Ничего не найдено',
+        message: isEmpty
+            ? 'Создайте чек, акт или договор — они появятся здесь.'
+            : null,
       );
     }
     return RefreshIndicator(
@@ -404,14 +419,19 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
       child: ListView.builder(
         key: const Key('document_archive_list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         itemCount: entries.length,
         itemBuilder: (context, index) {
           final entry = entries[index];
           if (entry.isHeader) return _buildGroupHeader(entry);
           final document = entry.document!;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: KeyedSubtree(
               key: Key('document_entry_${document.id}'),
               child: DocumentCard(
@@ -427,29 +447,37 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
 
   Widget _buildGroupHeader(_ArchiveEntry entry) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final title = entry.header!;
     return Padding(
       key: Key('document_group_$title'),
-      padding: const EdgeInsets.fromLTRB(4, 16, 4, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xxs,
+        AppSpacing.md,
+        AppSpacing.xxs,
+        AppSpacing.xs,
+      ),
       child: Semantics(
         header: true,
         child: Row(
           children: [
             CircleAvatar(
               radius: 12,
-              backgroundColor: theme.colorScheme.primaryContainer,
+              backgroundColor: tokens.primary.withValues(alpha: 0.12),
               child: Text(
                 title.substring(0, 1).toUpperCase(),
-                style: theme.textTheme.labelSmall,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: tokens.primary,
+                ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.xs),
             Expanded(
               child: Text(title, style: theme.textTheme.titleSmall),
             ),
             Text(
               '${entry.headerCount}',
-              style: theme.textTheme.labelSmall,
+              style: theme.textTheme.labelSmall?.copyWith(color: tokens.muted),
             ),
           ],
         ),
@@ -491,51 +519,18 @@ class _DisclaimerBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      key: const Key('document_archive_disclaimer'),
-      width: double.infinity,
-      color: theme.colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.info_outline,
-            size: 18,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              kNoLegalForceDisclaimer,
-              style: theme.textTheme.bodySmall,
-            ),
-          ),
-        ],
+    return const Padding(
+      key: Key('document_archive_disclaimer'),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
       ),
-    );
-  }
-}
-
-class _ArchiveFilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _ArchiveFilterChip({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
+      child: StatusBanner(
+        type: StatusBannerType.info,
+        message: kNoLegalForceDisclaimer,
+      ),
     );
   }
 }

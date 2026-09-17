@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
@@ -277,18 +279,33 @@ class _OperationsScreenState extends State<OperationsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
             child: _buildSearchField(),
           ),
           _buildTypeFilters(),
           _buildSphereFilters(),
           _buildPeriodRow(),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.xs,
+              AppSpacing.md,
+              0,
+            ),
             child: _buildClientFilter(),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
             child: _buildSummary(),
           ),
           Expanded(child: _buildList()),
@@ -298,36 +315,34 @@ class _OperationsScreenState extends State<OperationsScreen> {
   }
 
   Widget _buildSearchField() {
-    return TextField(
+    return AppTextField(
       key: const Key('operations_search_field'),
       controller: _searchController,
       onChanged: (value) => setState(() => _search = value),
-      decoration: InputDecoration(
-        hintText: 'Поиск по контрагенту, ИНН, категории, комментарию',
-        prefixIcon: const Icon(Icons.search),
-        border: const OutlineInputBorder(),
-        suffixIcon: _search.isEmpty
-            ? null
-            : IconButton(
-                key: const Key('operations_search_clear'),
-                tooltip: 'Очистить поиск',
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  _searchController.clear();
-                  setState(() => _search = '');
-                },
-              ),
-      ),
+      hint: 'Поиск по контрагенту, ИНН, категории, комментарию',
+      prefixIcon: const Icon(Icons.search),
+      suffixIcon: _search.isEmpty
+          ? null
+          : IconButton(
+              key: const Key('operations_search_clear'),
+              tooltip: 'Очистить поиск',
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                _searchController.clear();
+                setState(() => _search = '');
+              },
+            ),
     );
   }
 
   Widget _buildTypeFilters() {
+    final tokens = AppTokens.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Row(
         children: [
-          _FilterChip(
+          AppFilterChip(
             key: const Key('operation_type_filter_all'),
             label: 'Все типы',
             selected: _typeFilter == null,
@@ -335,11 +350,15 @@ class _OperationsScreenState extends State<OperationsScreen> {
           ),
           for (final type in TransactionType.values)
             Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _FilterChip(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: AppFilterChip(
                 key: Key('operation_type_filter_${type.name}'),
                 label: type.label,
                 selected: _typeFilter == type,
+                accent: type.isIncome ? tokens.success : tokens.destructive,
+                icon: type.isIncome
+                    ? Icons.trending_up
+                    : Icons.trending_down,
                 onSelected: () => _setType(type),
               ),
             ),
@@ -349,12 +368,18 @@ class _OperationsScreenState extends State<OperationsScreen> {
   }
 
   Widget _buildSphereFilters() {
+    final tokens = AppTokens.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
+      ),
       child: Row(
         children: [
-          _FilterChip(
+          AppFilterChip(
             key: const Key('operation_sphere_filter_all'),
             label: 'Все сферы',
             selected: _sphereFilter == null,
@@ -362,11 +387,17 @@ class _OperationsScreenState extends State<OperationsScreen> {
           ),
           for (final sphere in TransactionSphere.values)
             Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _FilterChip(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: AppFilterChip(
                 key: Key('operation_sphere_filter_${sphere.name}'),
                 label: sphere.label,
                 selected: _sphereFilter == sphere,
+                accent: sphere == TransactionSphere.it
+                    ? tokens.sphereIt
+                    : tokens.sphereLogistics,
+                icon: sphere == TransactionSphere.it
+                    ? Icons.code
+                    : Icons.local_shipping,
                 onSelected: () => _setSphere(sphere),
               ),
             ),
@@ -377,7 +408,12 @@ class _OperationsScreenState extends State<OperationsScreen> {
 
   Widget _buildPeriodRow() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.xs,
+        0,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -417,15 +453,29 @@ class _OperationsScreenState extends State<OperationsScreen> {
   }
 
   Widget _buildClientFilter() {
+    final tokens = AppTokens.of(context);
     final options = _clientOptions;
     final value = options.contains(_clientFilter) ? _clientFilter : null;
     return DropdownButtonFormField<String?>(
       key: const Key('operation_client_filter'),
       initialValue: value,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Контрагент',
-        border: OutlineInputBorder(),
         isDense: true,
+        filled: true,
+        fillColor: tokens.surfaceVariant,
+        border: OutlineInputBorder(
+          borderRadius: AppRadius.fieldRadius,
+          borderSide: BorderSide(color: tokens.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: AppRadius.fieldRadius,
+          borderSide: BorderSide(color: tokens.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: AppRadius.fieldRadius,
+          borderSide: BorderSide(color: tokens.primary, width: 1.5),
+        ),
       ),
       items: [
         const DropdownMenuItem<String?>(
@@ -440,71 +490,75 @@ class _OperationsScreenState extends State<OperationsScreen> {
   }
 
   Widget _buildSummary() {
-    return Card(
+    final tokens = AppTokens.of(context);
+    final profitColor = _summary.profit < 0
+        ? tokens.destructive
+        : tokens.success;
+    return AppCard(
       key: const Key('operations_summary'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _SummaryRow(
-              label: 'Доход',
-              value: _summary.income,
-              color: _incomeColor(context),
-              key: const Key('operations_summary_income'),
-            ),
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: 'Расход',
-              value: _summary.expense,
-              color: _expenseColor(context),
-              key: const Key('operations_summary_expense'),
-            ),
-            const Divider(height: 20),
-            _SummaryRow(
-              label: 'Прибыль',
-              value: _summary.profit,
-              color: _profitColor(context, _summary.profit),
-              emphasized: true,
-              key: const Key('operations_summary_profit'),
-            ),
-          ],
-        ),
+      semanticLabel:
+          'Итоги за период. Доход ${formatReceiptAmount(_summary.income)}. '
+          'Расход ${formatReceiptAmount(_summary.expense)}. '
+          'Прибыль ${formatReceiptAmount(_summary.profit)}.',
+      child: Column(
+        children: [
+          _SummaryRow(
+            label: 'Доход',
+            value: _summary.income,
+            color: tokens.success,
+            key: const Key('operations_summary_income'),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _SummaryRow(
+            label: 'Расход',
+            value: _summary.expense,
+            color: tokens.destructive,
+            key: const Key('operations_summary_expense'),
+          ),
+          Divider(height: AppSpacing.lg, color: tokens.border),
+          _SummaryRow(
+            label: 'Прибыль',
+            value: _summary.profit,
+            color: profitColor,
+            emphasized: true,
+            key: const Key('operations_summary_profit'),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildList() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(semanticLabel: 'Загрузка операций');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить операции'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('operations_retry'),
-              onPressed: _reload,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить операции',
+        retryKey: const Key('operations_retry'),
+        onRetry: _reload,
       );
     }
     final visible = _visible;
     if (visible.isEmpty) {
-      return Center(
-        child: Text(
-          _transactions.isEmpty ? 'Операций пока нет' : 'Ничего не найдено',
-          key: const Key('operations_empty'),
-        ),
+      final isEmpty = _transactions.isEmpty;
+      return AppEmptyState(
+        key: const Key('operations_empty'),
+        icon: isEmpty ? Icons.receipt_long_outlined : Icons.search_off,
+        title: isEmpty ? 'Операций пока нет' : 'Ничего не найдено',
+        message: isEmpty
+            ? 'Добавьте первый доход или расход, чтобы видеть итоги.'
+            : null,
       );
     }
     return ListView.builder(
       key: const Key('operations_list'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        88,
+      ),
       itemCount: visible.length,
       itemBuilder: (context, index) => _buildTile(visible[index]),
     );
@@ -512,8 +566,9 @@ class _OperationsScreenState extends State<OperationsScreen> {
 
   Widget _buildTile(Transaction transaction) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final isIncome = transaction.type.isIncome;
-    final color = isIncome ? _incomeColor(context) : _expenseColor(context);
+    final color = isIncome ? tokens.success : tokens.destructive;
     final client = transaction.clientName.trim();
     final subtitleParts = <String>[
       formatContractDate(transaction.date),
@@ -521,47 +576,74 @@ class _OperationsScreenState extends State<OperationsScreen> {
       if (transaction.category.trim().isNotEmpty) transaction.category.trim(),
     ];
 
-    return Card(
-      key: Key('operation_entry_${transaction.id}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: color.withValues(alpha: 0.12),
-          child: Icon(
-            isIncome ? Icons.trending_up : Icons.trending_down,
-            color: color,
-          ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: AppCard(
+        key: Key('operation_entry_${transaction.id}'),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.xxs,
+          AppSpacing.sm,
         ),
-        title: Text(client.isEmpty ? 'Без контрагента' : client),
-        subtitle: Text(subtitleParts.join(' · ')),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+        semanticLabel:
+            '${transaction.type.label} ${formatReceiptAmount(transaction.amount)}'
+            '${client.isEmpty ? '' : ', $client'}. ${subtitleParts.join(', ')}.',
+        onTap: () => _openForm(transaction: transaction),
+        child: Row(
           children: [
-            Text(
-              '${isIncome ? '+' : '−'}${formatReceiptAmount(transaction.amount)}',
-              key: Key('operation_amount_${transaction.id}'),
-              style: theme.textTheme.titleMedium!.copyWith(color: color),
+            CircleAvatar(
+              backgroundColor: color.withValues(alpha: 0.12),
+              child: Icon(
+                isIncome ? Icons.trending_up : Icons.trending_down,
+                color: color,
+              ),
             ),
-            IconButton(
-              key: Key('operation_delete_${transaction.id}'),
-              tooltip: 'Удалить операцию',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: () => _delete(transaction),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    client.isEmpty ? 'Без контрагента' : client,
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitleParts.join(' · '),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  '${isIncome ? '+' : '−'}${formatReceiptAmount(transaction.amount)}',
+                  key: Key('operation_amount_${transaction.id}'),
+                  style: theme.textTheme.titleMedium!.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                IconButton(
+                  key: Key('operation_delete_${transaction.id}'),
+                  tooltip: 'Удалить операцию',
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: () => _delete(transaction),
+                ),
+              ],
             ),
           ],
         ),
-        onTap: () => _openForm(transaction: transaction),
       ),
     );
   }
 }
-
-Color _incomeColor(BuildContext context) => const Color(0xFF2E7D32);
-
-Color _expenseColor(BuildContext context) => Theme.of(context).colorScheme.error;
-
-Color _profitColor(BuildContext context, double profit) =>
-    profit < 0 ? Theme.of(context).colorScheme.error : const Color(0xFF2E7D32);
 
 class _SummaryRow extends StatelessWidget {
   final String label;
@@ -580,6 +662,7 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -587,38 +670,16 @@ class _SummaryRow extends StatelessWidget {
           label,
           style: emphasized
               ? theme.textTheme.titleMedium
-              : theme.textTheme.bodyMedium,
+              : theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
         ),
         Text(
           formatReceiptAmount(value),
           style: (emphasized
                   ? theme.textTheme.titleLarge
                   : theme.textTheme.titleMedium)!
-              .copyWith(color: color),
+              .copyWith(color: color, fontWeight: FontWeight.w700),
         ),
       ],
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
     );
   }
 }

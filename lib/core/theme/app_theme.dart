@@ -32,11 +32,18 @@ class AppTheme {
       onError: tokens.onDestructive,
     );
 
+    OutlineInputBorder fieldBorder(Color color, {double width = 1}) =>
+        OutlineInputBorder(
+          borderRadius: AppRadius.fieldRadius,
+          borderSide: BorderSide(color: color, width: width),
+        );
+
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: tokens.surface,
       extensions: <ThemeExtension<dynamic>>[tokens],
+      iconTheme: IconThemeData(color: tokens.onSurface),
       cardTheme: CardThemeData(
         color: tokens.surface,
         elevation: AppElevation.low,
@@ -56,6 +63,94 @@ class AppTheme {
       dividerTheme: DividerThemeData(
         color: tokens.border,
         space: AppSpacing.lg,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: tokens.surfaceVariant,
+        labelStyle: TextStyle(color: tokens.muted),
+        hintStyle: TextStyle(color: tokens.muted),
+        border: fieldBorder(tokens.border),
+        enabledBorder: fieldBorder(tokens.border),
+        focusedBorder: fieldBorder(tokens.primary, width: 1.5),
+        errorBorder: fieldBorder(tokens.destructive),
+        focusedErrorBorder: fieldBorder(tokens.destructive, width: 1.5),
+        disabledBorder: fieldBorder(tokens.border.withValues(alpha: 0.5)),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: tokens.surfaceVariant,
+        selectedColor: tokens.primary.withValues(alpha: 0.14),
+        side: BorderSide(color: tokens.border),
+        shape: const StadiumBorder(),
+        labelStyle: TextStyle(color: tokens.onSurface),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? tokens.primary.withValues(alpha: 0.14)
+                : tokens.surfaceVariant,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? tokens.primary
+                : tokens.onSurface,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: tokens.border)),
+          shape: const WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+          ),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: tokens.onSurface,
+        contentTextStyle: TextStyle(color: tokens.surface),
+        actionTextColor: tokens.secondary,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.buttonRadius,
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: tokens.surface,
+        shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.cardRadius,
+        ),
+        titleTextStyle: TextStyle(
+          color: tokens.onSurface,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: TextStyle(color: tokens.onSurface),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: tokens.primary,
+        foregroundColor: tokens.onPrimary,
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: tokens.primary,
+          foregroundColor: tokens.onPrimary,
+          minimumSize: const Size(0, AppSpacing.xxl),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonRadius,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: tokens.primary,
+          side: BorderSide(color: tokens.border),
+          minimumSize: const Size(0, AppSpacing.xxl),
+          shape: const RoundedRectangleBorder(
+            borderRadius: AppRadius.buttonRadius,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: tokens.primary),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: tokens.muted,
+        textColor: tokens.onSurface,
       ),
     );
   }
