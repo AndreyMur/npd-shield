@@ -3,12 +3,10 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_gradients.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/transaction_repository.dart';
-
-/// Цветовая палитра сфер для графиков: IT — синий, Логистика — оранжевый.
-const kItColor = Color(0xFF2196F3);
-const kLogisticsColor = Color(0xFFFF9800);
 
 /// Карточка с линейным графиком доходов и переключателем периода.
 class IncomeChartCard extends StatefulWidget {
@@ -80,22 +78,25 @@ class _IncomeChartCardState extends State<IncomeChartCard> {
     final theme = Theme.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Динамика доходов', style: theme.textTheme.titleLarge),
             if (widget.sphere == null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               const Row(
                 children: [
-                  _LegendDot(color: kItColor, label: 'IT'),
-                  SizedBox(width: 16),
-                  _LegendDot(color: kLogisticsColor, label: 'Логистика'),
+                  _LegendDot(color: SphereColors.it, label: 'IT'),
+                  SizedBox(width: AppSpacing.md),
+                  _LegendDot(
+                    color: SphereColors.logistics,
+                    label: 'Логистика',
+                  ),
                 ],
               ),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             SegmentedButton<SeriesPeriod>(
               segments: [
                 for (final period in SeriesPeriod.values)
@@ -109,7 +110,7 @@ class _IncomeChartCardState extends State<IncomeChartCard> {
               ),
               onSelectionChanged: (selection) => _setPeriod(selection.first),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             SizedBox(
               height: 240,
               width: double.infinity,
@@ -173,6 +174,7 @@ class _IncomeLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final length = it?.length ?? logistics?.length ?? 0;
     if (length == 0) {
       return const SizedBox.shrink();
@@ -180,9 +182,9 @@ class _IncomeLineChart extends StatelessWidget {
 
     final lineBars = <LineChartBarData>[
       if (it != null)
-        _buildLine(it!, kItColor),
+        _buildLine(it!, tokens.sphereIt),
       if (logistics != null)
-        _buildLine(logistics!, kLogisticsColor),
+        _buildLine(logistics!, tokens.sphereLogistics),
     ];
 
     final maxValue = [
@@ -193,7 +195,7 @@ class _IncomeLineChart extends StatelessWidget {
     final maxY = maxValue == 0 ? step * 4 : (maxValue / step).ceil() * step;
 
     final axisStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
+      color: tokens.muted,
     );
 
     return LineChart(
@@ -213,7 +215,7 @@ class _IncomeLineChart extends StatelessWidget {
                 if (value > maxY) return const SizedBox.shrink();
                 return SideTitleWidget(
                   meta: meta,
-                  space: 8,
+                  space: AppSpacing.xs,
                   child: Text(_formatAxisNumber(value), style: axisStyle),
                 );
               },
@@ -236,7 +238,7 @@ class _IncomeLineChart extends StatelessWidget {
                 final start = (it ?? logistics)![index].start;
                 return SideTitleWidget(
                   meta: meta,
-                  space: 8,
+                  space: AppSpacing.xs,
                   child: Text(_shortAxisLabel(period, start), style: axisStyle),
                 );
               },
@@ -248,7 +250,7 @@ class _IncomeLineChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: step,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            color: tokens.border,
             strokeWidth: 1,
           ),
         ),
@@ -257,8 +259,8 @@ class _IncomeLineChart extends StatelessWidget {
           touchSpotThreshold: 24,
           touchTooltipData: LineTouchTooltipData(
             getTooltipColor: (spots) => theme.colorScheme.inverseSurface,
-            tooltipBorderRadius: BorderRadius.circular(8),
-            tooltipMargin: 12,
+            tooltipBorderRadius: AppRadius.buttonRadius,
+            tooltipMargin: AppSpacing.sm,
             getTooltipItems: (touchedSpots) => [
               for (final spot in touchedSpots)
                 LineTooltipItem(
@@ -314,11 +316,11 @@ class _LegendDot extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: AppSpacing.sm,
+          height: AppSpacing.sm,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSpacing.xs),
         Text(label, style: theme.textTheme.bodyMedium),
       ],
     );
