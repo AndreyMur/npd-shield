@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/tax_constants.dart';
 import '../../core/tax/tax_calculator.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../data/models/transaction.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
@@ -58,7 +59,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             child: SegmentedButton<DashboardFilter>(
               segments: const [
                 ButtonSegment(
@@ -246,7 +250,7 @@ class _DashboardBody extends StatelessWidget {
   Widget build(BuildContext context) {
     if (data.transactionCount == 0) {
       return ListView(
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.screen,
         children: [_EmptyState(onAddOperation: onAddOperation)],
       );
     }
@@ -257,17 +261,18 @@ class _DashboardBody extends StatelessWidget {
       DashboardFilter.logistics => 'Логистика',
     };
 
+    final tokens = AppTokens.of(context);
     final total = data.total!;
     final children = <Widget>[
       _TotalCard(title: title, summary: total),
-      const SizedBox(height: 16),
+      const SizedBox(height: AppSpacing.cardGap),
       _ProfitCard(summary: total),
-      const SizedBox(height: 16),
+      const SizedBox(height: AppSpacing.cardGap),
       _LimitCard(
         usedAmount: total.year,
         averageMonthlyIncome: data.averageMonthlyIncome,
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: AppSpacing.cardGap),
       _TaxCard(
         calculator: const TaxCalculator(),
         periodIncome: total.month,
@@ -277,14 +282,22 @@ class _DashboardBody extends StatelessWidget {
 
     if (filter == DashboardFilter.all) {
       children
-        ..add(const SizedBox(height: 16))
-        ..add(_SphereCard(title: 'IT', summary: data.it!))
-        ..add(const SizedBox(height: 16))
-        ..add(_SphereCard(title: 'Логистика', summary: data.logistics!));
+        ..add(const SizedBox(height: AppSpacing.cardGap))
+        ..add(_SphereCard(
+          title: 'IT',
+          summary: data.it!,
+          accent: tokens.sphereIt,
+        ))
+        ..add(const SizedBox(height: AppSpacing.cardGap))
+        ..add(_SphereCard(
+          title: 'Логистика',
+          summary: data.logistics!,
+          accent: tokens.sphereLogistics,
+        ));
     }
 
     children
-      ..add(const SizedBox(height: 16))
+      ..add(const SizedBox(height: AppSpacing.cardGap))
       ..add(IncomeChartCard(
         repository: repository,
         now: now,
@@ -297,7 +310,7 @@ class _DashboardBody extends StatelessWidget {
 
     if (documentRepository != null) {
       children
-        ..add(const SizedBox(height: 16))
+        ..add(const SizedBox(height: AppSpacing.cardGap))
         ..add(TransactionDocumentsCard(
           transactionRepository: repository,
           documentRepository: documentRepository!,
@@ -314,12 +327,13 @@ class _DashboardBody extends StatelessWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: AppSpacing.screen,
       children: children,
     );
   }
 }
 
+/// Карточка с акцентной метрикой: заголовок и крупное значение.
 class _TotalCard extends StatelessWidget {
   final String title;
   final IncomeSummary summary;
@@ -329,16 +343,22 @@ class _TotalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _MetricRow(label: 'Доход за месяц', value: summary.month),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
+            _MetricRow(
+              label: 'Доход за месяц',
+              value: summary.month,
+              color: tokens.primary,
+              emphasized: true,
+            ),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(label: 'Доход за год', value: summary.year),
           ],
         ),
@@ -361,25 +381,24 @@ class _TaxCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final period = calculator.calculate(income: periodIncome);
     final year = calculator.calculate(income: yearIncome);
 
-    final limitColor = year.limitExceeded
-        ? theme.colorScheme.error
-        : theme.colorScheme.primary;
+    final limitColor = year.limitExceeded ? tokens.destructive : tokens.primary;
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Налог (НПД 6%)', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             _MetricRow(label: 'К уплате за период', value: period.payableTax),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(label: 'Начислено (6%)', value: period.accruedTax),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _LimitRow(
               label: 'До лимита НПД',
               yearIncome: year.income,
@@ -429,36 +448,61 @@ class _LimitRow extends StatelessWidget {
 class _SphereCard extends StatelessWidget {
   final String title;
   final IncomeSummary summary;
+  final Color accent;
 
-  const _SphereCard({required this.title, required this.summary});
+  const _SphereCard({
+    required this.title,
+    required this.summary,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _MetricRow(label: 'Доход за месяц', value: summary.month),
-            const SizedBox(height: 8),
+            Row(
+              children: [
+                Container(
+                  width: AppSpacing.xxs,
+                  height: AppSpacing.md,
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: AppRadius.chipRadius,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  title,
+                  style: theme.textTheme.titleLarge?.copyWith(color: accent),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _MetricRow(
+              label: 'Доход за месяц',
+              value: summary.month,
+              color: accent,
+              emphasized: true,
+            ),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(
               label: 'Расход за месяц',
               value: summary.monthExpense,
-              color: theme.colorScheme.error,
+              color: tokens.destructive,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(
               label: 'Прибыль за месяц',
               value: summary.monthProfit,
-              color: summary.monthProfit < 0
-                  ? theme.colorScheme.error
-                  : _profitGreen,
+              color: summary.monthProfit < 0 ? tokens.destructive : tokens.success,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(label: 'Доход за год', value: summary.year),
           ],
         ),
@@ -476,37 +520,37 @@ class _ProfitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final profitColor = summary.monthProfit < 0
-        ? theme.colorScheme.error
-        : _profitGreen;
+    final tokens = AppTokens.of(context);
+    final profitColor =
+        summary.monthProfit < 0 ? tokens.destructive : tokens.success;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Прибыль', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             _MetricRow(label: 'Доход за месяц', value: summary.month),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(
               label: 'Расход за месяц',
               value: summary.monthExpense,
-              color: theme.colorScheme.error,
+              color: tokens.destructive,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _MetricRow(
               label: 'Прибыль за месяц',
               value: summary.monthProfit,
               color: profitColor,
+              emphasized: true,
             ),
-            const Divider(height: 24),
+            Divider(height: AppSpacing.lg, color: tokens.border),
             _MetricRow(
               label: 'Прибыль за год',
               value: summary.yearProfit,
-              color: summary.yearProfit < 0
-                  ? theme.colorScheme.error
-                  : _profitGreen,
+              color:
+                  summary.yearProfit < 0 ? tokens.destructive : tokens.success,
             ),
           ],
         ),
@@ -524,31 +568,35 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xxl,
+        ),
         child: Column(
           children: [
             Icon(
               Icons.receipt_long_outlined,
-              size: 48,
-              color: theme.colorScheme.onSurfaceVariant,
+              size: AppSpacing.xxl,
+              color: tokens.muted,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'Пока нет операций',
               key: const Key('dashboard_empty'),
               style: theme.textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               'Добавьте первый доход или расход, чтобы увидеть прибыль, '
               'налог и лимит НПД.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
             ),
             if (onAddOperation != null) ...[
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
               FilledButton.icon(
                 key: const Key('dashboard_add_operation'),
                 onPressed: onAddOperation,
@@ -575,6 +623,7 @@ class _LimitCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final result = const LimitCalculator().calculate(
       usedAmount: usedAmount,
       averageMonthlyIncome: averageMonthlyIncome,
@@ -583,7 +632,7 @@ class _LimitCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -594,49 +643,80 @@ class _LimitCard extends StatelessWidget {
                 Text(
                   '${LimitCalculator.formatAmount(usedAmount)} ₽ / '
                   '${LimitCalculator.formatAmount(result.limit)} ₽',
-                  style: theme.textTheme.bodyMedium,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: tokens.muted,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                key: const Key('limit_progress'),
-                minHeight: 16,
-                value: ratio,
-                valueColor: AlwaysStoppedAnimation<Color>(_levelColor(result.level)),
-                backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              ),
+            const SizedBox(height: AppSpacing.md),
+            _GradientProgressBar(
+              key: const Key('limit_progress'),
+              value: ratio,
+              gradient: tokens.limitGradient,
+              trackColor: tokens.surfaceVariant,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               result.text,
               key: const Key('limit_text'),
               style: theme.textTheme.titleMedium,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               'Точность прогноза ±15 дней на горизонте 3 месяцев.',
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               'Прогноз не учитывает сезонность.',
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  static Color _levelColor(LimitLevel level) {
-    return switch (level) {
-      LimitLevel.green => const Color(0xFF4CAF50),
-      LimitLevel.yellow => const Color(0xFFFFC107),
-      LimitLevel.red => const Color(0xFFF44336),
-    };
+/// Градиентная шкала прогресса (зелёный → жёлтый → красный).
+class _GradientProgressBar extends StatelessWidget {
+  final double value;
+  final LinearGradient gradient;
+  final Color trackColor;
+
+  const _GradientProgressBar({
+    super.key,
+    required this.value,
+    required this.gradient,
+    required this.trackColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final clamped = value.clamp(0.0, 1.0);
+    return Semantics(
+      value: '${(clamped * 100).round()}%',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppSpacing.xs),
+        child: SizedBox(
+          height: AppSpacing.md,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ColoredBox(color: trackColor),
+              FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: clamped,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(gradient: gradient),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -644,29 +724,35 @@ class _MetricRow extends StatelessWidget {
   final String label;
   final double value;
   final Color? color;
+  final bool emphasized;
 
-  const _MetricRow({required this.label, required this.value, this.color});
+  const _MetricRow({
+    required this.label,
+    required this.value,
+    this.color,
+    this.emphasized = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final style = theme.textTheme.titleMedium;
+    final baseStyle = emphasized
+        ? theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)
+        : theme.textTheme.titleMedium;
+    final style = color == null ? baseStyle : baseStyle?.copyWith(color: color);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: theme.textTheme.bodyMedium),
         Text(
           _formatRubles(value),
-          style: color == null ? style : style!.copyWith(color: color),
+          style: style,
           key: Key('summary_$label'),
         ),
       ],
     );
   }
 }
-
-/// Цвет положительной прибыли.
-const _profitGreen = Color(0xFF2E7D32);
 
 String _formatRubles(double value) {
   final fixed = value.toStringAsFixed(2);
