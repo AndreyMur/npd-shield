@@ -58,6 +58,15 @@ class NotificationSettings {
     NotificationType.digest => digestEnabled,
   };
 
+  /// Копия настроек с включением или отключением указанного типа.
+  NotificationSettings withTypeEnabled(NotificationType type, bool enabled) =>
+      switch (type) {
+        NotificationType.limit => copyWith(limitEnabled: enabled),
+        NotificationType.invoice => copyWith(invoiceEnabled: enabled),
+        NotificationType.anomaly => copyWith(anomalyEnabled: enabled),
+        NotificationType.digest => copyWith(digestEnabled: enabled),
+      };
+
   /// Попадает ли момент [time] в тихие часы.
   ///
   /// Тихие часы могут пересекать полночь (например, 22:00–08:00): тогда

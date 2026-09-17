@@ -6,14 +6,17 @@ import 'package:npd_shield/presentation/settings/settings_screen.dart';
 
 import 'helpers/fake_activity_spheres_service.dart';
 import 'helpers/fake_contract_repositories.dart';
+import 'helpers/fake_notification_settings_repository.dart';
 
 void main() {
   late FakeContractorProfileRepository profile;
   late FakeActivitySpheresService spheres;
+  late FakeNotificationSettingsRepository notificationSettings;
 
   setUp(() {
     profile = FakeContractorProfileRepository();
     spheres = FakeActivitySpheresService([TransactionSphere.it]);
+    notificationSettings = FakeNotificationSettingsRepository();
   });
 
   Future<void> pumpSettings(
@@ -34,6 +37,7 @@ void main() {
           onClearAllData: onClearAllData ?? () async {},
           profileRepository: profile,
           activitySpheresService: spheres,
+          notificationSettingsRepository: notificationSettings,
           themeMode: themeMode,
           onThemeModeChanged: onThemeModeChanged ?? (_) {},
         ),
@@ -168,5 +172,17 @@ void main() {
 
     expect(find.text('NPD Shield'), findsWidgets);
     expect(find.text('Версия 1.0.0'), findsOneWidget);
+  });
+
+  testWidgets('открывает экран настроек уведомлений', (tester) async {
+    await pumpSettings(tester);
+
+    await tester.tap(find.byKey(const Key('settings_notifications')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const Key('notification_settings_quiet_hours')),
+      findsOneWidget,
+    );
   });
 }

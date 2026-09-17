@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../data/models/transaction.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
+import '../../data/repositories/notification_settings_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
 import '../../domain/profile/contractor_profile.dart';
 import 'data_management_dialogs.dart';
+import 'notification_settings_screen.dart';
 import 'profile_edit_screen.dart';
 
 /// Экран настроек приложения.
@@ -25,6 +27,9 @@ class SettingsScreen extends StatefulWidget {
   /// Сервис выбранных сфер деятельности.
   final ActivitySpheresService activitySpheresService;
 
+  /// Хранилище настроек уведомлений.
+  final NotificationSettingsRepository notificationSettingsRepository;
+
   /// Текущая тема оформления.
   final ThemeMode themeMode;
 
@@ -37,6 +42,7 @@ class SettingsScreen extends StatefulWidget {
     required this.onClearAllData,
     required this.profileRepository,
     required this.activitySpheresService,
+    required this.notificationSettingsRepository,
     required this.themeMode,
     required this.onThemeModeChanged,
   });
@@ -76,6 +82,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
     await _loadProfile();
+  }
+
+  Future<void> _openNotificationSettings() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => NotificationSettingsScreen(
+          repository: widget.notificationSettingsRepository,
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleSphere(TransactionSphere sphere, bool selected) async {
@@ -220,6 +236,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
               ],
             ),
+          ),
+          const Divider(height: 1),
+          _SectionHeader(title: 'Уведомления'),
+          ListTile(
+            key: const Key('settings_notifications'),
+            leading: const Icon(Icons.notifications_outlined),
+            title: const Text('Настройки уведомлений'),
+            subtitle: const Text('Типы уведомлений и тихие часы'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _busy ? null : _openNotificationSettings,
           ),
           const Divider(height: 1),
           _SectionHeader(title: 'Управление данными'),

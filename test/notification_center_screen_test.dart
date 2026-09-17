@@ -34,7 +34,7 @@ void main() {
     WidgetTester tester,
     FakeNotificationRepository repository, {
     FakeNotificationService? service,
-    ValueChanged<AppNotification>? onAction,
+    Future<bool> Function(AppNotification)? onAction,
     ValueChanged<int>? onUnread,
     DateTime? clock,
   }) async {
@@ -197,7 +197,10 @@ void main() {
         note(id: 1, actionLabel: 'Отметить как оплаченный'),
       ]),
       service: service,
-      onAction: (notification) => actioned = notification,
+      onAction: (notification) async {
+        actioned = notification;
+        return false;
+      },
     );
 
     expect(find.text('Отметить как оплаченный'), findsOneWidget);
@@ -207,6 +210,29 @@ void main() {
 
     expect(actioned?.id, 1);
     expect(find.byKey(const Key('notification_unread_1')), findsNothing);
+    expect(service.cancelled, contains(1));
+    expect(find.byKey(const Key('notification_card_1')), findsOneWidget);
+  });
+
+  testWidgets('выполненное действие убирает уведомление из центра', (
+    tester,
+  ) async {
+    final service = FakeNotificationService();
+    await pumpCenter(
+      tester,
+      FakeNotificationRepository([
+        note(id: 1, actionLabel: 'Отметить оплаченным'),
+        note(id: 2),
+      ]),
+      service: service,
+      onAction: (_) async => true,
+    );
+
+    await tester.tap(find.byKey(const Key('notification_action_1')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('notification_card_1')), findsNothing);
+    expect(find.byKey(const Key('notification_card_2')), findsOneWidget);
     expect(service.cancelled, contains(1));
   });
 

@@ -4,6 +4,7 @@ import '../../data/backup/backup_service.dart';
 import '../../data/files/backup_file_picker.dart';
 import '../../data/files/export_file_saver.dart';
 import '../../data/files/text_file_picker.dart';
+import '../../data/models/app_notification.dart';
 import '../../data/notifications/notification_service.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/contract_draft_repository.dart';
@@ -12,6 +13,7 @@ import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/document_repository.dart';
 import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/notification_repository.dart';
+import '../../data/repositories/notification_settings_repository.dart';
 import '../../data/repositories/risk_report_repository.dart';
 import '../../data/repositories/transaction_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
@@ -22,6 +24,7 @@ import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../documents/document_archive_screen.dart';
 import '../invoices/invoices_screen.dart';
+import '../notifications/invoice_notification_action.dart';
 import '../notifications/notification_center_screen.dart';
 import '../operations/operations_screen.dart';
 import '../operations/transaction_form_screen.dart';
@@ -46,6 +49,7 @@ class HomeShell extends StatefulWidget {
   final DocumentRepository documentRepository;
   final NotificationRepository notificationRepository;
   final NotificationService notificationService;
+  final NotificationSettingsRepository notificationSettingsRepository;
   final TextFilePicker textFilePicker;
   final ActivitySpheresService activitySpheresService;
   final BackupGateway backupGateway;
@@ -69,6 +73,7 @@ class HomeShell extends StatefulWidget {
     required this.documentRepository,
     required this.notificationRepository,
     required this.notificationService,
+    required this.notificationSettingsRepository,
     required this.textFilePicker,
     required this.activitySpheresService,
     required this.backupGateway,
@@ -94,9 +99,14 @@ class _HomeShellState extends State<HomeShell> {
   int _selectedIndex = 0;
   int _unreadCount = 0;
 
+  late final InvoiceNotificationAction _invoiceNotificationAction;
+
   @override
   void initState() {
     super.initState();
+    _invoiceNotificationAction = InvoiceNotificationAction(
+      invoiceRepository: widget.invoiceRepository,
+    );
     _refreshUnreadCount();
   }
 
@@ -124,6 +134,25 @@ class _HomeShellState extends State<HomeShell> {
       ),
     );
     if (mounted) setState(() {});
+  }
+
+  /// Выполняет действие из карточки уведомления.
+  ///
+  /// Сейчас поддерживается «Отметить оплаченным» для напоминаний о счетах:
+  /// счёт гасится полностью, а уведомление убирается из центра. Возвращает
+  /// `true`, если уведомление стало неактуальным.
+  Future<bool> _handleNotificationAction(AppNotification notification) async {
+    final result = await _invoiceNotificationAction.markPaid(notification);
+    if (mounted && result.message != null) {
+      _showNotificationMessage(result.message!);
+    }
+    return result.resolved;
+  }
+
+  void _showNotificationMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _badge(IconData icon) {
@@ -184,6 +213,7 @@ class _HomeShellState extends State<HomeShell> {
       NotificationCenterScreen(
         repository: widget.notificationRepository,
         notificationService: widget.notificationService,
+        onNotificationAction: _handleNotificationAction,
         onUnreadCountChanged: (count) {
           if (count != _unreadCount) setState(() => _unreadCount = count);
         },
@@ -200,6 +230,7 @@ class _HomeShellState extends State<HomeShell> {
         onClearAllData: widget.onClearAllData,
         profileRepository: widget.profileRepository,
         activitySpheresService: widget.activitySpheresService,
+        notificationSettingsRepository: widget.notificationSettingsRepository,
         themeMode: widget.themeMode,
         onThemeModeChanged: widget.onThemeModeChanged,
       ),

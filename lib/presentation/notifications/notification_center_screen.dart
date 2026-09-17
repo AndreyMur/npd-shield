@@ -58,7 +58,11 @@ class NotificationCenterScreen extends StatefulWidget {
   final ValueChanged<AppNotification>? onNotificationTap;
 
   /// Нажатие на кнопку действия в карточке уведомления.
-  final ValueChanged<AppNotification>? onNotificationAction;
+  ///
+  /// Возвращает `true`, если действие выполнено и уведомление больше не
+  /// актуально — тогда оно убирается из центра.
+  final Future<bool> Function(AppNotification notification)?
+  onNotificationAction;
 
   /// Изменение количества непрочитанных (для значка в навигации).
   final ValueChanged<int>? onUnreadCountChanged;
@@ -158,7 +162,17 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
 
   Future<void> _handleAction(AppNotification notification) async {
     await _markRead(notification);
-    widget.onNotificationAction?.call(notification);
+    final handler = widget.onNotificationAction;
+    if (handler == null) return;
+    final resolved = await handler(notification);
+    if (!mounted || !resolved) return;
+    await widget.repository.delete(notification.id);
+    await widget.notificationService.cancel(notification.id);
+    if (!mounted) return;
+    setState(() {
+      _notifications.removeWhere((item) => item.id == notification.id);
+    });
+    _emitUnreadCount();
   }
 
   Future<void> _markRead(AppNotification notification) async {
