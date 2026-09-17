@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
 import '../../data/models/app_notification.dart';
 
 /// Визуальные атрибуты типа уведомления для центра уведомлений.
@@ -12,11 +13,11 @@ extension NotificationTypeVisuals on NotificationType {
     NotificationType.digest => Icons.insights_outlined,
   };
 
-  /// Акцентный цвет типа в заданной цветовой схеме.
-  Color color(ColorScheme scheme) => switch (this) {
-    NotificationType.limit => scheme.primary,
-    NotificationType.invoice => scheme.tertiary,
-    NotificationType.anomaly => scheme.error,
-    NotificationType.digest => scheme.secondary,
+  /// Акцентный цвет типа на основе семантических токенов.
+  Color color(AppTokens tokens) => switch (this) {
+    NotificationType.limit => tokens.primary,
+    NotificationType.invoice => tokens.secondary,
+    NotificationType.anomaly => tokens.destructive,
+    NotificationType.digest => tokens.success,
   };
 }

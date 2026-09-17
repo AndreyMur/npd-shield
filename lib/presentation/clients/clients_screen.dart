@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/client.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/document_repository.dart';
@@ -157,31 +159,33 @@ class _ClientsScreenState extends State<ClientsScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: AppTextField(
               key: const Key('clients_search_field'),
               controller: _searchController,
               onChanged: (value) {
                 _query = value;
                 _reload();
               },
-              decoration: InputDecoration(
-                hintText: 'Поиск по наименованию и ИНН',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        key: const Key('clients_search_clear'),
-                        tooltip: 'Очистить поиск',
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          _searchController.clear();
-                          _query = '';
-                          _reload();
-                        },
-                      ),
-              ),
+              hint: 'Поиск по наименованию и ИНН',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      key: const Key('clients_search_clear'),
+                      tooltip: 'Очистить поиск',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchController.clear();
+                        _query = '';
+                        _reload();
+                      },
+                    ),
             ),
           ),
           Expanded(child: _buildList()),
@@ -192,61 +196,89 @@ class _ClientsScreenState extends State<ClientsScreen> {
 
   Widget _buildList() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(semanticLabel: 'Загрузка клиентов');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить справочник'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('clients_retry'),
-              onPressed: _reload,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить справочник',
+        retryKey: const Key('clients_retry'),
+        onRetry: _reload,
       );
     }
     if (_clients.isEmpty) {
-      return Center(
-        child: Text(
-          _query.isEmpty ? 'Клиентов пока нет' : 'Ничего не найдено',
-          key: const Key('clients_empty'),
-        ),
+      final isEmpty = _query.isEmpty;
+      return AppEmptyState(
+        key: const Key('clients_empty'),
+        icon: isEmpty ? Icons.people_outline : Icons.search_off,
+        title: isEmpty ? 'Клиентов пока нет' : 'Ничего не найдено',
+        message: isEmpty
+            ? 'Добавьте первого клиента, чтобы связывать с ним операции и документы.'
+            : null,
       );
     }
     return ListView.builder(
       key: const Key('clients_list'),
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        88,
+      ),
       itemCount: _clients.length,
       itemBuilder: (context, index) => _buildTile(_clients[index]),
     );
   }
 
   Widget _buildTile(Client client) {
-    return Card(
-      key: Key('client_entry_${client.id}'),
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: CircleAvatar(
-          child: Icon(
-            client.type == ClientType.legal
-                ? Icons.business_outlined
-                : Icons.person_outline,
-          ),
+    final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final isLegal = client.type == ClientType.legal;
+    final accent = isLegal ? tokens.primary : tokens.sphereLogistics;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: AppCard(
+        key: Key('client_entry_${client.id}'),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.sm,
+          AppSpacing.sm,
+          AppSpacing.xxs,
+          AppSpacing.sm,
         ),
-        title: Text(client.name),
-        subtitle: Text(_subtitle(client)),
-        trailing: IconButton(
-          key: Key('client_delete_${client.id}'),
-          tooltip: 'Удалить клиента',
-          icon: const Icon(Icons.delete_outline),
-          onPressed: () => _delete(client),
-        ),
+        semanticLabel: '${client.name}. ${_subtitle(client)}',
         onTap: () => _openDetails(client),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: accent.withValues(alpha: 0.12),
+              child: Icon(
+                isLegal ? Icons.business_outlined : Icons.person_outline,
+                color: accent,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(client.name, style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    _subtitle(client),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              key: Key('client_delete_${client.id}'),
+              tooltip: 'Удалить клиента',
+              icon: const Icon(Icons.delete_outline),
+              onPressed: () => _delete(client),
+            ),
+          ],
+        ),
       ),
     );
   }

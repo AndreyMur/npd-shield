@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/client.dart';
 import '../../data/repositories/client_repository.dart';
 import 'client_form_screen.dart';
@@ -87,55 +89,55 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return FractionallySizedBox(
       heightFactor: 0.75,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Text(widget.title, style: theme.textTheme.titleLarge),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: TextField(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: AppTextField(
               key: const Key('client_picker_search'),
               controller: _searchController,
               onChanged: (value) {
                 _query = value;
                 _reload();
               },
-              decoration: InputDecoration(
-                hintText: 'Поиск по наименованию и ИНН',
-                prefixIcon: const Icon(Icons.search),
-                isDense: true,
-                border: const OutlineInputBorder(),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        key: const Key('client_picker_search_clear'),
-                        tooltip: 'Очистить поиск',
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          _searchController.clear();
-                          _query = '';
-                          _reload();
-                        },
-                      ),
-              ),
+              hint: 'Поиск по наименованию и ИНН',
+              prefixIcon: const Icon(Icons.search),
+              dense: true,
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      key: const Key('client_picker_search_clear'),
+                      tooltip: 'Очистить поиск',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchController.clear();
+                        _query = '';
+                        _reload();
+                      },
+                    ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xs),
           Expanded(child: _buildList()),
-          const Divider(height: 1),
+          Divider(height: 1, color: tokens.border),
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: OutlinedButton.icon(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: AppButton(
               key: const Key('client_picker_create'),
+              label: 'Новый клиент',
+              icon: Icons.person_add_alt,
+              variant: AppButtonVariant.secondary,
+              expanded: true,
               onPressed: _create,
-              icon: const Icon(Icons.person_add_alt),
-              label: const Text('Новый клиент'),
             ),
           ),
         ],
@@ -145,35 +147,29 @@ class _ClientPickerSheetState extends State<_ClientPickerSheet> {
 
   Widget _buildList() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(
+        itemCount: 3,
+        semanticLabel: 'Загрузка справочника',
+      );
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить справочник'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('client_picker_retry'),
-              onPressed: _reload,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить справочник',
+        retryKey: const Key('client_picker_retry'),
+        onRetry: _reload,
       );
     }
     if (_clients.isEmpty) {
-      return Center(
-        child: Text(
-          _query.isEmpty ? 'Справочник пуст' : 'Ничего не найдено',
-          key: const Key('client_picker_empty'),
-        ),
+      final isEmpty = _query.isEmpty;
+      return AppEmptyState(
+        key: const Key('client_picker_empty'),
+        icon: isEmpty ? Icons.people_outline : Icons.search_off,
+        title: isEmpty ? 'Справочник пуст' : 'Ничего не найдено',
       );
     }
     return ListView.builder(
       key: const Key('client_picker_list'),
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
       itemCount: _clients.length,
       itemBuilder: (context, index) {
         final client = _clients[index];

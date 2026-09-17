@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/invoice.dart';
 import '../../data/repositories/client_repository.dart';
 import '../../data/repositories/invoice_repository.dart';
@@ -222,9 +224,16 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final effective = widget.invoice?.effectiveStatus(now: widget.now);
     final showOverdueNote =
         effective == InvoiceStatus.overdue && _status == InvoiceStatus.sent;
+
+    OutlineInputBorder fieldBorder(Color color, {double width = 1}) =>
+        OutlineInputBorder(
+          borderRadius: AppRadius.fieldRadius,
+          borderSide: BorderSide(color: color, width: width),
+        );
 
     return Scaffold(
       appBar: AppBar(
@@ -233,67 +242,55 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            TextFormField(
+            AppTextFormField(
               key: const Key('invoice_number_field'),
               controller: _numberController,
               validator: _numberValidator,
               textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'Номер счёта',
-                hintText: 'Например, 14/09',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Номер счёта',
+              hint: 'Например, 14/09',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('invoice_amount_field'),
               controller: _amountController,
               validator: _amountValidator,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Сумма, ₽',
-                hintText: 'Например, 50000',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Сумма, ₽',
+              hint: 'Например, 50000',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('invoice_issued_at_field'),
               controller: _issuedAtController,
               validator: _dateValidator,
-              decoration: InputDecoration(
-                labelText: 'Дата выставления',
-                hintText: 'ДД.ММ.ГГГГ',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  key: const Key('invoice_issued_at_picker'),
-                  tooltip: 'Выбрать дату',
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  onPressed: _pickIssuedAt,
-                ),
+              label: 'Дата выставления',
+              hint: 'ДД.ММ.ГГГГ',
+              suffixIcon: IconButton(
+                key: const Key('invoice_issued_at_picker'),
+                tooltip: 'Выбрать дату',
+                icon: const Icon(Icons.calendar_today_outlined),
+                onPressed: _pickIssuedAt,
               ),
               onChanged: (value) {
                 final parsed = parseContractDate(value);
                 if (parsed != null) setState(() => _issuedAt = parsed);
               },
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('invoice_due_date_field'),
               controller: _dueDateController,
               validator: _dueDateValidator,
-              decoration: InputDecoration(
-                labelText: 'Срок оплаты',
-                hintText: 'ДД.ММ.ГГГГ',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  key: const Key('invoice_due_date_picker'),
-                  tooltip: 'Выбрать дату',
-                  icon: const Icon(Icons.event_outlined),
-                  onPressed: _pickDueDate,
-                ),
+              label: 'Срок оплаты',
+              hint: 'ДД.ММ.ГГГГ',
+              suffixIcon: IconButton(
+                key: const Key('invoice_due_date_picker'),
+                tooltip: 'Выбрать дату',
+                icon: const Icon(Icons.event_outlined),
+                onPressed: _pickDueDate,
               ),
               onChanged: (value) {
                 final parsed = parseContractDate(value);
@@ -301,18 +298,22 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
               },
             ),
             if (showOverdueNote) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               const _OverdueNote(),
             ],
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             Text('Статус', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             DropdownButtonFormField<InvoiceStatus>(
               key: const Key('invoice_status_field'),
               initialValue: _status,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
                 isDense: true,
+                filled: true,
+                fillColor: tokens.surfaceVariant,
+                border: fieldBorder(tokens.border),
+                enabledBorder: fieldBorder(tokens.border),
+                focusedBorder: fieldBorder(tokens.primary, width: 1.5),
               ),
               items: [
                 for (final status in InvoiceStatus.manualValues)
@@ -336,60 +337,53 @@ class _InvoiceFormScreenState extends State<InvoiceFormScreen> {
                 setState(() => _status = status);
               },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             if (widget.clientRepository != null) ...[
-              OutlinedButton.icon(
+              AppButton(
                 key: const Key('invoice_pick_client_button'),
+                label: _selectedClientId != null
+                    ? 'Клиент из справочника'
+                    : 'Выбрать из справочника',
+                icon: Icons.people_outline,
+                variant: AppButtonVariant.secondary,
+                expanded: true,
                 onPressed: _pickClient,
-                icon: const Icon(Icons.people_outline, size: 18),
-                label: Text(
-                  _selectedClientId != null
-                      ? 'Клиент из справочника'
-                      : 'Выбрать из справочника',
-                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
             ],
-            TextFormField(
+            AppTextFormField(
               key: const Key('invoice_client_name_field'),
               controller: _clientNameController,
               textCapitalization: TextCapitalization.words,
               onChanged: (_) => _clearClientSelection(),
-              decoration: const InputDecoration(
-                labelText: 'Клиент',
-                hintText: 'Наименование или ФИО',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Клиент',
+              hint: 'Наименование или ФИО',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('invoice_client_inn_field'),
               controller: _clientInnController,
               keyboardType: TextInputType.number,
               onChanged: (_) => _clearClientSelection(),
-              decoration: const InputDecoration(
-                labelText: 'ИНН клиента',
-                border: OutlineInputBorder(),
-              ),
+              label: 'ИНН клиента',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('invoice_comment_field'),
               controller: _commentController,
               minLines: 2,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Комментарий',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Комментарий',
             ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
               key: const Key('invoice_save_button'),
+              label: _isEditing ? 'Сохранить' : 'Добавить счёт',
+              icon: Icons.check,
+              expanded: true,
+              loading: _saving,
               onPressed: _saving ? null : _save,
-              icon: const Icon(Icons.check),
-              label: Text(_isEditing ? 'Сохранить' : 'Добавить счёт'),
             ),
           ],
         ),
@@ -404,19 +398,10 @@ class _OverdueNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.error;
-    return Row(
-      key: const Key('invoice_overdue_note'),
-      children: [
-        Icon(Icons.warning_amber_rounded, size: 18, color: color),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Срок оплаты истёк — счёт отображается как просроченный',
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(color: color),
-          ),
-        ),
-      ],
+    return const StatusBanner(
+      key: Key('invoice_overdue_note'),
+      type: StatusBannerType.warning,
+      message: 'Срок оплаты истёк — счёт отображается как просроченный',
     );
   }
 }

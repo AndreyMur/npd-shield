@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/app_notification.dart';
 import 'notification_time.dart';
 import 'notification_type_visuals.dart';
@@ -49,119 +51,118 @@ class NotificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = notification.type.color(theme.colorScheme);
+    final tokens = AppTokens.of(context);
+    final color = notification.type.color(tokens);
     final unread = !notification.isRead;
 
-    return Card(
+    return AppCard(
       key: Key('notification_card_${notification.id}'),
-      clipBehavior: Clip.antiAlias,
-      child: Semantics(
-        button: true,
-        label: _semanticsLabel(),
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-            child: Row(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.xxs,
+        AppSpacing.sm,
+      ),
+      onTap: onTap,
+      semanticLabel: _semanticsLabel(),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CircleAvatar(
+            radius: 20,
+            backgroundColor: color.withValues(alpha: 0.14),
+            child: Icon(notification.type.icon, color: color, size: 20),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: color.withValues(alpha: 0.14),
-                  child: Icon(notification.type.icon, color: color, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (unread)
-                            Padding(
-                              key: Key('notification_unread_${notification.id}'),
-                              padding: const EdgeInsets.only(top: 6, right: 6),
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: color,
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            child: Text(
-                              notification.title,
-                              style: unread
-                                  ? theme.textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    )
-                                  : theme.textTheme.titleSmall,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              formatNotificationTime(
-                                notification.createdAt,
-                                now: now,
-                              ),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(notification.body, style: theme.textTheme.bodyMedium),
-                      if (notification.hasAction) ...[
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: FilledButton.tonal(
-                            key: Key('notification_action_${notification.id}'),
-                            onPressed: onAction,
-                            child: Text(notification.actionLabel),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (unread)
+                      Padding(
+                        key: Key('notification_unread_${notification.id}'),
+                        padding: const EdgeInsets.only(top: 6, right: 6),
+                        child: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: color,
                           ),
                         ),
-                      ],
-                    ],
-                  ),
-                ),
-                PopupMenuButton<NotificationCardAction>(
-                  key: Key('notification_menu_${notification.id}'),
-                  tooltip: 'Действия с уведомлением',
-                  onSelected: (action) {
-                    switch (action) {
-                      case NotificationCardAction.toggleRead:
-                        onToggleRead?.call();
-                      case NotificationCardAction.delete:
-                        onDelete?.call();
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<NotificationCardAction>(
-                      value: NotificationCardAction.toggleRead,
+                      ),
+                    Expanded(
                       child: Text(
-                        unread
-                            ? 'Отметить прочитанным'
-                            : 'Отметить непрочитанным',
+                        notification.title,
+                        style: unread
+                            ? theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              )
+                            : theme.textTheme.titleSmall,
                       ),
                     ),
-                    const PopupMenuItem<NotificationCardAction>(
-                      value: NotificationCardAction.delete,
-                      child: Text('Удалить'),
+                    const SizedBox(width: AppSpacing.xs),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        formatNotificationTime(
+                          notification.createdAt,
+                          now: now,
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: tokens.muted,
+                        ),
+                      ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text(notification.body, style: theme.textTheme.bodyMedium),
+                if (notification.hasAction) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: AppButton(
+                      key: Key('notification_action_${notification.id}'),
+                      label: notification.actionLabel,
+                      variant: AppButtonVariant.secondary,
+                      onPressed: onAction,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-        ),
+          PopupMenuButton<NotificationCardAction>(
+            key: Key('notification_menu_${notification.id}'),
+            tooltip: 'Действия с уведомлением',
+            onSelected: (action) {
+              switch (action) {
+                case NotificationCardAction.toggleRead:
+                  onToggleRead?.call();
+                case NotificationCardAction.delete:
+                  onDelete?.call();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<NotificationCardAction>(
+                value: NotificationCardAction.toggleRead,
+                child: Text(
+                  unread
+                      ? 'Отметить прочитанным'
+                      : 'Отметить непрочитанным',
+                ),
+              ),
+              const PopupMenuItem<NotificationCardAction>(
+                value: NotificationCardAction.delete,
+                child: Text('Удалить'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
