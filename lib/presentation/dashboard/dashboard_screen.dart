@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/tax_constants.dart';
 import '../../core/tax/tax_calculator.dart';
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_tokens.dart';
+import '../../core/theme/app_typography.dart';
 import '../../data/models/transaction.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
@@ -88,16 +91,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Expanded(
-            child: _DashboardView(
-              future: _load(_filter),
-              filter: _filter,
-              repository: widget.repository,
-              documentRepository: widget.documentRepository,
-              onAddOperation: widget.onAddOperation,
-              pdfGenerator: widget.pdfGenerator,
-              shareService: widget.shareService,
-              fontLoader: widget.fontLoader,
-              now: widget.now ?? DateTime.now(),
+            child: AnimatedSwitcher(
+              duration: AppMotion.transition(context),
+              switchInCurve: AppMotion.enterCurve(context),
+              switchOutCurve: AppMotion.exitCurve(context),
+              child: _DashboardView(
+                key: ValueKey(_filter),
+                future: _load(_filter),
+                filter: _filter,
+                repository: widget.repository,
+                documentRepository: widget.documentRepository,
+                onAddOperation: widget.onAddOperation,
+                pdfGenerator: widget.pdfGenerator,
+                shareService: widget.shareService,
+                fontLoader: widget.fontLoader,
+                now: widget.now ?? DateTime.now(),
+              ),
             ),
           ),
         ],
@@ -185,6 +194,7 @@ class _DashboardView extends StatelessWidget {
   final DateTime now;
 
   const _DashboardView({
+    super.key,
     required this.future,
     required this.filter,
     required this.repository,
@@ -438,7 +448,7 @@ class _LimitRow extends StatelessWidget {
         Text(label, style: theme.textTheme.bodyMedium),
         Text(
           message,
-          style: theme.textTheme.titleMedium!.copyWith(color: color),
+          style: AppTypography.metricSmall.copyWith(color: color),
         ),
       ],
     );
@@ -577,9 +587,9 @@ class _EmptyState extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Icon(
+            AppIcon(
               Icons.receipt_long_outlined,
-              size: AppSpacing.xxl,
+              size: AppIconSize.xl,
               color: tokens.muted,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -737,9 +747,9 @@ class _MetricRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final baseStyle = emphasized
-        ? theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)
-        : theme.textTheme.titleMedium;
-    final style = color == null ? baseStyle : baseStyle?.copyWith(color: color);
+        ? AppTypography.metricLarge
+        : AppTypography.metricSmall;
+    final style = color == null ? baseStyle : baseStyle.copyWith(color: color);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
