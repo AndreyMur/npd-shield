@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/risk_marker.dart';
 import '../../data/repositories/risk_report_repository.dart';
 import '../../domain/risk/safety_index.dart';
 import 'risk_report_detail_screen.dart';
-import 'safety_index_gauge.dart';
+import 'risk_visuals.dart';
 
 /// Форматирует дату проверки как `дд.мм.гггг чч:мм` в локальном времени.
 ///
@@ -116,49 +118,22 @@ class _RiskHistoryScreenState extends State<RiskHistoryScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(key: Key('risk_history_loading')),
-      );
+      return const AppLoadingState(semanticLabel: 'Загрузка истории проверок');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить историю проверок'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              key: const Key('risk_history_retry'),
-              onPressed: _load,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить историю проверок',
+        retryKey: const Key('risk_history_retry'),
+        onRetry: _load,
       );
     }
     if (_reports.isEmpty) {
-      return const Center(
+      return const AppEmptyState(
         key: Key('risk_history_empty'),
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.history, size: 56),
-              SizedBox(height: 12),
-              Text(
-                'История проверок пуста',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Загрузите договор на вкладке «Проверка», '
-                'чтобы результаты сохранились здесь.',
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+        icon: Icons.history,
+        title: 'История проверок пуста',
+        message: 'Загрузите договор на вкладке «Проверка», '
+            'чтобы результаты сохранились здесь.',
       );
     }
 
@@ -167,9 +142,14 @@ class _RiskHistoryScreenState extends State<RiskHistoryScreen> {
       child: ListView.separated(
         key: const Key('risk_history_list'),
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         itemCount: _reports.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
+        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
         itemBuilder: (context, index) {
           final report = _reports[index];
           return _HistoryCard(
@@ -199,79 +179,80 @@ class _HistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final id = report.id;
     final percent = report.safetyIndex.clamp(0, 100).round();
     final level = SafetyIndexCalculator.levelFor(percent.toDouble());
-    final color = safetyIndexColor(percent.toDouble());
+    final color = level.color(tokens);
     final name = report.sourceName.isEmpty ? 'Без имени' : report.sourceName;
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.xxs,
+        AppSpacing.sm,
+      ),
+      onTap: onTap,
+      semanticLabel:
+          '$name. ${formatHistoryDate(report.createdAt)}. '
+          'Индекс: $percent%, ${level.label}. Рисков: ${report.riskCount}',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  key: Key('risk_history_name_$id'),
+                  style: theme.textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  formatHistoryDate(report.createdAt),
+                  key: Key('risk_history_date_$id'),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: tokens.muted,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Row(
                   children: [
-                    Text(
-                      name,
-                      key: Key('risk_history_name_$id'),
-                      style: theme.textTheme.titleMedium,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      formatHistoryDate(report.createdAt),
-                      key: Key('risk_history_date_$id'),
-                      style: theme.textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: color,
-                            shape: BoxShape.circle,
-                          ),
+                    Icon(level.icon, size: 16, color: color),
+                    const SizedBox(width: AppSpacing.xxs),
+                    Flexible(
+                      child: Text(
+                        'Индекс: $percent% · ${level.label}',
+                        key: Key('risk_history_index_$id'),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w600,
                         ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            'Индекс: $percent% · ${level.label}',
-                            key: Key('risk_history_index_$id'),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: color,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Рисков: ${report.riskCount}',
-                      key: Key('risk_history_risks_$id'),
-                      style: theme.textTheme.bodyMedium,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                key: Key('risk_history_delete_$id'),
-                tooltip: 'Удалить из истории',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: onDelete,
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'Рисков: ${report.riskCount}',
+                  key: Key('risk_history_risks_$id'),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: tokens.muted,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
+          IconButton(
+            key: Key('risk_history_delete_$id'),
+            tooltip: 'Удалить из истории',
+            icon: const Icon(Icons.delete_outline),
+            onPressed: onDelete,
+          ),
+        ],
       ),
     );
   }

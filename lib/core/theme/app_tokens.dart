@@ -36,6 +36,10 @@ class AppTokens extends ThemeExtension<AppTokens> {
   /// Цвет предупреждения.
   final Color warning;
 
+  /// Затемнённый цвет предупреждения для текста и мелких элементов:
+  /// сохраняет контраст ≥4.5:1 на светлом фоне.
+  final Color warningStrong;
+
   /// Цвет успеха/дохода.
   final Color success;
 
@@ -76,6 +80,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.border,
     required this.destructive,
     required this.warning,
+    required this.warningStrong,
     required this.success,
     required this.onSurface,
     required this.onPrimary,
@@ -99,6 +104,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     border: Color(0xFFE2E8F0),
     destructive: Color(0xFFDC2626),
     warning: Color(0xFFF59E0B),
+    warningStrong: Color(0xFFB45309),
     success: Color(0xFF059669),
     onSurface: Color(0xFF0F172A),
     onPrimary: Color(0xFFFFFFFF),
@@ -125,6 +131,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     border: Color(0xFF334155),
     destructive: Color(0xFFF87171),
     warning: Color(0xFFFBBF24),
+    warningStrong: Color(0xFFFBBF24),
     success: Color(0xFF10B981),
     onSurface: Color(0xFFF8FAFC),
     onPrimary: Color(0xFF0B1220),
@@ -160,6 +167,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     Color? border,
     Color? destructive,
     Color? warning,
+    Color? warningStrong,
     Color? success,
     Color? onSurface,
     Color? onPrimary,
@@ -181,6 +189,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
       border: border ?? this.border,
       destructive: destructive ?? this.destructive,
       warning: warning ?? this.warning,
+      warningStrong: warningStrong ?? this.warningStrong,
       success: success ?? this.success,
       onSurface: onSurface ?? this.onSurface,
       onPrimary: onPrimary ?? this.onPrimary,
@@ -207,6 +216,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
       border: Color.lerp(border, other.border, t)!,
       destructive: Color.lerp(destructive, other.destructive, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
+      warningStrong: Color.lerp(warningStrong, other.warningStrong, t)!,
       success: Color.lerp(success, other.success, t)!,
       onSurface: Color.lerp(onSurface, other.onSurface, t)!,
       onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/risk_marker.dart';
 import 'risk_match_card.dart';
+import 'risk_visuals.dart';
 import 'safety_index_gauge.dart';
 
 /// Отображение результата проверки договора: индекс безопасности и список рисков.
@@ -32,13 +35,19 @@ class RiskReportView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final risks = report.risks;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.xs,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -48,9 +57,9 @@ class RiskReportView extends StatelessWidget {
                 style: theme.textTheme.titleMedium,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Center(child: SafetyIndexGauge(index: report.safetyIndex)),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 risks.isEmpty
                     ? 'Риски не найдены'
@@ -58,14 +67,14 @@ class RiskReportView extends StatelessWidget {
                 key: const Key('risk_summary'),
                 style: theme.textTheme.bodyLarge,
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.xxs),
               Text(
                 'Это не заменяет юридическую консультацию.',
                 key: const Key('risk_disclaimer'),
-                style: theme.textTheme.bodySmall,
+                style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
               ),
               if (error != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 RiskErrorText(error!),
               ],
             ],
@@ -73,37 +82,16 @@ class RiskReportView extends StatelessWidget {
         ),
         Expanded(
           child: risks.isEmpty
-              ? _NoRisksView(theme: theme)
+              ? const AppEmptyState(
+                  icon: Icons.verified_outlined,
+                  title: 'Опасных формулировок не найдено',
+                  message: 'Это не заменяет юридическую консультацию.',
+                )
               : _RiskList(risks: risks),
         ),
         if (footer != null)
-          Padding(padding: const EdgeInsets.all(16), child: footer!),
+          Padding(padding: const EdgeInsets.all(AppSpacing.md), child: footer!),
       ],
-    );
-  }
-}
-
-class _NoRisksView extends StatelessWidget {
-  final ThemeData theme;
-
-  const _NoRisksView({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.verified_outlined, size: 56),
-          const SizedBox(height: 12),
-          Text('Опасных формулировок не найдено', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(
-            'Это не заменяет юридическую консультацию.',
-            style: theme.textTheme.bodySmall,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -126,6 +114,7 @@ class _RiskListState extends State<_RiskList> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
     final filtered = _filter == null
         ? widget.risks
         : widget.risks.where((match) => match.severity == _filter).toList();
@@ -134,74 +123,57 @@ class _RiskListState extends State<_RiskList> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _FilterChip(
+                AppFilterChip(
                   key: const Key('risk_filter_all'),
-                  label: 'Все',
-                  count: widget.risks.length,
+                  label: 'Все (${widget.risks.length})',
                   selected: _filter == null,
                   onSelected: () => setState(() => _filter = null),
                 ),
-                const SizedBox(width: 8),
                 for (final severity in RiskSeverity.values) ...[
-                  _FilterChip(
+                  const SizedBox(width: AppSpacing.xs),
+                  AppFilterChip(
                     key: Key('risk_filter_${severity.name}'),
-                    label: severity.pluralLabel,
-                    count: _count(severity),
+                    label: '${severity.pluralLabel} (${_count(severity)})',
+                    accent: severity.color(tokens),
+                    icon: severity.icon,
                     selected: _filter == severity,
                     onSelected: () => setState(() => _filter = severity),
                   ),
-                  const SizedBox(width: 8),
                 ],
               ],
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.xs),
         Expanded(
           child: filtered.isEmpty
-              ? const Center(
+              ? const AppEmptyState(
                   key: Key('risk_filter_empty'),
-                  child: Text('Нет рисков выбранного уровня'),
+                  compact: true,
+                  icon: Icons.search_off,
+                  title: 'Нет рисков выбранного уровня',
                 )
               : ListView.separated(
                   key: const Key('risk_result_list'),
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                  ),
                   itemCount: filtered.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSpacing.xs),
                   itemBuilder: (context, index) =>
                       RiskMatchCard(match: filtered[index]),
                 ),
         ),
       ],
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final int count;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    super.key,
-    required this.label,
-    required this.count,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text('$label ($count)'),
-      selected: selected,
-      onSelected: (_) => onSelected(),
     );
   }
 }
@@ -214,15 +186,18 @@ class RiskErrorText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.error;
+    final tokens = AppTokens.of(context);
     return Row(
       key: const Key('risk_error'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.error_outline, size: 18, color: color),
-        const SizedBox(width: 8),
+        Icon(Icons.error_outline, size: 18, color: tokens.destructive),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
-          child: Text(message, style: TextStyle(color: color)),
+          child: Text(
+            message,
+            style: TextStyle(color: tokens.destructive),
+          ),
         ),
       ],
     );
