@@ -80,8 +80,29 @@ flutter:
     - assets/templates/
 
   fonts:
+    # Roboto остаётся для PDF-документов (договоры, чеки, акты, отчёты).
     - family: Roboto
       fonts:
         - asset: assets/fonts/Roboto-Regular.ttf
         - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+    # Интерфейсная типографика: Inter для заголовков и текста.
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    # Числовые метрики: моноширинный JetBrains Mono.
+    - family: JetBrains Mono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
           weight: 700

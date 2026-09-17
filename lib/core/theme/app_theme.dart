@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app_tokens.dart';
+import 'app_typography.dart';
 
 class AppTheme {
   static const seedColor = Color(0xFF2196F3);
@@ -36,6 +37,9 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: tokens.surface,
+      fontFamily: AppFonts.inter,
+      fontFamilyFallback: AppFonts.interFallback,
+      textTheme: AppTypography.textTheme,
       extensions: <ThemeExtension<dynamic>>[tokens],
       cardTheme: CardThemeData(
         color: tokens.surface,

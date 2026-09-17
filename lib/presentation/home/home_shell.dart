@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_icons.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/files/backup_file_picker.dart';
 import '../../data/files/export_file_saver.dart';
@@ -159,7 +160,23 @@ class _HomeShellState extends State<HomeShell> {
     return Badge(
       isLabelVisible: _unreadCount > 0,
       label: Text('$_unreadCount'),
-      child: Icon(icon),
+      child: AppIcon(icon),
+    );
+  }
+
+  /// Пункт навигации: контурная иконка для невыбранного состояния,
+  /// заполненная — для выбранного (единое семейство Material Symbols).
+  NavigationDestination _destination({
+    required IconData outline,
+    required IconData filled,
+    required String label,
+    bool badge = false,
+  }) {
+    Widget wrap(IconData icon) => badge ? _badge(icon) : AppIcon(icon);
+    return NavigationDestination(
+      icon: wrap(AppIcons.toggle(outline, filled, selected: false)),
+      selectedIcon: wrap(AppIcons.toggle(outline, filled, selected: true)),
+      label: label,
     );
   }
 
@@ -239,59 +256,60 @@ class _HomeShellState extends State<HomeShell> {
 
   List<NavigationDestination> _destinations() {
     return [
-      const NavigationDestination(
-        icon: Icon(Icons.dashboard_outlined),
-        selectedIcon: Icon(Icons.dashboard),
+      _destination(
+        outline: Icons.dashboard_outlined,
+        filled: Icons.dashboard,
         label: 'Дашборд',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.swap_vert_outlined),
-        selectedIcon: Icon(Icons.swap_vert),
+      _destination(
+        outline: Icons.swap_vert_outlined,
+        filled: Icons.swap_vert,
         label: 'Операции',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.people_outline),
-        selectedIcon: Icon(Icons.people),
+      _destination(
+        outline: Icons.people_outline,
+        filled: Icons.people,
         label: 'Клиенты',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.receipt_long_outlined),
-        selectedIcon: Icon(Icons.receipt_long),
+      _destination(
+        outline: Icons.receipt_long_outlined,
+        filled: Icons.receipt_long,
         label: 'Счета',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.description_outlined),
-        selectedIcon: Icon(Icons.description),
+      _destination(
+        outline: Icons.description_outlined,
+        filled: Icons.description,
         label: 'Шаблоны',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.folder_copy_outlined),
-        selectedIcon: Icon(Icons.folder_copy),
+      _destination(
+        outline: Icons.folder_copy_outlined,
+        filled: Icons.folder_copy,
         label: 'Договоры',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.folder_open_outlined),
-        selectedIcon: Icon(Icons.folder_open),
+      _destination(
+        outline: Icons.folder_open_outlined,
+        filled: Icons.folder_open,
         label: 'Документы',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.shield_outlined),
-        selectedIcon: Icon(Icons.shield),
+      _destination(
+        outline: Icons.shield_outlined,
+        filled: Icons.shield,
         label: 'Проверка',
       ),
-      NavigationDestination(
-        icon: _badge(Icons.notifications_outlined),
-        selectedIcon: _badge(Icons.notifications),
+      _destination(
+        outline: Icons.notifications_outlined,
+        filled: Icons.notifications,
         label: 'Уведомления',
+        badge: true,
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.assessment_outlined),
-        selectedIcon: Icon(Icons.assessment),
+      _destination(
+        outline: Icons.assessment_outlined,
+        filled: Icons.assessment,
         label: 'Отчёты',
       ),
-      const NavigationDestination(
-        icon: Icon(Icons.settings_outlined),
-        selectedIcon: Icon(Icons.settings),
+      _destination(
+        outline: Icons.settings_outlined,
+        filled: Icons.settings,
         label: 'Настройки',
       ),
     ];
