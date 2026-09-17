@@ -208,6 +208,7 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Операция' : 'Новая операция'),
@@ -219,23 +220,24 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
           children: [
             Text('Тип операции', style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
-            SegmentedButton<TransactionType>(
+            AppSegmentedControl<TransactionType>(
               key: const Key('transaction_type_selector'),
+              semanticLabel: 'Тип операции',
+              selected: _type,
+              onChanged: (type) => setState(() => _type = type),
               segments: [
                 for (final type in TransactionType.values)
-                  ButtonSegment(
+                  AppSegmentOption(
                     value: type,
-                    label: Text(type.label),
-                    icon: Icon(
-                      type.isIncome
-                          ? Icons.trending_up
-                          : Icons.trending_down,
-                    ),
+                    label: type.label,
+                    icon: type.isIncome
+                        ? Icons.trending_up
+                        : Icons.trending_down,
+                    accent: type.isIncome
+                        ? tokens.success
+                        : tokens.destructive,
                   ),
               ],
-              selected: {_type},
-              onSelectionChanged: (selection) =>
-                  setState(() => _type = selection.first),
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextFormField(
@@ -267,23 +269,24 @@ class _TransactionFormScreenState extends State<TransactionFormScreen> {
             const SizedBox(height: AppSpacing.lg),
             Text('Сфера деятельности', style: theme.textTheme.titleMedium),
             const SizedBox(height: AppSpacing.xs),
-            SegmentedButton<TransactionSphere>(
+            AppSegmentedControl<TransactionSphere>(
               key: const Key('transaction_sphere_selector'),
+              semanticLabel: 'Сфера деятельности',
+              selected: _sphere,
+              onChanged: (sphere) => setState(() => _sphere = sphere),
               segments: [
                 for (final sphere in TransactionSphere.values)
-                  ButtonSegment(
+                  AppSegmentOption(
                     value: sphere,
-                    label: Text(sphere.label),
-                    icon: Icon(
-                      sphere == TransactionSphere.it
-                          ? Icons.code
-                          : Icons.local_shipping,
-                    ),
+                    label: sphere.label,
+                    icon: sphere == TransactionSphere.it
+                        ? Icons.code
+                        : Icons.local_shipping,
+                    accent: sphere == TransactionSphere.it
+                        ? tokens.sphereIt
+                        : tokens.sphereLogistics,
                   ),
               ],
-              selected: {_sphere},
-              onSelectionChanged: (selection) =>
-                  setState(() => _sphere = selection.first),
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextFormField(

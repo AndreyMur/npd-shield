@@ -2,6 +2,7 @@ export 'app_button.dart';
 export 'app_card.dart';
 export 'app_chip.dart';
 export 'app_pressable.dart';
+export 'app_segmented_control.dart';
 export 'app_states.dart';
 export 'app_text_field.dart';
 export 'status_banner.dart';

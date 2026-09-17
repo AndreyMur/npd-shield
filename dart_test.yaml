@@ -1,0 +1,9 @@
+# Конфигурация тестов пакета `test`/`flutter test`.
+#
+# Golden-тесты компонентов платформозависимы: растеризация текста и теней
+# отличается между Windows/Linux/macOS, поэтому в CI (ubuntu) они не гоняются.
+# Локально их можно запустить и обновить так:
+#   flutter test --run-skipped --tags golden --update-goldens
+tags:
+  golden:
+    skip: "Платформозависимые golden-тесты. Запуск: flutter test --run-skipped --tags golden"
