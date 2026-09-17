@@ -14,7 +14,6 @@ void main() {
   late FakeActivitySpheresService spheres;
   late FakeContractorProfileRepository profile;
   late SharedPrefsFirstRunService firstRun;
-  late int demoLoads;
   late int completions;
 
   setUp(() {
@@ -22,7 +21,6 @@ void main() {
     spheres = FakeActivitySpheresService();
     profile = FakeContractorProfileRepository();
     firstRun = SharedPrefsFirstRunService();
-    demoLoads = 0;
     completions = 0;
   });
 
@@ -37,7 +35,6 @@ void main() {
           activitySpheresService: spheres,
           profileRepository: profile,
           firstRunService: firstRun,
-          onLoadDemoData: () async => demoLoads++,
           onCompleted: () => completions++,
         ),
       ),
@@ -67,10 +64,6 @@ void main() {
       'Иванов Иван Иванович',
     );
     await tester.enterText(find.byKey(const Key('onboarding_inn')), '771234567890');
-    await tester.tap(find.byKey(const Key('onboarding_next')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('onboarding_step_start')), findsOneWidget);
     await tester.tap(find.byKey(const Key('onboarding_finish')));
     await tester.pumpAndSettle();
 
@@ -79,67 +72,26 @@ void main() {
     expect(spheres.spheres, [TransactionSphere.it]);
     expect(profile.profile?.fullName, 'Иванов Иван Иванович');
     expect(profile.profile?.inn, '771234567890');
-    expect(demoLoads, 0);
     expect(completions, 1);
   });
 
-  testWidgets('режим «с нуля» не загружает демо и не создаёт профиль', (
-    tester,
-  ) async {
+  testWidgets('без профиля завершает онбординг без данных', (tester) async {
     await pumpOnboarding(tester);
     await selectSphereAndContinue(tester);
-    await tester.tap(find.byKey(const Key('onboarding_next')));
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('onboarding_finish')));
     await tester.pumpAndSettle();
 
-    expect(demoLoads, 0);
     expect(profile.profile, isNull);
     expect(await firstRun.getStartMode(), StartMode.fromScratch);
     expect(completions, 1);
   });
 
-  testWidgets('режим «демо» требует подтверждения и загружает данные', (
-    tester,
-  ) async {
+  testWidgets('в онбординге нет выбора режима старта', (tester) async {
     await pumpOnboarding(tester);
     await selectSphereAndContinue(tester);
-    await tester.tap(find.byKey(const Key('onboarding_next')));
-    await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('onboarding_mode_demo')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('onboarding_finish')));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Загрузить демо-данные?'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('demo_load_confirm')));
-    await tester.pumpAndSettle();
-
-    expect(demoLoads, 1);
-    expect(await firstRun.getStartMode(), StartMode.demo);
-    expect(completions, 1);
-  });
-
-  testWidgets('отмена подтверждения демо не завершает онбординг', (
-    tester,
-  ) async {
-    await pumpOnboarding(tester);
-    await selectSphereAndContinue(tester);
-    await tester.tap(find.byKey(const Key('onboarding_next')));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('onboarding_mode_demo')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('onboarding_finish')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('demo_load_cancel')));
-    await tester.pumpAndSettle();
-
-    expect(demoLoads, 0);
-    expect(completions, 0);
-    expect(await firstRun.isOnboardingCompleted(), isFalse);
-    expect(find.byKey(const Key('onboarding_step_start')), findsOneWidget);
+    expect(find.byKey(const Key('onboarding_step_start')), findsNothing);
+    expect(find.byKey(const Key('onboarding_mode_demo')), findsNothing);
   });
 
   testWidgets('без выбранной сферы дальше не переходит', (tester) async {
@@ -155,15 +107,16 @@ void main() {
     );
   });
 
-  testWidgets('некорректный ИНН не пропускает дальше', (tester) async {
+  testWidgets('некорректный ИНН не завершает онбординг', (tester) async {
     await pumpOnboarding(tester);
     await selectSphereAndContinue(tester);
 
     await tester.enterText(find.byKey(const Key('onboarding_inn')), '123');
-    await tester.tap(find.byKey(const Key('onboarding_next')));
+    await tester.tap(find.byKey(const Key('onboarding_finish')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('onboarding_step_profile')), findsOneWidget);
     expect(find.text('Введите 10 или 12 цифр'), findsOneWidget);
+    expect(await firstRun.isOnboardingCompleted(), isFalse);
   });
 }

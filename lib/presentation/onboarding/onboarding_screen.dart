@@ -7,20 +7,17 @@ import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
 import '../../data/services/first_run_service.dart';
 import '../../domain/profile/contractor_profile.dart';
-import '../settings/data_management_dialogs.dart';
 
 /// Онбординг первого запуска.
 ///
-/// Проводит пользователя через три шага: выбор сфер деятельности, заполнение
-/// профиля ИП и выбор режима старта («с нуля» или «демо»). По завершении
-/// сохраняет введённые данные и отмечает онбординг пройденным.
+/// Проводит пользователя через два шага: выбор сфер деятельности и заполнение
+/// профиля ИП. Новый пользователь всегда начинает с нуля — демонстрационные
+/// данные можно загрузить позже из настроек. По завершении сохраняет введённые
+/// данные и отмечает онбординг пройденным.
 class OnboardingScreen extends StatefulWidget {
   final ActivitySpheresService activitySpheresService;
   final ContractorProfileRepository profileRepository;
   final FirstRunService firstRunService;
-
-  /// Загружает демонстрационные данные по подтверждению пользователя.
-  final Future<void> Function() onLoadDemoData;
 
   /// Вызывается после успешного завершения онбординга.
   final VoidCallback onCompleted;
@@ -30,7 +27,6 @@ class OnboardingScreen extends StatefulWidget {
     required this.activitySpheresService,
     required this.profileRepository,
     required this.firstRunService,
-    required this.onLoadDemoData,
     required this.onCompleted,
   });
 
@@ -39,13 +35,12 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  static const _stepCount = 3;
+  static const _stepCount = 2;
 
   int _step = 0;
   bool _busy = false;
 
   final _selectedSpheres = <TransactionSphere>{};
-  StartMode _startMode = StartMode.fromScratch;
 
   final _formKey = GlobalKey<FormState>();
   final _fullName = TextEditingController();
@@ -90,25 +85,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Future<void> _finish() async {
     if (_busy) return;
-    final mode = _startMode;
-
-    if (mode == StartMode.demo) {
-      final confirmed = await showDemoDataConfirmation(context);
-      if (!confirmed) return;
-    }
-    if (!mounted) return;
 
     setState(() => _busy = true);
     try {
-      if (mode == StartMode.demo) {
-        await widget.onLoadDemoData();
-      }
       final profile = _buildProfile();
       if (profile != null) {
         await widget.profileRepository.save(profile);
       }
       await widget.activitySpheresService.save(_selectedSpheres.toList());
-      await widget.firstRunService.completeOnboarding(mode);
+      await widget.firstRunService.completeOnboarding(StartMode.fromScratch);
       widget.onCompleted();
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -166,8 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Expanded(
               child: switch (_step) {
                 0 => _buildSpheresStep(context),
-                1 => _buildProfileStep(context),
-                _ => _buildStartModeStep(context),
+                _ => _buildProfileStep(context),
               },
             ),
             _buildActions(context),
@@ -327,44 +311,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildStartModeStep(BuildContext context) {
-    final theme = Theme.of(context);
-    return ListView(
-      key: const Key('onboarding_step_start'),
-      padding: const EdgeInsets.all(24),
-      children: [
-        Text('Режим старта', style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(
-          'Выберите, как начать работу. Решение можно изменить позже в '
-          'настройках.',
-          style: theme.textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 16),
-        RadioGroup<StartMode>(
-          groupValue: _startMode,
-          onChanged: (value) => setState(() => _startMode = value!),
-          child: const Column(
-            children: [
-              RadioListTile<StartMode>(
-                key: Key('onboarding_mode_from_scratch'),
-                value: StartMode.fromScratch,
-                title: Text('Начать с нуля'),
-                subtitle: Text('Пустые, но готовые к работе экраны'),
-              ),
-              RadioListTile<StartMode>(
-                key: Key('onboarding_mode_demo'),
-                value: StartMode.demo,
-                title: Text('Загрузить демо-данные'),
-                subtitle: Text('Наполненное приложение для ознакомления'),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

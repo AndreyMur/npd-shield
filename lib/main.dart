@@ -315,7 +315,6 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
         activitySpheresService: widget.activitySpheresService,
         profileRepository: widget.profileRepository,
         firstRunService: widget.firstRunService,
-        onLoadDemoData: _loadDemoData,
         onCompleted: _handleOnboardingCompleted,
       );
     }
