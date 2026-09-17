@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/export/csv_export_service.dart';
 import '../../data/files/backup_file_picker.dart';
@@ -272,29 +274,29 @@ class _ReportsScreenState extends State<ReportsScreen> {
       appBar: AppBar(title: const Text('Отчёты')),
       body: ListView(
         key: const Key('reports_list'),
-        padding: const EdgeInsets.all(16),
+        padding: AppSpacing.screen,
         children: [
           ReportPeriodSelector(
             preset: _preset,
             period: _period,
             onPresetSelected: _selectPreset,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           _buildReportSection(),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           _ExportCard(
             busy: _busy,
             onExportTransactions: _exportTransactionsCsv,
             onExportInvoices: _exportInvoicesCsv,
             onExportPdf: _exportPdf,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           _BackupCard(
             busy: _busy,
             onExportBackup: _exportBackup,
             onImportBackup: _importBackup,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xl),
         ],
       ),
     );
@@ -302,36 +304,25 @@ class _ReportsScreenState extends State<ReportsScreen> {
 
   Widget _buildReportSection() {
     if (_loading) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 48),
-        child: Center(child: CircularProgressIndicator()),
+      return const AppLoadingState(
+        itemCount: 3,
+        semanticLabel: 'Построение отчёта',
       );
     }
     if (_error != null) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              const Text('Не удалось построить отчёт'),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                key: const Key('reports_retry'),
-                onPressed: _reload,
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
-        ),
+      return AppErrorState(
+        message: 'Не удалось построить отчёт',
+        retryKey: const Key('reports_retry'),
+        onRetry: _reload,
       );
     }
     final report = _report!;
     return Column(
       children: [
         _SummaryCard(report: report),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         ReportSphereChart(spheres: report.spheres),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         _BreakdownCard(
           keyPrefix: 'sphere',
           title: 'Разбивка по сферам',
@@ -347,7 +338,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ],
           emptyText: 'За выбранный период операций по сферам нет',
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         _BreakdownCard(
           keyPrefix: 'client',
           title: 'Разбивка по клиентам',
@@ -377,49 +368,50 @@ class _SummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tokens = AppTokens.of(context);
+    final profitColor = report.profit < 0
+        ? tokens.destructive
+        : tokens.success;
+    return AppCard(
       key: const Key('report_summary'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Итоги за период', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            _SummaryRow(
-              label: 'Доход',
-              value: report.income,
-              color: kReportIncomeColor,
-              valueKey: 'report_income',
-            ),
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: 'Расход',
-              value: report.expense,
-              color: kReportExpenseColor,
-              valueKey: 'report_expense',
-            ),
-            const SizedBox(height: 8),
-            _SummaryRow(
-              label: 'Прибыль',
-              value: report.profit,
-              color: report.profit < 0 ? kReportExpenseColor : kReportIncomeColor,
-              valueKey: 'report_profit',
-            ),
-            const Divider(height: 24),
-            _SummaryRow(
-              label: 'Налог к уплате',
-              value: report.taxAmount,
-              valueKey: 'report_tax',
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Начислено ${formatReportMoney(report.tax.accruedTax)} · '
-              'вычет взносов ${formatReportMoney(report.tax.insuranceDeduction)}',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Итоги за период', style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          _SummaryRow(
+            label: 'Доход',
+            value: report.income,
+            color: tokens.success,
+            valueKey: 'report_income',
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _SummaryRow(
+            label: 'Расход',
+            value: report.expense,
+            color: tokens.destructive,
+            valueKey: 'report_expense',
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          _SummaryRow(
+            label: 'Прибыль',
+            value: report.profit,
+            color: profitColor,
+            valueKey: 'report_profit',
+          ),
+          Divider(height: AppSpacing.lg, color: tokens.border),
+          _SummaryRow(
+            label: 'Налог к уплате',
+            value: report.taxAmount,
+            valueKey: 'report_tax',
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Начислено ${formatReportMoney(report.tax.accruedTax)} · '
+            'вычет взносов ${formatReportMoney(report.tax.insuranceDeduction)}',
+            style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
+          ),
+        ],
       ),
     );
   }
@@ -441,11 +433,15 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final style = theme.textTheme.titleMedium;
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: theme.textTheme.bodyMedium),
+        Text(
+          label,
+          style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
+        ),
         Text(
           formatReportMoney(value),
           key: Key(valueKey),
@@ -475,51 +471,49 @@ class _BreakdownCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tokens = AppTokens.of(context);
+    return AppCard(
       key: Key('report_breakdown_$keyPrefix'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            if (rows.isEmpty)
-              Text(
-                emptyText,
-                key: Key('report_breakdown_${keyPrefix}_empty'),
-                style: theme.textTheme.bodyMedium,
-              )
-            else ...[
-              _row(theme, headers, header: true),
-              const Divider(height: 12),
-              for (var i = 0; i < rows.length; i++)
-                _row(
-                  theme,
-                  rows[i],
-                  key: Key('report_${keyPrefix}_row_$i'),
-                ),
-            ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          if (rows.isEmpty)
+            Text(
+              emptyText,
+              key: Key('report_breakdown_${keyPrefix}_empty'),
+              style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
+            )
+          else ...[
+            _row(theme, tokens, headers, header: true),
+            Divider(height: AppSpacing.sm, color: tokens.border),
+            for (var i = 0; i < rows.length; i++)
+              _row(
+                theme,
+                tokens,
+                rows[i],
+                key: Key('report_${keyPrefix}_row_$i'),
+              ),
           ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _row(
     ThemeData theme,
+    AppTokens tokens,
     List<String> cells, {
     bool header = false,
     Key? key,
   }) {
     final style = header
-        ? theme.textTheme.bodySmall!.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          )
+        ? theme.textTheme.bodySmall?.copyWith(color: tokens.muted)
         : theme.textTheme.bodyMedium;
     return Padding(
       key: key,
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -559,46 +553,46 @@ class _ExportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tokens = AppTokens.of(context);
+    return AppCard(
       key: const Key('report_export_card'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Экспорт', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              'Файлы сохраняются на устройство в выбранную папку.',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                OutlinedButton.icon(
-                  key: const Key('reports_export_operations_csv'),
-                  onPressed: busy ? null : onExportTransactions,
-                  icon: const Icon(Icons.table_view_outlined),
-                  label: const Text('Операции в CSV'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('reports_export_invoices_csv'),
-                  onPressed: busy ? null : onExportInvoices,
-                  icon: const Icon(Icons.table_view_outlined),
-                  label: const Text('Счета в CSV'),
-                ),
-                FilledButton.icon(
-                  key: const Key('reports_export_pdf'),
-                  onPressed: busy ? null : onExportPdf,
-                  icon: const Icon(Icons.picture_as_pdf_outlined),
-                  label: const Text('Отчёт в PDF'),
-                ),
-              ],
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Экспорт', style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Файлы сохраняются на устройство в выбранную папку.',
+            style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              AppButton(
+                key: const Key('reports_export_operations_csv'),
+                label: 'Операции в CSV',
+                icon: Icons.table_view_outlined,
+                variant: AppButtonVariant.secondary,
+                onPressed: busy ? null : onExportTransactions,
+              ),
+              AppButton(
+                key: const Key('reports_export_invoices_csv'),
+                label: 'Счета в CSV',
+                icon: Icons.table_view_outlined,
+                variant: AppButtonVariant.secondary,
+                onPressed: busy ? null : onExportInvoices,
+              ),
+              AppButton(
+                key: const Key('reports_export_pdf'),
+                label: 'Отчёт в PDF',
+                icon: Icons.picture_as_pdf_outlined,
+                onPressed: busy ? null : onExportPdf,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -619,41 +613,40 @@ class _BackupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tokens = AppTokens.of(context);
+    return AppCard(
       key: const Key('report_backup_card'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Резервное копирование', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 4),
-            Text(
-              'Копия содержит все данные приложения. Восстановление заменяет '
-              'текущие данные.',
-              style: theme.textTheme.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                FilledButton.icon(
-                  key: const Key('reports_export_backup'),
-                  onPressed: busy ? null : onExportBackup,
-                  icon: const Icon(Icons.backup_outlined),
-                  label: const Text('Создать копию'),
-                ),
-                OutlinedButton.icon(
-                  key: const Key('reports_import_backup'),
-                  onPressed: busy ? null : onImportBackup,
-                  icon: const Icon(Icons.restore_outlined),
-                  label: const Text('Восстановить из копии'),
-                ),
-              ],
-            ),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Резервное копирование', style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Копия содержит все данные приложения. Восстановление заменяет '
+            'текущие данные.',
+            style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
+            children: [
+              AppButton(
+                key: const Key('reports_export_backup'),
+                label: 'Создать копию',
+                icon: Icons.backup_outlined,
+                onPressed: busy ? null : onExportBackup,
+              ),
+              AppButton(
+                key: const Key('reports_import_backup'),
+                label: 'Восстановить из копии',
+                icon: Icons.restore_outlined,
+                variant: AppButtonVariant.secondary,
+                onPressed: busy ? null : onImportBackup,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

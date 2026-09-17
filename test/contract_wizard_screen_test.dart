@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npd_shield/core/constants/contract_field_keys.dart';
+import 'package:npd_shield/core/widgets/widgets.dart';
 import 'package:npd_shield/data/models/contract_draft.dart';
 import 'package:npd_shield/data/models/document.dart';
 import 'package:npd_shield/data/pdf/contract_pdf_service.dart';
@@ -344,7 +345,7 @@ void main() {
       find.text('Не удалось сохранить черновик. Попробуйте ещё раз.'),
       findsOneWidget,
     );
-    final button = tester.widget<FilledButton>(createButton);
+    final button = tester.widget<AppButton>(createButton);
     expect(button.onPressed, isNotNull);
   });
 

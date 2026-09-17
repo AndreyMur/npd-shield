@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/files/text_file_picker.dart';
 import '../../data/models/risk_marker.dart';
 import '../../data/repositories/risk_report_repository.dart';
@@ -128,11 +130,12 @@ class _RiskShieldScreenState extends State<RiskShieldScreen> {
       report: _report!,
       fileName: _file?.name ?? '',
       error: _error,
-      footer: OutlinedButton.icon(
+      footer: AppButton(
         key: const Key('risk_pick_another_button'),
+        label: 'Проверить другой договор',
+        icon: Icons.upload_file,
+        variant: AppButtonVariant.secondary,
         onPressed: _pickAndAnalyze,
-        icon: const Icon(Icons.upload_file),
-        label: const Text('Проверить другой договор'),
       ),
     );
   }
@@ -147,55 +150,66 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.shield_outlined,
-              size: 72,
-              color: theme.colorScheme.primary,
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                gradient: tokens.brandGradient,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.shield_outlined,
+                size: 48,
+                color: tokens.onPrimary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'Проверка договора на риски',
               style: theme.textTheme.titleLarge,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               'Загрузите договор в формате TXT (до 100 КБ) — приложение найдёт '
               'формулировки, по которым договор могут переквалифицировать '
               'в трудовой.',
-              style: theme.textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               riskShieldDisclaimer,
               key: const Key('risk_empty_disclaimer'),
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
-            TextButton.icon(
+            const SizedBox(height: AppSpacing.xs),
+            AppButton(
               key: const Key('risk_empty_info_button'),
+              label: 'Как подготовить договор из PDF или DOCX',
+              icon: Icons.help_outline,
+              variant: AppButtonVariant.text,
               onPressed: () => showRiskShieldInfoSheet(context),
-              icon: const Icon(Icons.help_outline, size: 18),
-              label: const Text('Как подготовить договор из PDF или DOCX'),
             ),
             if (error != null) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               RiskErrorText(error!),
             ],
-            const SizedBox(height: 24),
-            FilledButton.icon(
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
               key: const Key('risk_pick_button'),
+              label: 'Загрузить договор',
+              icon: Icons.upload_file,
+              expanded: true,
               onPressed: onPick,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Загрузить договор'),
             ),
           ],
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/app_tokens.dart';
 
@@ -127,6 +128,18 @@ class AppTextFormField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final String? Function(String?)? validator;
 
+  /// Форматтеры ввода (ограничение допустимых символов).
+  final List<TextInputFormatter>? inputFormatters;
+
+  /// Действие клавиатуры (next/done/newline).
+  final TextInputAction? textInputAction;
+
+  /// Вызывается при отправке поля с клавиатуры.
+  final ValueChanged<String>? onFieldSubmitted;
+
+  /// Автофокус при открытии экрана.
+  final bool autofocus;
+
   const AppTextFormField({
     Key? key,
     this.controller,
@@ -143,6 +156,10 @@ class AppTextFormField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.onChanged,
     this.validator,
+    this.inputFormatters,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.autofocus = false,
   }) : fieldKey = key,
        super(key: null);
 
@@ -156,8 +173,12 @@ class AppTextFormField extends StatelessWidget {
       keyboardType: keyboardType,
       minLines: minLines,
       maxLines: maxLines,
+      autofocus: autofocus,
       textCapitalization: textCapitalization,
+      inputFormatters: inputFormatters,
+      textInputAction: textInputAction,
       onChanged: onChanged,
+      onFieldSubmitted: onFieldSubmitted,
       validator: validator,
       decoration: _decoration(
         context,

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/constants/contract_field_keys.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../../core/validation/contract_input.dart';
+import '../../../core/widgets/widgets.dart';
 import '../../../data/models/contract_draft.dart';
 import '../../../data/models/contract_template.dart';
 import '../../../data/models/document.dart';
@@ -733,21 +735,27 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                ),
                 child: Text(
                   'Предпросмотр договора',
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xxs),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                ),
                 child: Text(
                   'Обновляется автоматически по мере заполнения полей.',
-                  style: Theme.of(sheetContext).textTheme.bodySmall,
+                  style: Theme.of(sheetContext).textTheme.bodySmall?.copyWith(
+                    color: AppTokens.of(sheetContext).muted,
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: ListenableBuilder(
                   listenable: controllerListenable,
@@ -759,7 +767,12 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
                       );
                     }
                     return SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        0,
+                        AppSpacing.md,
+                        AppSpacing.md,
+                      ),
                       child: ContractDocumentPreview(document: current),
                     );
                   },
@@ -816,6 +829,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   }
 
   Widget _buildScaffold(ThemeData theme) {
+    final tokens = AppTokens.of(context);
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -832,7 +846,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
                 child: Icon(
                   Icons.cloud_done_outlined,
                   key: const Key('autosave_indicator'),
-                  color: theme.colorScheme.primary,
+                  color: tokens.primary,
                 ),
               ),
             ),
@@ -871,24 +885,13 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   }
 
   Widget _buildLoadError() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить шаблон договора'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: () {
-                setState(() => _loadError = null);
-                _loadTemplateText();
-              },
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
-      ),
+    return AppErrorState(
+      message: 'Не удалось загрузить шаблон договора',
+      retryKey: const Key('wizard_load_retry'),
+      onRetry: () {
+        setState(() => _loadError = null);
+        _loadTemplateText();
+      },
     );
   }
 
@@ -903,30 +906,40 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     return Form(
       key: _formKey,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         children: [
           Text(step.title, style: theme.textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(step.description, style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 16),
-          if (_step == _clientStepIndex && widget.clientRepository != null) ...[
-            OutlinedButton.icon(
-              key: const Key('wizard_pick_client_button'),
-              onPressed: _pickClient,
-              icon: const Icon(Icons.people_outline, size: 18),
-              label: Text(
-                _clientId == 0
-                    ? 'Выбрать заказчика из справочника'
-                    : 'Заказчик из справочника',
-              ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            step.description,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppTokens.of(context).muted,
             ),
-            const SizedBox(height: 12),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (_step == _clientStepIndex && widget.clientRepository != null) ...[
+            AppButton(
+              key: const Key('wizard_pick_client_button'),
+              label: _clientId == 0
+                  ? 'Выбрать заказчика из справочника'
+                  : 'Заказчик из справочника',
+              icon: Icons.people_outline,
+              variant: AppButtonVariant.secondary,
+              expanded: true,
+              onPressed: _pickClient,
+            ),
+            const SizedBox(height: AppSpacing.sm),
           ],
           for (final field in step.fields) ...[
             _buildField(field),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           _buildNavigationRow(theme),
         ],
       ),
@@ -934,88 +947,81 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
   }
 
   Widget _buildPreviewStep(ThemeData theme) {
+    final tokens = AppTokens.of(context);
     final document = _composeCurrent();
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.lg,
+      ),
       children: [
         Text('Предпросмотр документа', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xxs),
         Text(
           'Договор собран из заполненных полей. Нажмите «Создать PDF», '
           'чтобы получить готовый файл.',
-          style: theme.textTheme.bodyMedium,
+          style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.sm),
         if (document != null)
           ContractDocumentPreview(document: document)
         else
           const Center(child: CircularProgressIndicator()),
         if (widget.riskAnalyzer != null) ...[
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
           _buildRiskSection(theme),
         ],
-        const SizedBox(height: 20),
-        FilledButton.icon(
+        const SizedBox(height: AppSpacing.lg),
+        AppButton(
           key: const Key('wizard_create_pdf_button'),
+          label: _busy ? 'Создание PDF…' : 'Создать PDF',
+          icon: Icons.picture_as_pdf_outlined,
+          loading: _busy,
+          expanded: true,
           onPressed: _busy ? null : _createContract,
-          icon: _busy
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Icon(Icons.picture_as_pdf_outlined),
-          label: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Text(_busy ? 'Создание PDF…' : 'Создать PDF'),
-          ),
         ),
-        const SizedBox(height: 8),
-        Align(
-          alignment: Alignment.center,
-          child: OutlinedButton(
-            key: const Key('wizard_back_button'),
-            onPressed: _busy ? null : _goBack,
-            child: const Text('Назад'),
-          ),
+        const SizedBox(height: AppSpacing.xs),
+        AppButton(
+          key: const Key('wizard_back_button'),
+          label: 'Назад',
+          variant: AppButtonVariant.secondary,
+          expanded: true,
+          onPressed: _busy ? null : _goBack,
         ),
       ],
     );
   }
 
   Widget _buildRiskSection(ThemeData theme) {
+    final tokens = AppTokens.of(context);
     if (_analyzingRisks) {
-      return Card(
+      return AppCard(
         key: const Key('risk_contract_analyzing'),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                'Risk Shield проверяет договор на опасные формулировки…',
+                style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Risk Shield проверяет договор на опасные формулировки…',
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     }
     final error = _riskError;
     if (error != null) {
-      return Card(
+      return AppCard(
         key: const Key('risk_contract_error'),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: RiskErrorText(error),
-        ),
+        child: RiskErrorText(error),
       );
     }
     final report = _riskReport;
@@ -1026,11 +1032,12 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
         RiskShieldSummaryCard(report: report),
         Align(
           alignment: Alignment.centerLeft,
-          child: TextButton.icon(
+          child: AppButton(
             key: const Key('risk_contract_recheck'),
+            label: 'Проверить заново',
+            icon: Icons.refresh,
+            variant: AppButtonVariant.text,
             onPressed: _analyzingRisks ? null : _runRiskCheck,
-            icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Проверить заново'),
           ),
         ),
       ],
@@ -1041,23 +1048,20 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     return Row(
       children: [
         if (_step > 0) ...[
-          OutlinedButton(
+          AppButton(
             key: const Key('wizard_back_button'),
+            label: 'Назад',
+            variant: AppButtonVariant.secondary,
             onPressed: _goBack,
-            child: const Text('Назад'),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.sm),
         ],
         Expanded(
-          child: FilledButton(
+          child: AppButton(
             key: const Key('wizard_next_button'),
+            label: _step == _stepsCount - 2 ? 'К предпросмотру' : 'Далее',
+            expanded: true,
             onPressed: _goNext,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Text(
-                _step == _stepsCount - 2 ? 'К предпросмотру' : 'Далее',
-              ),
-            ),
           ),
         ),
       ],
@@ -1070,17 +1074,19 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
     final isFirst = fields.first.key == field.key;
     final isLast = fields.last.key == field.key;
     final isMultiline = field.maxLines > 1;
-    return TextFormField(
+    return AppTextFormField(
       key: Key('field_${field.key}'),
       controller: controller,
+      label: field.label,
+      helper: field.helper,
+      keyboardType: field.keyboardType,
+      maxLines: field.maxLines,
+      autofocus: isFirst,
       validator: (value) {
         final security = ContractInput.validate(value);
         if (security != null) return security;
         return field.validator?.call(value);
       },
-      keyboardType: field.keyboardType,
-      maxLines: field.maxLines,
-      autofocus: isFirst,
       onChanged: field.key == ContractFieldKeys.clientName
           ? (_) => _clearClientSelection()
           : null,
@@ -1090,15 +1096,7 @@ class _ContractWizardScreenState extends State<ContractWizardScreen> {
           : isLast
           ? TextInputAction.done
           : TextInputAction.next,
-      onFieldSubmitted: isMultiline || !isLast
-          ? null
-          : (_) => _goNext(),
-      decoration: InputDecoration(
-        labelText: field.label,
-        helperText: field.helper,
-        helperMaxLines: 3,
-        border: const OutlineInputBorder(),
-      ),
+      onFieldSubmitted: isMultiline || !isLast ? null : (_) => _goNext(),
     );
   }
 }
@@ -1120,14 +1118,19 @@ class _StepProgressHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final progress = totalSteps <= 1 ? 1.0 : step / (totalSteps - 1);
-    final colorScheme = theme.colorScheme;
 
     return Semantics(
       label: 'Шаг ${step + 1} из $totalSteps',
       liveRegion: true,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.sm,
+          AppSpacing.md,
+          0,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1135,30 +1138,35 @@ class _StepProgressHeader extends StatelessWidget {
               children: [
                 Text(
                   'Шаг ${step + 1} из $totalSteps',
-                  style: theme.textTheme.labelMedium!.copyWith(
-                    color: colorScheme.primary,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: tokens.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     stepTitle,
-                    style: theme.textTheme.labelMedium,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: tokens.muted,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             ClipRRect(
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(AppSpacing.xxs),
               child: LinearProgressIndicator(
                 key: const Key('wizard_progress'),
                 value: progress,
                 minHeight: 6,
+                backgroundColor: tokens.surfaceVariant,
+                color: tokens.primary,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 for (var i = 0; i < totalSteps; i++) ...[
@@ -1166,9 +1174,7 @@ class _StepProgressHeader extends StatelessWidget {
                     Expanded(
                       child: Container(
                         height: 2,
-                        color: i <= step
-                            ? colorScheme.primary
-                            : colorScheme.outlineVariant,
+                        color: i <= step ? tokens.primary : tokens.border,
                       ),
                     ),
                   _StepDot(
@@ -1180,7 +1186,7 @@ class _StepProgressHeader extends StatelessWidget {
                 ],
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xxs),
           ],
         ),
       ),
@@ -1203,12 +1209,12 @@ class _StepDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = AppTokens.of(context);
     final color = active
-        ? colorScheme.primary
+        ? tokens.primary
         : reached
-        ? colorScheme.primary.withValues(alpha: 0.4)
-        : colorScheme.outlineVariant;
+        ? tokens.primary.withValues(alpha: 0.4)
+        : tokens.border;
 
     return Semantics(
       button: onTap != null,
@@ -1222,20 +1228,20 @@ class _StepDot extends StatelessWidget {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: reached || active ? color : colorScheme.surface,
+            color: reached || active ? color : tokens.surface,
             border: active || !reached
                 ? Border.all(color: color, width: 2)
                 : null,
           ),
           child: Center(
             child: reached
-                ? Icon(Icons.check, size: 16, color: colorScheme.surface)
+                ? Icon(Icons.check, size: 16, color: tokens.onPrimary)
                 : Text(
                     '${index + 1}',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: active ? colorScheme.surface : color,
+                      color: active ? tokens.onPrimary : color,
                     ),
                   ),
           ),
@@ -1254,32 +1260,28 @@ class _TemplateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      color: template.sphere.color.withValues(alpha: 0.1),
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Icon(template.sphere.icon, color: template.sphere.color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(template.title, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(
-                    template.sphere.category,
-                    style: theme.textTheme.bodySmall!.copyWith(
-                      color: template.sphere.color,
-                    ),
-                  ),
-                ],
-              ),
+    final color = template.sphere.color;
+    return AppCard(
+      color: color.withValues(alpha: 0.1),
+      borderColor: color.withValues(alpha: 0.3),
+      child: Row(
+        children: [
+          Icon(template.sphere.icon, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(template.title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(
+                  template.sphere.category,
+                  style: theme.textTheme.bodySmall?.copyWith(color: color),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

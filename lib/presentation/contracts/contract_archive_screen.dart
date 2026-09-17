@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/contract_draft.dart';
 import '../../data/models/contract_template.dart';
 import '../../data/models/transaction.dart';
@@ -390,32 +392,35 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: AppTextField(
               key: const Key('contract_search_field'),
               controller: _searchController,
+              hint: 'Поиск по названию, контрагенту, дате',
+              dense: true,
+              prefixIcon: const Icon(Icons.search),
               onChanged: _onQueryChanged,
-              decoration: InputDecoration(
-                hintText: 'Поиск по названию, контрагенту, дате',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                suffixIcon: _query.isEmpty
-                    ? null
-                    : IconButton(
-                        key: const Key('contract_search_clear'),
-                        tooltip: 'Очистить поиск',
-                        icon: const Icon(Icons.close),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                          _load();
-                        },
-                      ),
-              ),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      key: const Key('contract_search_clear'),
+                      tooltip: 'Очистить поиск',
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _query = '');
+                        _load();
+                      },
+                    ),
             ),
           ),
           _buildStatusFilters(),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xxs),
           Expanded(child: _buildBody()),
         ],
       ),
@@ -425,10 +430,10 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
   Widget _buildStatusFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       child: Row(
         children: [
-          _FilterChip(
+          AppFilterChip(
             key: const Key('status_filter_all'),
             label: 'Все',
             selected: _statusFilter == null,
@@ -436,10 +441,11 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
           ),
           for (final status in ContractStatus.values)
             Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: _FilterChip(
+              padding: const EdgeInsets.only(left: AppSpacing.xs),
+              child: AppFilterChip(
                 key: Key('status_filter_${status.name}'),
                 label: status.label,
+                icon: status.icon,
                 selected: _statusFilter == status,
                 onSelected: () => _selectStatus(status),
               ),
@@ -451,30 +457,25 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
 
   Widget _buildBody() {
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoadingState(semanticLabel: 'Загрузка договоров');
     }
     if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Не удалось загрузить договоры'),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _load,
-              child: const Text('Повторить'),
-            ),
-          ],
-        ),
+      return AppErrorState(
+        message: 'Не удалось загрузить договоры',
+        retryKey: const Key('contract_archive_retry'),
+        onRetry: _load,
       );
     }
     final drafts = _visibleDrafts;
     if (drafts.isEmpty) {
-      return Center(
-        child: Text(
-          _drafts.isEmpty ? 'Договоров пока нет' : 'Ничего не найдено',
-          key: const Key('contract_archive_empty'),
-        ),
+      final isEmpty = _drafts.isEmpty;
+      return AppEmptyState(
+        key: const Key('contract_archive_empty'),
+        icon: isEmpty ? Icons.description_outlined : Icons.search_off,
+        title: isEmpty ? 'Договоров пока нет' : 'Ничего не найдено',
+        message: isEmpty
+            ? 'Создайте договор из библиотеки шаблонов.'
+            : 'Измените запрос или статус.',
       );
     }
     final showFooter = _hasMore || _loadingMore;
@@ -484,19 +485,24 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
         key: const Key('contract_archive_list'),
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.xs,
+          AppSpacing.md,
+          AppSpacing.lg,
+        ),
         itemCount: drafts.length + (showFooter ? 1 : 0),
         itemBuilder: (context, index) {
           if (index >= drafts.length) {
             return const Padding(
               key: Key('contract_archive_loading_more'),
-              padding: EdgeInsets.symmetric(vertical: 16),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Center(child: CircularProgressIndicator()),
             );
           }
           final draft = drafts[index];
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: _ContractCard(
               key: Key('contract_card_${draft.id}'),
               draftId: draft.id,
@@ -523,28 +529,6 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
           );
         },
       ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _FilterChip({
-    super.key,
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
     );
   }
 }
@@ -578,75 +562,85 @@ class _ContractCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final subtitleParts = [
       if (client.isNotEmpty) client,
       if (number.isNotEmpty) '№ $number',
       if (date.isNotEmpty) date,
     ];
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: theme.textTheme.titleMedium),
-                    if (subtitleParts.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitleParts.join(' · '),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    ],
-                    const SizedBox(height: 8),
-                    _StatusChip(status: status),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                key: Key('contract_menu_$draftId'),
-                tooltip: 'Действия с договором',
-                onSelected: onAction,
-                itemBuilder: (context) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Text('Редактировать'),
-                  ),
-                  if (canComplete)
-                    const PopupMenuItem(
-                      value: 'complete',
-                      child: Text('Завершить сделку'),
+    return AppCard(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.xxs,
+        AppSpacing.sm,
+      ),
+      onTap: onTap,
+      semanticLabel:
+          '$title${subtitleParts.isEmpty ? '' : '. ${subtitleParts.join(', ')}'}. '
+          'Статус: ${status.label}',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: theme.textTheme.titleMedium),
+                if (subtitleParts.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    subtitleParts.join(' · '),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: tokens.muted,
                     ),
-                  if (canCreateAct)
-                    const PopupMenuItem(
-                      value: 'act',
-                      child: Text('Создать акт'),
-                    ),
-                  const PopupMenuItem(
-                    value: 'duplicate',
-                    child: Text('Дублировать'),
-                  ),
-                  for (final target in status.allowedTransitions)
-                    PopupMenuItem(
-                      value: 'status:${target.name}',
-                      child: Text(_statusActionLabel(status, target)),
-                    ),
-                  const PopupMenuItem(
-                    value: 'delete',
-                    child: Text('Удалить'),
                   ),
                 ],
+                const SizedBox(height: AppSpacing.xs),
+                AppStatusChip(
+                  label: status.label,
+                  color: status.color(tokens),
+                  icon: status.icon,
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            key: Key('contract_menu_$draftId'),
+            tooltip: 'Действия с договором',
+            onSelected: onAction,
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Text('Редактировать'),
+              ),
+              if (canComplete)
+                const PopupMenuItem(
+                  value: 'complete',
+                  child: Text('Завершить сделку'),
+                ),
+              if (canCreateAct)
+                const PopupMenuItem(
+                  value: 'act',
+                  child: Text('Создать акт'),
+                ),
+              const PopupMenuItem(
+                value: 'duplicate',
+                child: Text('Дублировать'),
+              ),
+              for (final target in status.allowedTransitions)
+                PopupMenuItem(
+                  value: 'status:${target.name}',
+                  child: Text(_statusActionLabel(status, target)),
+                ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Text('Удалить'),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -661,37 +655,5 @@ class _ContractCard extends StatelessWidget {
     if (to == ContractStatus.signed) return 'Отметить подписанным';
     if (to == ContractStatus.draft) return 'Вернуть в черновик';
     return 'В архив';
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  final ContractStatus status;
-
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = status.color;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(status.icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            status.label,
-            style: Theme.of(
-              context,
-            ).textTheme.labelMedium!.copyWith(color: color),
-          ),
-        ],
-      ),
-    );
   }
 }

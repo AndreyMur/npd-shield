@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/contract_template.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
@@ -127,14 +129,22 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
         future: _templatesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppLoadingState(semanticLabel: 'Загрузка шаблонов');
           }
           if (snapshot.hasError || snapshot.data == null) {
-            return const Center(child: Text('Не удалось загрузить шаблоны'));
+            return AppErrorState(
+              message: 'Не удалось загрузить шаблоны',
+              retryKey: const Key('template_library_retry'),
+              onRetry: _reload,
+            );
           }
           final templates = snapshot.data!;
           if (templates.isEmpty) {
-            return const Center(child: Text('Шаблонов пока нет'));
+            return const AppEmptyState(
+              icon: Icons.description_outlined,
+              title: 'Шаблонов пока нет',
+              message: 'Библиотека шаблонов пуста.',
+            );
           }
           return _buildCatalog(templates);
         },
@@ -152,29 +162,30 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: TextField(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            0,
+          ),
+          child: AppTextField(
             key: const Key('template_search_field'),
             controller: _searchController,
+            hint: 'Поиск по названию, описанию, ОКВЭД',
+            dense: true,
+            prefixIcon: const Icon(Icons.search),
             onChanged: (value) => setState(() => _query = value),
-            textInputAction: TextInputAction.search,
-            decoration: InputDecoration(
-              hintText: 'Поиск по названию, описанию, ОКВЭД',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      key: const Key('template_search_clear'),
-                      tooltip: 'Очистить поиск',
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        _searchController.clear();
-                        setState(() => _query = '');
-                      },
-                    ),
-              isDense: true,
-              border: const OutlineInputBorder(),
-            ),
+            suffixIcon: _query.isEmpty
+                ? null
+                : IconButton(
+                    key: const Key('template_search_clear'),
+                    tooltip: 'Очистить поиск',
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _query = '');
+                    },
+                  ),
           ),
         ),
         _CategoryFilterBar(
@@ -183,14 +194,10 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
         ),
         Expanded(
           child: visible.isEmpty
-              ? const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Text(
-                      'Ничего не найдено. Измените запрос или категорию.',
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
+              ? const AppEmptyState(
+                  icon: Icons.search_off,
+                  title: 'Ничего не найдено',
+                  message: 'Измените запрос или категорию.',
                 )
               : RefreshIndicator(
                   onRefresh: () async {
@@ -199,12 +206,17 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
                   },
                   child: ListView.builder(
                     key: const Key('template_library'),
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.xxs,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                    ),
                     itemCount: visible.length,
                     itemBuilder: (context, index) {
                       final template = visible[index];
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: _TemplateCard(
                           key: Key('template_card_${template.code}'),
                           template: template,
@@ -229,61 +241,36 @@ class _CategoryFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.xs,
+      ),
       child: Row(
         children: [
-          _CategoryChip(
+          AppFilterChip(
             key: const Key('template_filter_all'),
             label: 'Все',
-            color: Theme.of(context).colorScheme.primary,
+            accent: tokens.primary,
             selected: selected == null,
             onSelected: () => onSelected(null),
           ),
           for (final sphere in TemplateSphere.values) ...[
-            const SizedBox(width: 8),
-            _CategoryChip(
+            const SizedBox(width: AppSpacing.xs),
+            AppFilterChip(
               key: Key('template_filter_${sphere.name}'),
               label: sphere.category,
-              color: sphere.color,
+              accent: sphere.color,
+              icon: sphere.icon,
               selected: selected == sphere,
               onSelected: () => onSelected(sphere),
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  final String label;
-  final Color color;
-  final bool selected;
-  final VoidCallback onSelected;
-
-  const _CategoryChip({
-    super.key,
-    required this.label,
-    required this.color,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selected,
-      onSelected: (_) => onSelected(),
-      selectedColor: color.withValues(alpha: 0.18),
-      side: BorderSide(
-        color: selected ? color : Theme.of(context).colorScheme.outlineVariant,
-      ),
-      labelStyle: TextStyle(
-        color: selected ? color : Theme.of(context).colorScheme.onSurface,
-        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
       ),
     );
   }
@@ -298,132 +285,97 @@ class _TemplateCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final sphereColor = template.sphere.color;
 
-    return Semantics(
-      button: true,
-      label:
+    return AppCard(
+      onTap: onTap,
+      semanticLabel:
           'Шаблон: ${template.title}. '
           'Категория ${template.sphere.category}. '
           'Сфера ${template.sphere.label}. '
           '${template.okved.isEmpty ? '' : 'ОКВЭД ${template.okved}. '}'
           '${template.recommended ? 'Рекомендовано. ' : ''}'
           '${template.example.isEmpty ? '' : 'Пример: ${template.example}'}',
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: sphereColor.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
+                child: Icon(template.sphere.icon, color: sphereColor),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: sphereColor,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(template.sphere.icon, color: Colors.white),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            template.sphere.category,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: sphereColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        if (template.recommended)
+                          AppStatusChip(
+                            label: 'Рекомендовано',
+                            color: sphereColor,
+                            icon: Icons.verified_outlined,
+                          ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  template.sphere.category,
-                                  style: theme.textTheme.labelMedium!.copyWith(
-                                    color: sphereColor,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                              if (template.recommended)
-                                _RecommendedBadge(color: sphereColor),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            template.title,
-                            style: theme.textTheme.titleMedium,
-                          ),
-                        ],
-                      ),
+                    const SizedBox(height: 2),
+                    Text(
+                      template.title,
+                      style: theme.textTheme.titleMedium,
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  template.description,
-                  style: theme.textTheme.bodyMedium,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (template.example.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  _ExampleRow(example: template.example, color: sphereColor),
-                ],
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    _SphereChip(
-                      label: 'Категория: ${template.sphere.category}',
-                      color: sphereColor,
-                    ),
-                    _SphereChip(
-                      label: 'Сфера: ${template.sphere.label}',
-                      color: sphereColor,
-                    ),
-                    if (template.okved.isNotEmpty)
-                      _SphereChip(
-                        label: 'ОКВЭД: ${template.okved}',
-                        color: sphereColor,
-                      ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Пометка «Рекомендовано» для наиболее безопасных шаблонов.
-class _RecommendedBadge extends StatelessWidget {
-  final Color color;
-
-  const _RecommendedBadge({required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.verified_outlined, size: 14, color: color),
-          const SizedBox(width: 4),
+          const SizedBox(height: AppSpacing.sm),
           Text(
-            'Рекомендовано',
-            style: Theme.of(context).textTheme.labelSmall!
-                .copyWith(color: color, fontWeight: FontWeight.w600),
+            template.description,
+            style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (template.example.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _ExampleRow(example: template.example, color: sphereColor),
+          ],
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              AppStatusChip(
+                label: 'Категория: ${template.sphere.category}',
+                color: sphereColor,
+              ),
+              AppStatusChip(
+                label: 'Сфера: ${template.sphere.label}',
+                color: sphereColor,
+              ),
+              if (template.okved.isNotEmpty)
+                AppStatusChip(
+                  label: 'ОКВЭД: ${template.okved}',
+                  color: sphereColor,
+                ),
+            ],
           ),
         ],
       ),
@@ -441,38 +393,19 @@ class _ExampleRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(Icons.lightbulb_outline, size: 16, color: color),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
-          child: Text('Пример: $example', style: theme.textTheme.bodySmall),
+          child: Text(
+            'Пример: $example',
+            style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
+          ),
         ),
       ],
-    );
-  }
-}
-
-class _SphereChip extends StatelessWidget {
-  final String label;
-  final Color color;
-
-  const _SphereChip({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium!.copyWith(color: color),
-      ),
     );
   }
 }

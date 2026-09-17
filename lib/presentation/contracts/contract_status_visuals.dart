@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
 import '../../data/models/contract_draft.dart';
 
 /// Визуальные параметры статусов договора.
@@ -11,11 +12,11 @@ extension ContractStatusVisuals on ContractStatus {
     ContractStatus.archived => 'Архив',
   };
 
-  /// Цвет маркировки статуса.
-  Color get color => switch (this) {
-    ContractStatus.draft => const Color(0xFF607D8B),
-    ContractStatus.signed => const Color(0xFF2E7D32),
-    ContractStatus.archived => const Color(0xFF6D4C41),
+  /// Цвет маркировки статуса из семантических токенов темы.
+  Color color(AppTokens tokens) => switch (this) {
+    ContractStatus.draft => tokens.muted,
+    ContractStatus.signed => tokens.success,
+    ContractStatus.archived => tokens.primary,
   };
 
   /// Значок статуса.

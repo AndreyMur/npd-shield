@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/contract_field_keys.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/contract_draft.dart';
 import '../../data/models/contract_template.dart';
 import '../../data/repositories/contract_draft_repository.dart';
@@ -189,192 +191,161 @@ class _ContractFormScreenState extends State<ContractFormScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Scaffold(
       appBar: AppBar(title: const Text('Новый договор')),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: AppSpacing.screen,
           children: [
             _TemplateHeader(template: widget.template),
-            const SizedBox(height: 16),
-            Text('Параметры договора', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.md),
+            _SectionTitle('Параметры договора'),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_contractNumber'),
               controller: _numberController,
-              decoration: const InputDecoration(
-                labelText: 'Номер договора',
-                hintText: 'Например, 14/09',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Номер договора',
+              hint: 'Например, 14/09',
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_contractDate'),
               controller: _dateController,
+              label: 'Дата договора',
+              hint: 'ДД.ММ.ГГГГ',
               validator: _dateValidator,
-              decoration: const InputDecoration(
-                labelText: 'Дата договора',
-                hintText: 'ДД.ММ.ГГГГ',
-                border: OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_contractCity'),
               controller: _cityController,
-              decoration: const InputDecoration(
-                labelText: 'Город заключения',
-                hintText: 'Например, Москва',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Город заключения',
+              hint: 'Например, Москва',
             ),
-            const SizedBox(height: 20),
-            Text('Исполнитель', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.lg),
+            _SectionTitle('Исполнитель'),
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               _profile == null
                   ? 'Данные берутся из профиля. Заполните профиль, '
                         'чтобы они подставлялись автоматически.'
                   : 'Реквизиты из профиля подставлены автоматически.',
-              style: theme.textTheme.bodySmall,
+              style: theme.textTheme.bodySmall?.copyWith(color: tokens.muted),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_executorFullName'),
               controller: _executorFullNameController,
+              label: 'ФИО исполнителя (ИП)',
               validator: (v) =>
                   _requiredValidator(v, 'Укажите ФИО исполнителя'),
-              decoration: const InputDecoration(
-                labelText: 'ФИО исполнителя (ИП)',
-                border: OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: TextFormField(
+                  child: AppTextFormField(
                     key: const Key('field_executorInn'),
                     controller: _executorInnController,
-                    validator: _innValidator,
+                    label: 'ИНН исполнителя',
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'ИНН исполнителя',
-                      border: OutlineInputBorder(),
-                    ),
+                    validator: _innValidator,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: TextFormField(
+                  child: AppTextFormField(
                     key: const Key('field_executorOgrnip'),
                     controller: _executorOgrnipController,
-                    validator: (v) => _requiredValidator(v, 'Укажите ОГРНИП'),
+                    label: 'ОГРНИП',
                     keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      labelText: 'ОГРНИП',
-                      border: OutlineInputBorder(),
-                    ),
+                    validator: (v) => _requiredValidator(v, 'Укажите ОГРНИП'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_executorAddress'),
               controller: _executorAddressController,
+              label: 'Адрес регистрации',
               validator: (v) =>
                   _requiredValidator(v, 'Укажите адрес регистрации'),
-              decoration: const InputDecoration(
-                labelText: 'Адрес регистрации',
-                border: OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 20),
-            Text('Заказчик', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.lg),
+            _SectionTitle('Заказчик'),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_clientName'),
               controller: _clientNameController,
+              label: 'Заказчик',
+              hint: 'Организация или ФИО ИП',
               validator: (v) => _requiredValidator(v, 'Укажите заказчика'),
-              decoration: const InputDecoration(
-                labelText: 'Заказчик',
-                hintText: 'Организация или ФИО ИП',
-                border: OutlineInputBorder(),
-              ),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_clientInn'),
               controller: _clientInnController,
-              validator: _innValidator,
+              label: 'ИНН заказчика',
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'ИНН заказчика',
-                border: OutlineInputBorder(),
-              ),
+              validator: _innValidator,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_clientAddress'),
               controller: _clientAddressController,
-              decoration: const InputDecoration(
-                labelText: 'Адрес заказчика',
-                border: OutlineInputBorder(),
-              ),
+              label: 'Адрес заказчика',
             ),
-            const SizedBox(height: 20),
-            Text('Предмет и стоимость', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.lg),
+            _SectionTitle('Предмет и стоимость'),
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_subject'),
               controller: _subjectController,
-              validator: (v) =>
-                  _requiredValidator(v, 'Опишите предмет договора'),
+              label: 'Предмет договора',
+              hint: 'Какие услуги/работы выполняются',
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Предмет договора',
-                hintText: 'Какие услуги/работы выполняются',
-                border: OutlineInputBorder(),
-              ),
+              validator: (v) => _requiredValidator(v, 'Опишите предмет договора'),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const SizedBox(height: AppSpacing.sm),
+            AppTextFormField(
               key: const Key('field_amount'),
               controller: _amountController,
-              validator: _amountValidator,
+              label: 'Стоимость, ₽',
+              hint: 'Например, 150000',
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              decoration: const InputDecoration(
-                labelText: 'Стоимость, ₽',
-                hintText: 'Например, 150000',
-                border: OutlineInputBorder(),
-                prefixText: '₽ ',
-              ),
+              validator: _amountValidator,
             ),
-            const SizedBox(height: 24),
-            FilledButton(
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
               key: const Key('save_draft_button'),
+              label: 'Сохранить черновик',
+              icon: Icons.save_outlined,
+              expanded: true,
+              loading: _saving,
               onPressed: _saving ? null : _save,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: _saving
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Сохранить черновик'),
-              ),
             ),
           ],
         ),
       ),
     );
+  }
+}
+
+/// Заголовок раздела формы.
+class _SectionTitle extends StatelessWidget {
+  final String text;
+
+  const _SectionTitle(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(text, style: Theme.of(context).textTheme.titleMedium);
   }
 }
 
@@ -386,31 +357,28 @@ class _TemplateHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
-      color: template.sphere.color.withValues(alpha: 0.1),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(template.sphere.icon, color: template.sphere.color),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(template.title, style: theme.textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text(
-                    template.sphere.category,
-                    style: theme.textTheme.bodySmall!.copyWith(
-                      color: template.sphere.color,
-                    ),
-                  ),
-                ],
-              ),
+    final color = template.sphere.color;
+    return AppCard(
+      color: color.withValues(alpha: 0.1),
+      borderColor: color.withValues(alpha: 0.3),
+      child: Row(
+        children: [
+          Icon(template.sphere.icon, color: color),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(template.title, style: theme.textTheme.titleMedium),
+                const SizedBox(height: 2),
+                Text(
+                  template.sphere.category,
+                  style: theme.textTheme.bodySmall?.copyWith(color: color),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

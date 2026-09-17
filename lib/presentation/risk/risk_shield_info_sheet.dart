@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+
 /// Дисклеймер о том, что Risk Shield не заменяет юридическую консультацию.
 const String riskShieldDisclaimer =
     'Risk Shield — вспомогательный инструмент. Он не заменяет юридическую '
@@ -35,6 +37,7 @@ class RiskShieldInfoSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return SafeArea(
       child: FractionallySizedBox(
         key: const Key('risk_info_sheet'),
@@ -46,7 +49,7 @@ class RiskShieldInfoSheet extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(Icons.shield_outlined, color: theme.colorScheme.primary),
+                  Icon(Icons.shield_outlined, color: tokens.primary),
                   const SizedBox(width: 8),
                   Text('Как работает Risk Shield', style: theme.textTheme.titleLarge),
                 ],
@@ -90,7 +93,7 @@ class RiskShieldInfoSheet extends StatelessWidget {
                   Icon(
                     Icons.lock_outline,
                     size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: AppTokens.of(context).muted,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -120,7 +123,7 @@ class _SectionTitle extends StatelessWidget {
     return Text(
       text,
       style: theme.textTheme.titleMedium?.copyWith(
-        color: theme.colorScheme.primary,
+        color: AppTokens.of(context).primary,
         fontWeight: FontWeight.w600,
       ),
     );

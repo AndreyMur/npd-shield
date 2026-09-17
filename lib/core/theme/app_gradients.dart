@@ -50,4 +50,7 @@ abstract final class SphereColors {
 
   /// Логистика — оранжевый.
   static const logistics = Color(0xFFFF9800);
+
+  /// Универсальные шаблоны — нейтральный серо-синий.
+  static const universal = Color(0xFF607D8B);
 }
