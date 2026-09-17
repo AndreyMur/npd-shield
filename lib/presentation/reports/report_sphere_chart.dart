@@ -3,16 +3,16 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../domain/reports/business_report.dart';
 import '../../domain/reports/report_format.dart';
 
-/// Цвет дохода на графике отчёта.
-const kReportIncomeColor = Color(0xFF2E7D32);
-
-/// Цвет расхода на графике отчёта.
-const kReportExpenseColor = Color(0xFFC62828);
-
 /// Столбчатый график дохода и расхода по сферам деятельности.
+///
+/// Палитра берётся из семантических токенов темы (доход — success, расход —
+/// destructive), поэтому график читаем и различим в обеих темах. Легенда и
+/// всплывающие подсказки подписаны текстом, а не только цветом.
 class ReportSphereChart extends StatelessWidget {
   /// Разбивка показателей по сферам.
   final List<ReportSphereBreakdown> spheres;
@@ -22,33 +22,32 @@ class ReportSphereChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tokens = AppTokens.of(context);
+    return AppCard(
       key: const Key('report_sphere_chart'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Доход и расход по сферам', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 12),
-            const Row(
-              children: [
-                _LegendDot(color: kReportIncomeColor, label: 'Доход'),
-                SizedBox(width: 16),
-                _LegendDot(color: kReportExpenseColor, label: 'Расход'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            if (spheres.isEmpty)
-              Text(
-                'За выбранный период операций по сферам нет',
-                key: const Key('report_sphere_chart_empty'),
-                style: theme.textTheme.bodyMedium,
-              )
-            else
-              SizedBox(height: 220, child: _SphereBarChart(spheres: spheres)),
-          ],
-        ),
+      semanticLabel: 'График дохода и расхода по сферам деятельности',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Доход и расход по сферам', style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              _LegendDot(color: tokens.success, label: 'Доход'),
+              const SizedBox(width: AppSpacing.md),
+              _LegendDot(color: tokens.destructive, label: 'Расход'),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (spheres.isEmpty)
+            Text(
+              'За выбранный период операций по сферам нет',
+              key: const Key('report_sphere_chart_empty'),
+              style: theme.textTheme.bodyMedium?.copyWith(color: tokens.muted),
+            )
+          else
+            SizedBox(height: 220, child: _SphereBarChart(spheres: spheres)),
+        ],
       ),
     );
   }
@@ -62,6 +61,7 @@ class _SphereBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     final maxValue = spheres.fold<double>(0, (acc, sphere) {
       final value = sphere.income > sphere.expense
           ? sphere.income
@@ -70,9 +70,7 @@ class _SphereBarChart extends StatelessWidget {
     });
     final step = _niceStep(maxValue);
     final maxY = maxValue == 0 ? step * 4 : (maxValue / step).ceil() * step;
-    final axisStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
+    final axisStyle = theme.textTheme.bodySmall?.copyWith(color: tokens.muted);
 
     return BarChart(
       BarChartData(
@@ -85,13 +83,13 @@ class _SphereBarChart extends StatelessWidget {
               barRods: [
                 BarChartRodData(
                   toY: spheres[i].income,
-                  color: kReportIncomeColor,
+                  color: tokens.success,
                   width: 12,
                   borderRadius: BorderRadius.circular(3),
                 ),
                 BarChartRodData(
                   toY: spheres[i].expense,
-                  color: kReportExpenseColor,
+                  color: tokens.destructive,
                   width: 12,
                   borderRadius: BorderRadius.circular(3),
                 ),
@@ -143,20 +141,18 @@ class _SphereBarChart extends StatelessWidget {
           drawVerticalLine: false,
           horizontalInterval: step,
           getDrawingHorizontalLine: (value) => FlLine(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+            color: tokens.border,
             strokeWidth: 1,
           ),
         ),
         borderData: FlBorderData(show: false),
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
-            getTooltipColor: (group) => theme.colorScheme.inverseSurface,
+            getTooltipColor: (group) => tokens.onSurface,
             getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
               '${rodIndex == 0 ? 'Доход' : 'Расход'}: '
               '${formatReportMoney(rod.toY)}',
-              theme.textTheme.labelMedium!.copyWith(
-                color: theme.colorScheme.onInverseSurface,
-              ),
+              theme.textTheme.labelMedium!.copyWith(color: tokens.surface),
             ),
           ),
         ),
@@ -174,6 +170,7 @@ class _LegendDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -183,7 +180,7 @@ class _LegendDot extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 6),
-        Text(label, style: theme.textTheme.bodyMedium),
+        Text(label, style: theme.textTheme.bodyMedium?.copyWith(color: tokens.onSurface)),
       ],
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import 'report_period.dart';
 
 /// Выбор периода отчёта: предустановки (месяц, квартал, год) и произвольный
@@ -24,48 +26,46 @@ class ReportPeriodSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    final tokens = AppTokens.of(context);
+    return AppCard(
       key: const Key('report_period_selector'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Период отчёта', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final value in ReportPeriodPreset.values)
-                  ChoiceChip(
-                    key: Key('report_period_${value.name}'),
-                    label: Text(value.label),
-                    selected: preset == value,
-                    onSelected: (_) => onPresetSelected(value),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Icon(
-                  Icons.event_outlined,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Период отчёта', style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final value in ReportPeriodPreset.values)
+                AppFilterChip(
+                  key: Key('report_period_${value.name}'),
+                  label: value.label,
+                  selected: preset == value,
+                  onSelected: () => onPresetSelected(value),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    period.label,
-                    key: const Key('report_period_label'),
-                    style: theme.textTheme.bodyLarge,
-                  ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Icon(
+                Icons.event_outlined,
+                size: 18,
+                color: tokens.muted,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Expanded(
+                child: Text(
+                  period.label,
+                  key: const Key('report_period_label'),
+                  style: theme.textTheme.bodyLarge,
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
