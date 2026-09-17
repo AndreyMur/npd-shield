@@ -87,6 +87,18 @@ class BackupImportResult {
   const BackupImportResult({required this.counts});
 }
 
+/// Операции резервного копирования, используемые интерфейсом.
+///
+/// Узкий контракт поверх [BackupService] позволяет экрану отчётов зависеть
+/// только от экспорта и импорта и подменять их в тестах.
+abstract class BackupGateway {
+  /// Формирует резервную копию всех данных.
+  Future<BackupFile> exportBackup();
+
+  /// Восстанавливает данные из резервной копии, заменяя текущие.
+  Future<BackupImportResult> importBackup(Uint8List bytes);
+}
+
 /// Ошибка чтения резервной копии: файл повреждён или несовместим.
 class BackupFormatException implements Exception {
   final String message;
@@ -108,7 +120,7 @@ class BackupFormatException implements Exception {
 /// Чувствительные строки при экспорте расшифровываются, а при импорте
 /// шифруются заново текущим ключом устройства. Поэтому копия переносима между
 /// установками и не содержит зашифрованных «чужим» ключом данных.
-class BackupService {
+class BackupService implements BackupGateway {
   final Isar isar;
   final ContractorProfileRepository profileRepository;
   final ActivitySpheresService activitySpheresService;
@@ -125,6 +137,7 @@ class BackupService {
        _now = now ?? DateTime.now;
 
   /// Формирует резервную копию всех данных.
+  @override
   Future<BackupFile> exportBackup() async {
     final createdAt = _now();
 
@@ -198,6 +211,7 @@ class BackupService {
   /// Перед записью все коллекции очищаются, поэтому после импорта в базе
   /// остаются ровно те данные, что были в копии. Бросает
   /// [BackupFormatException], если файл повреждён или имеет другую версию.
+  @override
   Future<BackupImportResult> importBackup(Uint8List bytes) async {
     final payload = _decode(bytes);
 

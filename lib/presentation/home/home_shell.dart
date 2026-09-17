@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../data/backup/backup_service.dart';
+import '../../data/files/backup_file_picker.dart';
+import '../../data/files/export_file_saver.dart';
 import '../../data/files/text_file_picker.dart';
 import '../../data/notifications/notification_service.dart';
 import '../../data/repositories/client_repository.dart';
@@ -22,6 +25,7 @@ import '../invoices/invoices_screen.dart';
 import '../notifications/notification_center_screen.dart';
 import '../operations/operations_screen.dart';
 import '../operations/transaction_form_screen.dart';
+import '../reports/reports_screen.dart';
 import '../risk/risk_shield_screen.dart';
 import '../settings/settings_screen.dart';
 
@@ -44,6 +48,9 @@ class HomeShell extends StatefulWidget {
   final NotificationService notificationService;
   final TextFilePicker textFilePicker;
   final ActivitySpheresService activitySpheresService;
+  final BackupGateway backupGateway;
+  final ExportFileSaver fileSaver;
+  final BackupFilePicker backupFilePicker;
   final ThemeMode themeMode;
   final void Function(ThemeMode mode) onThemeModeChanged;
   final Future<void> Function() onLoadDemoData;
@@ -64,6 +71,9 @@ class HomeShell extends StatefulWidget {
     required this.notificationService,
     required this.textFilePicker,
     required this.activitySpheresService,
+    required this.backupGateway,
+    required this.fileSaver,
+    required this.backupFilePicker,
     required this.themeMode,
     required this.onThemeModeChanged,
     required this.onLoadDemoData,
@@ -178,6 +188,13 @@ class _HomeShellState extends State<HomeShell> {
           if (count != _unreadCount) setState(() => _unreadCount = count);
         },
       ),
+      ReportsScreen(
+        transactionRepository: widget.transactionRepository,
+        invoiceRepository: widget.invoiceRepository,
+        backupGateway: widget.backupGateway,
+        fileSaver: widget.fileSaver,
+        backupFilePicker: widget.backupFilePicker,
+      ),
       SettingsScreen(
         onLoadDemoData: widget.onLoadDemoData,
         onClearAllData: widget.onClearAllData,
@@ -235,6 +252,11 @@ class _HomeShellState extends State<HomeShell> {
         icon: _badge(Icons.notifications_outlined),
         selectedIcon: _badge(Icons.notifications),
         label: 'Уведомления',
+      ),
+      const NavigationDestination(
+        icon: Icon(Icons.assessment_outlined),
+        selectedIcon: Icon(Icons.assessment),
+        label: 'Отчёты',
       ),
       const NavigationDestination(
         icon: Icon(Icons.settings_outlined),
