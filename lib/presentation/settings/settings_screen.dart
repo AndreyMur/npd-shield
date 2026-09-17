@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/layout/app_breakpoints.dart';
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/notification_settings_repository.dart';
@@ -146,11 +150,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAbout() {
+    final tokens = AppTokens.of(context);
     showAboutDialog(
       context: context,
       applicationName: 'NPD Shield',
       applicationVersion: '1.0.0',
-      applicationIcon: const Icon(Icons.shield_outlined, size: 40),
+      applicationIcon: Icon(
+        Icons.shield_outlined,
+        size: AppIconSize.xl,
+        color: tokens.primary,
+      ),
       children: const [
         Text(
           'Помощник самозанятого на НПД: учёт доходов и расходов, лимит '
@@ -164,154 +173,228 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Настройки')),
-      body: ListView(
-        children: [
-          _SectionHeader(title: 'Профиль'),
-          ListTile(
-            key: const Key('settings_profile'),
-            leading: const Icon(Icons.person_outline),
-            title: const Text('Профиль ИП'),
-            subtitle: Text(
-              _profile?.fullName.isNotEmpty == true
-                  ? _profile!.fullName
-                  : 'Заполнить реквизиты для документов',
-            ),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _busy ? null : _openProfileEditor,
-          ),
-          const Divider(height: 1),
-          _SectionHeader(title: 'Оформление'),
-          RadioGroup<ThemeMode>(
-            groupValue: widget.themeMode,
-            onChanged: (mode) {
-              if (mode != null) widget.onThemeModeChanged(mode);
-            },
-            child: const Column(
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: AppBreakpoints.screenPadding(width),
+          children: [
+            _SettingsSection(
+              title: 'Профиль',
               children: [
-                RadioListTile<ThemeMode>(
-                  key: Key('settings_theme_system'),
-                  value: ThemeMode.system,
-                  title: Text('Системная'),
-                  subtitle: Text('Как в операционной системе'),
-                ),
-                RadioListTile<ThemeMode>(
-                  key: Key('settings_theme_light'),
-                  value: ThemeMode.light,
-                  title: Text('Светлая'),
-                ),
-                RadioListTile<ThemeMode>(
-                  key: Key('settings_theme_dark'),
-                  value: ThemeMode.dark,
-                  title: Text('Тёмная'),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          _SectionHeader(title: 'Сферы деятельности'),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Text(
-              'Выберите направления, которые нужно учитывать. Сферы также '
-              'используются для фильтров и подбора шаблонов.',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                for (final sphere in TransactionSphere.values)
-                  FilterChip(
-                    key: Key('settings_sphere_${sphere.name}'),
-                    label: Text(sphere.label),
-                    selected: _spheres.contains(sphere),
-                    onSelected: _busy
-                        ? null
-                        : (selected) => _toggleSphere(sphere, selected),
+                ListTile(
+                  key: const Key('settings_profile'),
+                  leading: Icon(Icons.person_outline, color: tokens.primary),
+                  title: const Text('Профиль ИП'),
+                  subtitle: Text(
+                    _profile?.fullName.isNotEmpty == true
+                        ? _profile!.fullName
+                        : 'Заполнить реквизиты для документов',
                   ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _busy ? null : _openProfileEditor,
+                ),
               ],
             ),
-          ),
-          const Divider(height: 1),
-          _SectionHeader(title: 'Уведомления'),
-          ListTile(
-            key: const Key('settings_notifications'),
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Настройки уведомлений'),
-            subtitle: const Text('Типы уведомлений и тихие часы'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _busy ? null : _openNotificationSettings,
-          ),
-          const Divider(height: 1),
-          _SectionHeader(title: 'Управление данными'),
-          ListTile(
-            key: const Key('settings_load_demo'),
-            enabled: !_busy,
-            leading: const Icon(Icons.download_outlined),
-            title: const Text('Загрузить демо-данные'),
-            subtitle: const Text(
-              'Добавить демонстрационные операции и уведомления',
+            const SizedBox(height: AppSpacing.md),
+            _SettingsSection(
+              title: 'Оформление',
+              children: [
+                RadioGroup<ThemeMode>(
+                  groupValue: widget.themeMode,
+                  onChanged: (mode) {
+                    if (mode != null) widget.onThemeModeChanged(mode);
+                  },
+                  child: const Column(
+                    children: [
+                      RadioListTile<ThemeMode>(
+                        key: Key('settings_theme_system'),
+                        value: ThemeMode.system,
+                        title: Text('Системная'),
+                        subtitle: Text('Как в операционной системе'),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        key: Key('settings_theme_light'),
+                        value: ThemeMode.light,
+                        title: Text('Светлая'),
+                      ),
+                      RadioListTile<ThemeMode>(
+                        key: Key('settings_theme_dark'),
+                        value: ThemeMode.dark,
+                        title: Text('Тёмная'),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            onTap: _loadDemoData,
-          ),
-          ListTile(
-            key: const Key('settings_clear_data'),
-            enabled: !_busy,
-            leading: Icon(
-              Icons.delete_forever_outlined,
-              color: theme.colorScheme.error,
+            const SizedBox(height: AppSpacing.md),
+            _SettingsSection(
+              title: 'Сферы деятельности',
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                  ),
+                  child: Text(
+                    'Выберите направления, которые нужно учитывать. Сферы также '
+                    'используются для фильтров и подбора шаблонов.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: tokens.muted,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
+                  child: Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      for (final sphere in TransactionSphere.values)
+                        AppFilterChip(
+                          key: Key('settings_sphere_${sphere.name}'),
+                          label: sphere.label,
+                          selected: _spheres.contains(sphere),
+                          accent: _sphereAccent(sphere, tokens),
+                          onSelected: _busy
+                              ? () {}
+                              : () => _toggleSphere(
+                                  sphere,
+                                  !_spheres.contains(sphere),
+                                ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            title: Text(
-              'Очистить все данные',
-              style: TextStyle(color: theme.colorScheme.error),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsSection(
+              title: 'Уведомления',
+              children: [
+                ListTile(
+                  key: const Key('settings_notifications'),
+                  leading: Icon(
+                    Icons.notifications_outlined,
+                    color: tokens.primary,
+                  ),
+                  title: const Text('Настройки уведомлений'),
+                  subtitle: const Text('Типы уведомлений и тихие часы'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _busy ? null : _openNotificationSettings,
+                ),
+              ],
             ),
-            subtitle: const Text(
-              'Удалить все записи и вернуться к первому запуску',
+            const SizedBox(height: AppSpacing.md),
+            _SettingsSection(
+              title: 'Управление данными',
+              children: [
+                ListTile(
+                  key: const Key('settings_load_demo'),
+                  enabled: !_busy,
+                  leading: const Icon(Icons.download_outlined),
+                  title: const Text('Загрузить демо-данные'),
+                  subtitle: const Text(
+                    'Добавить демонстрационные операции и уведомления',
+                  ),
+                  onTap: _loadDemoData,
+                ),
+                ListTile(
+                  key: const Key('settings_clear_data'),
+                  enabled: !_busy,
+                  leading: Icon(
+                    Icons.delete_forever_outlined,
+                    color: tokens.destructive,
+                  ),
+                  title: Text(
+                    'Очистить все данные',
+                    style: TextStyle(color: tokens.destructive),
+                  ),
+                  subtitle: const Text(
+                    'Удалить все записи и вернуться к первому запуску',
+                  ),
+                  onTap: _clearAllData,
+                ),
+              ],
             ),
-            onTap: _clearAllData,
-          ),
-          const Divider(height: 1),
-          _SectionHeader(title: 'О приложении'),
-          ListTile(
-            key: const Key('settings_about'),
-            leading: const Icon(Icons.info_outline),
-            title: const Text('NPD Shield'),
-            subtitle: const Text('Версия 1.0.0'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _showAbout,
-          ),
-          if (_busy)
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+            const SizedBox(height: AppSpacing.md),
+            _SettingsSection(
+              title: 'О приложении',
+              children: [
+                ListTile(
+                  key: const Key('settings_about'),
+                  leading: Icon(Icons.info_outline, color: tokens.primary),
+                  title: const Text('NPD Shield'),
+                  subtitle: const Text('Версия 1.0.0'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _showAbout,
+                ),
+              ],
             ),
-          const SizedBox(height: 16),
-        ],
+            if (_busy)
+              const Padding(
+                padding: EdgeInsets.all(AppSpacing.md),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+        ),
       ),
     );
   }
+
+  Color _sphereAccent(TransactionSphere sphere, AppTokens tokens) {
+    return switch (sphere) {
+      TransactionSphere.it => tokens.sphereIt,
+      TransactionSphere.logistics => tokens.sphereLogistics,
+    };
+  }
 }
 
-class _SectionHeader extends StatelessWidget {
+/// Карточка раздела настроек с заголовком.
+class _SettingsSection extends StatelessWidget {
   final String title;
+  final List<Widget> children;
 
-  const _SectionHeader({required this.title});
+  const _SettingsSection({required this.title, required this.children});
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: theme.colorScheme.primary,
-        ),
+    return AppCard(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: Text(
+              title,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: tokens.primary,
+              ),
+            ),
+          ),
+          ...children,
+        ],
       ),
     );
   }

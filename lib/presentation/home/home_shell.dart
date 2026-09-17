@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../core/layout/app_breakpoints.dart';
 import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_motion.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/files/backup_file_picker.dart';
 import '../../data/files/export_file_saver.dart';
@@ -90,15 +93,20 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell>
+    with SingleTickerProviderStateMixin {
   /// Индекс раздела «Уведомления» в списке разделов.
   static const _notificationsIndex = 8;
 
-  /// Ширина, с которой включается боковая навигация.
-  static const _wideBreakpoint = 900.0;
-
   int _selectedIndex = 0;
   int _unreadCount = 0;
+
+  /// Анимация перехода между разделами (150–300 мс).
+  late final AnimationController _sectionController = AnimationController(
+    vsync: this,
+    duration: AppMotionDurations.medium,
+    value: 1,
+  );
 
   late final InvoiceNotificationAction _invoiceNotificationAction;
 
@@ -111,6 +119,12 @@ class _HomeShellState extends State<HomeShell> {
     _refreshUnreadCount();
   }
 
+  @override
+  void dispose() {
+    _sectionController.dispose();
+    super.dispose();
+  }
+
   Future<void> _refreshUnreadCount() async {
     try {
       final count = await widget.notificationRepository.unreadCount();
@@ -121,7 +135,16 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void _select(int index) {
+    if (index == _selectedIndex) {
+      if (index == _notificationsIndex) _refreshUnreadCount();
+      return;
+    }
     setState(() => _selectedIndex = index);
+    _sectionController.duration = AppMotion.duration(
+      context,
+      AppMotionDurations.medium,
+    );
+    _sectionController.forward(from: 0);
     if (index == _notificationsIndex) _refreshUnreadCount();
   }
 
@@ -157,10 +180,13 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Widget _badge(IconData icon) {
-    return Badge(
-      isLabelVisible: _unreadCount > 0,
-      label: Text('$_unreadCount'),
-      child: AppIcon(icon),
+    return Semantics(
+      label: _unreadCount > 0 ? '$_unreadCount непрочитанных' : null,
+      child: Badge(
+        isLabelVisible: _unreadCount > 0,
+        label: ExcludeSemantics(child: Text('$_unreadCount')),
+        child: AppIcon(icon),
+      ),
     );
   }
 
@@ -315,41 +341,78 @@ class _HomeShellState extends State<HomeShell> {
     ];
   }
 
+  /// Обёртка раздела с motion-переходом (fade + лёгкий сдвиг).
+  ///
+  /// [IndexedStack] сохраняет состояние всех разделов, поэтому переключение
+  /// анимируется без повторной загрузки экранов.
+  Widget _animatedSections(List<Widget> screens) {
+    final curved = CurvedAnimation(
+      parent: _sectionController,
+      curve: AppMotion.enterCurve(context),
+    );
+    return FadeTransition(
+      opacity: curved,
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.015),
+          end: Offset.zero,
+        ).animate(curved),
+        child: RepaintBoundary(
+          child: IndexedStack(index: _selectedIndex, children: screens),
+        ),
+      ),
+    );
+  }
+
+  /// Фирменный знак в шапке боковой навигации.
+  Widget _brandLeading() {
+    final tokens = AppTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+      child: Icon(Icons.shield, color: tokens.primary, size: AppIconSize.lg),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final screens = _screens();
     final destinations = _destinations();
-    final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final size = MediaQuery.sizeOf(context);
+    final wide = AppBreakpoints.useRail(
+      width: size.width,
+      height: size.height,
+    );
 
     if (wide) {
       return Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: _select,
-              labelType: NavigationRailLabelType.all,
-              scrollable: true,
-              destinations: [
-                for (final destination in destinations)
-                  NavigationRailDestination(
-                    icon: destination.icon,
-                    selectedIcon: destination.selectedIcon,
-                    label: Text(destination.label),
-                  ),
-              ],
-            ),
-            const VerticalDivider(width: 1),
-            Expanded(
-              child: IndexedStack(index: _selectedIndex, children: screens),
-            ),
-          ],
+        body: SafeArea(
+          child: Row(
+            children: [
+              NavigationRail(
+                selectedIndex: _selectedIndex,
+                onDestinationSelected: _select,
+                labelType: NavigationRailLabelType.all,
+                scrollable: true,
+                leading: _brandLeading(),
+                destinations: [
+                  for (final destination in destinations)
+                    NavigationRailDestination(
+                      icon: destination.icon,
+                      selectedIcon: destination.selectedIcon,
+                      label: Text(destination.label),
+                    ),
+                ],
+              ),
+              const VerticalDivider(width: 1),
+              Expanded(child: _animatedSections(screens)),
+            ],
+          ),
         ),
       );
     }
 
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: screens),
+      body: _animatedSections(screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _select,

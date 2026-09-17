@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_icons.dart';
 import 'app_tokens.dart';
 import 'app_typography.dart';
 
@@ -155,6 +156,44 @@ class AppTheme {
       listTileTheme: ListTileThemeData(
         iconColor: tokens.muted,
         textColor: tokens.onSurface,
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: tokens.surface,
+        indicatorColor: tokens.primary.withValues(alpha: 0.14),
+        elevation: AppElevation.none,
+        height: 72,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            size: AppIconSize.md,
+            color: states.contains(WidgetState.selected)
+                ? tokens.primary
+                : tokens.muted,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => AppTypography.label.copyWith(
+            color: states.contains(WidgetState.selected)
+                ? tokens.primary
+                : tokens.muted,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
+          ),
+        ),
+      ),
+      navigationRailTheme: NavigationRailThemeData(
+        backgroundColor: tokens.surface,
+        indicatorColor: tokens.primary.withValues(alpha: 0.14),
+        selectedIconTheme: IconThemeData(color: tokens.primary),
+        unselectedIconTheme: IconThemeData(color: tokens.muted),
+        selectedLabelTextStyle: AppTypography.label.copyWith(
+          color: tokens.primary,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelTextStyle: AppTypography.label.copyWith(
+          color: tokens.muted,
+        ),
       ),
     );
   }

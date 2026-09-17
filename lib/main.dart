@@ -39,6 +39,7 @@ import 'data/services/data_reset_service.dart';
 import 'data/services/first_run_service.dart';
 import 'domain/risk/risk_analyzer.dart';
 import 'presentation/home/home_shell.dart';
+import 'presentation/loading/loading_screen.dart';
 import 'presentation/onboarding/onboarding_screen.dart';
 
 Future<void> main() async {
@@ -306,9 +307,7 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
 
   Widget _buildHome() {
     if (_onboardingCompleted == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const LoadingScreen();
     }
     if (!_onboardingCompleted!) {
       return OnboardingScreen(

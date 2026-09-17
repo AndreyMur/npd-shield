@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/layout/app_breakpoints.dart';
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_motion.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../core/validation/profile_input.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
@@ -140,19 +145,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Настройка приложения'),
-        automaticallyImplyLeading: false,
-      ),
       body: SafeArea(
         child: Column(
           children: [
-            LinearProgressIndicator(value: (_step + 1) / _stepCount),
+            _OnboardingHeader(step: _step, stepCount: _stepCount),
             Expanded(
-              child: switch (_step) {
-                0 => _buildSpheresStep(context),
-                _ => _buildProfileStep(context),
-              },
+              child: AnimatedSwitcher(
+                duration: AppMotion.duration(context, AppMotionDurations.medium),
+                switchInCurve: AppMotion.enterCurve(context),
+                switchOutCurve: AppMotion.exitCurve(context),
+                transitionBuilder: (child, animation) {
+                  final offset = Tween<Offset>(
+                    begin: const Offset(0, 0.04),
+                    end: Offset.zero,
+                  ).animate(animation);
+                  return FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(position: offset, child: child),
+                  );
+                },
+                child: KeyedSubtree(
+                  key: ValueKey<int>(_step),
+                  child: switch (_step) {
+                    0 => _buildSpheresStep(context),
+                    _ => _buildProfileStep(context),
+                  },
+                ),
+              ),
             ),
             _buildActions(context),
           ],
@@ -163,36 +182,64 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildSpheresStep(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+
     return ListView(
       key: const Key('onboarding_step_spheres'),
-      padding: const EdgeInsets.all(24),
+      padding: AppBreakpoints.screenPadding(width),
       children: [
-        Text('Сферы деятельности', style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(
-          'Выберите, чем вы занимаетесь. Это поможет подобрать шаблоны '
-          'договоров и разделить учёт по направлениям.',
-          style: theme.textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 24),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            for (final sphere in TransactionSphere.values)
-              FilterChip(
-                key: Key('onboarding_sphere_${sphere.name}'),
-                label: Text(sphere.label),
-                selected: _selectedSpheres.contains(sphere),
-                onSelected: (selected) => setState(() {
-                  if (selected) {
-                    _selectedSpheres.add(sphere);
-                  } else {
-                    _selectedSpheres.remove(sphere);
-                  }
-                }),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(
+                    Icons.work_outline,
+                    size: AppIconSize.lg,
+                    color: tokens.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      'Сферы деятельности',
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                  ),
+                ],
               ),
-          ],
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Выберите, чем вы занимаетесь. Это поможет подобрать шаблоны '
+                'договоров и разделить учёт по направлениям.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: tokens.muted,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  for (final sphere in TransactionSphere.values)
+                    AppFilterChip(
+                      key: Key('onboarding_sphere_${sphere.name}'),
+                      label: sphere.label,
+                      selected: _selectedSpheres.contains(sphere),
+                      accent: _sphereAccent(sphere, tokens),
+                      onSelected: () => setState(() {
+                        if (_selectedSpheres.contains(sphere)) {
+                          _selectedSpheres.remove(sphere);
+                        } else {
+                          _selectedSpheres.add(sphere);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -200,114 +247,120 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildProfileStep(BuildContext context) {
     final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    final width = MediaQuery.sizeOf(context).width;
+
     return Form(
       key: _formKey,
       child: ListView(
         key: const Key('onboarding_step_profile'),
-        padding: const EdgeInsets.all(24),
+        padding: AppBreakpoints.screenPadding(width),
         children: [
-          Text('Профиль ИП', style: theme.textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          Text(
-            'Реквизиты подставляются в договоры, чеки и акты. Можно заполнить '
-            'позже — все поля необязательны.',
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 24),
-          TextFormField(
-            key: const Key('onboarding_full_name'),
-            controller: _fullName,
-            textCapitalization: TextCapitalization.words,
-            decoration: const InputDecoration(
-              labelText: 'ФИО',
-              border: OutlineInputBorder(),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: AppIconSize.lg,
+                      color: tokens.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        'Профиль ИП',
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  'Реквизиты подставляются в договоры, чеки и акты. Можно '
+                  'заполнить позже — все поля необязательны.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: tokens.muted,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                AppTextFormField(
+                  key: const Key('onboarding_full_name'),
+                  controller: _fullName,
+                  label: 'ФИО',
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextFormField(
+                  key: const Key('onboarding_inn'),
+                  controller: _inn,
+                  label: 'ИНН',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(12),
+                  ],
+                  validator: (value) =>
+                      ProfileInput.validateDigits(value, lengths: const [10, 12]),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextFormField(
+                  key: const Key('onboarding_ogrnip'),
+                  controller: _ogrnip,
+                  label: 'ОГРНИП',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(15),
+                  ],
+                  validator: (value) =>
+                      ProfileInput.validateDigits(value, lengths: const [15]),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextFormField(
+                  key: const Key('onboarding_address'),
+                  controller: _address,
+                  label: 'Адрес регистрации',
+                  textCapitalization: TextCapitalization.sentences,
+                  maxLines: 2,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Банковские реквизиты', style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                AppTextFormField(
+                  key: const Key('onboarding_bank_name'),
+                  controller: _bankName,
+                  label: 'Банк',
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextFormField(
+                  key: const Key('onboarding_bank_account'),
+                  controller: _bankAccount,
+                  label: 'Расчётный счёт',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(20),
+                  ],
+                  validator: (value) =>
+                      ProfileInput.validateDigits(value, lengths: const [20]),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppTextFormField(
+                  key: const Key('onboarding_bank_bik'),
+                  controller: _bankBik,
+                  label: 'БИК',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(9),
+                  ],
+                  validator: (value) =>
+                      ProfileInput.validateDigits(value, lengths: const [9]),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('onboarding_inn'),
-            controller: _inn,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(12),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'ИНН',
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) =>
-                ProfileInput.validateDigits(value, lengths: const [10, 12]),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('onboarding_ogrnip'),
-            controller: _ogrnip,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(15),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'ОГРНИП',
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) =>
-                ProfileInput.validateDigits(value, lengths: const [15]),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('onboarding_address'),
-            controller: _address,
-            textCapitalization: TextCapitalization.sentences,
-            maxLines: 2,
-            decoration: const InputDecoration(
-              labelText: 'Адрес регистрации',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 24),
-          Text('Банковские реквизиты', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('onboarding_bank_name'),
-            controller: _bankName,
-            decoration: const InputDecoration(
-              labelText: 'Банк',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('onboarding_bank_account'),
-            controller: _bankAccount,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(20),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'Расчётный счёт',
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) =>
-                ProfileInput.validateDigits(value, lengths: const [20]),
-          ),
-          const SizedBox(height: 16),
-          TextFormField(
-            key: const Key('onboarding_bank_bik'),
-            controller: _bankBik,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(9),
-            ],
-            decoration: const InputDecoration(
-              labelText: 'БИК',
-              border: OutlineInputBorder(),
-            ),
-            validator: (value) =>
-                ProfileInput.validateDigits(value, lengths: const [9]),
           ),
         ],
       ),
@@ -316,29 +369,137 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildActions(BuildContext context) {
     final isLast = _step == _stepCount - 1;
+    final width = MediaQuery.sizeOf(context).width;
+    // При крупном системном шрифте кнопки переносятся в столбец, чтобы не
+    // переполнять строку.
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 22;
+
+    final back = _step > 0
+        ? AppButton(
+            key: const Key('onboarding_back'),
+            label: 'Назад',
+            variant: AppButtonVariant.text,
+            expanded: largeText,
+            onPressed: _busy ? null : _back,
+          )
+        : null;
+    final next = AppButton(
+      key: isLast
+          ? const Key('onboarding_finish')
+          : const Key('onboarding_next'),
+      label: isLast ? 'Начать работу' : 'Далее',
+      icon: isLast ? Icons.check : Icons.arrow_forward,
+      loading: _busy,
+      expanded: largeText,
+      onPressed: _busy ? null : _next,
+    );
+
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          if (_step > 0)
-            TextButton(
-              key: const Key('onboarding_back'),
-              onPressed: _busy ? null : _back,
-              child: const Text('Назад'),
+      padding: EdgeInsets.fromLTRB(
+        AppBreakpoints.horizontalGutter(width),
+        AppSpacing.sm,
+        AppBreakpoints.horizontalGutter(width),
+        AppSpacing.md,
+      ),
+      child: largeText
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (back != null) ...[back, const SizedBox(height: AppSpacing.xs)],
+                next,
+              ],
+            )
+          : Row(
+              children: [
+                ?back,
+                const Spacer(),
+                next,
+              ],
             ),
-          const Spacer(),
-          FilledButton(
-            key: isLast
-                ? const Key('onboarding_finish')
-                : const Key('onboarding_next'),
-            onPressed: _busy ? null : _next,
-            child: _busy
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(isLast ? 'Начать работу' : 'Далее'),
+    );
+  }
+
+  Color _sphereAccent(TransactionSphere sphere, AppTokens tokens) {
+    return switch (sphere) {
+      TransactionSphere.it => tokens.sphereIt,
+      TransactionSphere.logistics => tokens.sphereLogistics,
+    };
+  }
+}
+
+/// Градиентная шапка онбординга с индикатором прогресса шагов.
+class _OnboardingHeader extends StatelessWidget {
+  final int step;
+  final int stepCount;
+
+  const _OnboardingHeader({required this.step, required this.stepCount});
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
+    final theme = Theme.of(context);
+    final progress = (step + 1) / stepCount;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(gradient: tokens.brandGradient),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.shield, color: tokens.onPrimary, size: AppIconSize.lg),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'NPD Shield',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: tokens.onPrimary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Настройка приложения',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              color: tokens.onPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Semantics(
+            key: const Key('onboarding_progress'),
+            label: 'Шаг ${step + 1} из $stepCount',
+            value: '${(progress * 100).round()}%',
+            child: ExcludeSemantics(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.chip),
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: progress),
+                  duration: AppMotion.duration(
+                    context,
+                    AppMotionDurations.medium,
+                  ),
+                  curve: AppMotion.enterCurve(context),
+                  builder: (context, value, _) =>
+                      LinearProgressIndicator(value: value),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Шаг ${step + 1} из $stepCount',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: tokens.onPrimary.withValues(alpha: 0.85),
+            ),
           ),
         ],
       ),
