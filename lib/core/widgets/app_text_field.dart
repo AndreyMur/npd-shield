@@ -8,6 +8,7 @@ InputDecoration _decoration(
   String? label,
   String? hint,
   String? helper,
+  String? errorText,
   Widget? prefixIcon,
   Widget? suffixIcon,
   bool dense = false,
@@ -23,6 +24,7 @@ InputDecoration _decoration(
     labelText: label,
     hintText: hint,
     helperText: helper,
+    errorText: errorText,
     prefixIcon: prefixIcon,
     suffixIcon: suffixIcon,
     isDense: dense,
@@ -43,6 +45,10 @@ class AppTextField extends StatelessWidget {
   final String? label;
   final String? hint;
   final String? helper;
+
+  /// Текст ошибки под полем. Показывается, если не задан `null`.
+  final String? errorText;
+
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final bool obscureText;
@@ -63,6 +69,7 @@ class AppTextField extends StatelessWidget {
     this.label,
     this.hint,
     this.helper,
+    this.errorText,
     this.prefixIcon,
     this.suffixIcon,
     this.obscureText = false,
@@ -97,6 +104,7 @@ class AppTextField extends StatelessWidget {
         label: label,
         hint: hint,
         helper: helper,
+        errorText: errorText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         dense: dense,
@@ -117,6 +125,11 @@ class AppTextFormField extends StatelessWidget {
   final String? label;
   final String? hint;
   final String? helper;
+
+  /// Текст ошибки. Обычно задаётся через [validator], но может быть выставлен
+  /// и вручную (например, при серверной проверке).
+  final String? errorText;
+
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final bool obscureText;
@@ -146,6 +159,7 @@ class AppTextFormField extends StatelessWidget {
     this.label,
     this.hint,
     this.helper,
+    this.errorText,
     this.prefixIcon,
     this.suffixIcon,
     this.obscureText = false,
@@ -185,6 +199,7 @@ class AppTextFormField extends StatelessWidget {
         label: label,
         hint: hint,
         helper: helper,
+        errorText: errorText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
       ),

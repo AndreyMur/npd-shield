@@ -32,6 +32,9 @@ class AppButton extends StatefulWidget {
   final bool expanded;
   final EdgeInsetsGeometry? padding;
 
+  /// Узел фокуса. Позволяет управлять фокусом и проверять focus-состояние.
+  final FocusNode? focusNode;
+
   const AppButton({
     super.key,
     required this.label,
@@ -41,6 +44,7 @@ class AppButton extends StatefulWidget {
     this.loading = false,
     this.expanded = false,
     this.padding,
+    this.focusNode,
   });
 
   @override
@@ -49,6 +53,7 @@ class AppButton extends StatefulWidget {
 
 class _AppButtonState extends State<AppButton> {
   bool _pressed = false;
+  bool _focused = false;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +66,7 @@ class _AppButtonState extends State<AppButton> {
     if (widget.variant == AppButtonVariant.text) {
       return TextButton(
         onPressed: enabled ? widget.onPressed : null,
+        focusNode: widget.focusNode,
         child: content,
       );
     }
@@ -101,8 +107,10 @@ class _AppButtonState extends State<AppButton> {
         decoration: decoration,
         child: InkWell(
           onTap: enabled ? widget.onPressed : null,
+          focusNode: widget.focusNode,
           borderRadius: AppRadius.buttonRadius,
           onHighlightChanged: (value) => setState(() => _pressed = value),
+          onFocusChange: (value) => setState(() => _focused = value),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: AppSpacing.xxl),
             child: Padding(
@@ -130,6 +138,19 @@ class _AppButtonState extends State<AppButton> {
           ),
         ),
       ),
+    );
+
+    // Фокус-кольцо рисуется поверх и не влияет на layout (без сдвига).
+    button = DecoratedBox(
+      position: DecorationPosition.foreground,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.buttonRadius,
+        border: Border.all(
+          color: _focused ? tokens.primary : tokens.primary.withValues(alpha: 0),
+          width: 2,
+        ),
+      ),
+      child: button,
     );
 
     button = AnimatedScale(
