@@ -2,9 +2,14 @@ import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
 import 'core/theme/app_theme.dart';
+import 'data/backup/backup_service.dart';
 import 'data/built_in_templates.dart';
 import 'data/database.dart';
 import 'data/demo_data.dart';
+import 'data/files/backup_file_picker.dart';
+import 'data/files/export_file_saver.dart';
+import 'data/files/file_picker_backup_file_picker.dart';
+import 'data/files/file_picker_export_file_saver.dart';
 import 'data/files/file_picker_text_file_picker.dart';
 import 'data/files/text_file_picker.dart';
 import 'data/notifications/firebase_push_notification_service.dart';
@@ -57,6 +62,11 @@ Future<void> main() async {
 
     final firstRunService = SharedPrefsFirstRunService();
     final activitySpheresService = SharedPrefsActivitySpheresService();
+    final backupService = BackupService(
+      isar: isar,
+      profileRepository: profileRepository,
+      activitySpheresService: activitySpheresService,
+    );
     final dataResetService = DataResetService(
       transactionRepository: transactionRepository,
       clientRepository: clientRepository,
@@ -86,6 +96,9 @@ Future<void> main() async {
         textFilePicker: const FilePickerTextFilePicker(),
         firstRunService: firstRunService,
         activitySpheresService: activitySpheresService,
+        backupGateway: backupService,
+        fileSaver: const FilePickerExportFileSaver(),
+        backupFilePicker: const FilePickerBackupFilePicker(),
         dataResetService: dataResetService,
       ),
     );
@@ -145,6 +158,9 @@ class NpdShieldApp extends StatefulWidget {
   final TextFilePicker textFilePicker;
   final FirstRunService firstRunService;
   final ActivitySpheresService activitySpheresService;
+  final BackupGateway backupGateway;
+  final ExportFileSaver fileSaver;
+  final BackupFilePicker backupFilePicker;
   final DataResetService dataResetService;
 
   const NpdShieldApp({
@@ -163,6 +179,9 @@ class NpdShieldApp extends StatefulWidget {
     required this.textFilePicker,
     required this.firstRunService,
     required this.activitySpheresService,
+    required this.backupGateway,
+    required this.fileSaver,
+    required this.backupFilePicker,
     required this.dataResetService,
   });
 
@@ -268,6 +287,9 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
       notificationService: widget.notificationService,
       textFilePicker: widget.textFilePicker,
       activitySpheresService: widget.activitySpheresService,
+      backupGateway: widget.backupGateway,
+      fileSaver: widget.fileSaver,
+      backupFilePicker: widget.backupFilePicker,
       themeMode: _themeMode,
       onThemeModeChanged: _setThemeMode,
       onLoadDemoData: _loadDemoData,
