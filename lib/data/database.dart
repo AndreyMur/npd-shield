@@ -37,6 +37,14 @@ class AppDatabase {
   /// коллекций или полей существующая база обновляется без потери данных.
   /// Удалённые поля помечаются как устаревшие и игнорируются при чтении.
   static Future<Isar> open({String? path}) async {
+    // В фоновом изоляте база может быть уже открыта основным приложением —
+    // переиспользуем существующий инстанс, чтобы не конфликтовать за файл.
+    final existing = Isar.getInstance('npd_shield');
+    if (existing != null) {
+      instance = existing;
+      return existing;
+    }
+
     final isarDir = path ?? (await getApplicationDocumentsDirectory()).path;
 
     instance = await Isar.open(

@@ -23,6 +23,14 @@ class IsarNotificationRepository implements NotificationRepository {
   }
 
   @override
+  Future<AppNotification?> findByDedupeKey(String dedupeKey) {
+    return isar.appNotifications
+        .filter()
+        .dedupeKeyEqualTo(dedupeKey)
+        .findFirst();
+  }
+
+  @override
   Future<List<AppNotification>> getAll() {
     return isar.appNotifications.where().sortByCreatedAtDesc().findAll();
   }

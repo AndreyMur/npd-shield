@@ -40,6 +40,14 @@ class FakeNotificationRepository implements NotificationRepository {
   }
 
   @override
+  Future<AppNotification?> findByDedupeKey(String dedupeKey) async {
+    for (final notification in notifications) {
+      if (notification.dedupeKey == dedupeKey) return notification;
+    }
+    return null;
+  }
+
+  @override
   Future<List<AppNotification>> getAll() async {
     if (failOnLoad) throw Exception('load failed');
     final result = List.of(notifications);

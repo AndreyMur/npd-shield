@@ -90,6 +90,15 @@ class AppNotification {
   /// Подпись кнопки действия в карточке уведомления. Пусто — без действия.
   String actionLabel;
 
+  /// Уникальный ключ события, породившего уведомление (например,
+  /// `invoice:42:reminder:7` или `limit:threshold:80:2026`).
+  ///
+  /// Используется движком уведомлений, чтобы не создавать дубли при повторных
+  /// проверках одного и того же условия. `null` — уведомление создано вне
+  /// движка (демо-данные, push извне), дедупликация для него не применяется.
+  @Index()
+  String? dedupeKey;
+
   /// Дата и время прочтения. `null` — уведомление не прочитано.
   DateTime? readAt;
 
@@ -101,6 +110,7 @@ class AppNotification {
     this.status = NotificationStatus.unread,
     this.payload = '',
     this.actionLabel = '',
+    this.dedupeKey,
     this.readAt,
   });
 
