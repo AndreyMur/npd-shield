@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
+import '../../core/theme/app_tokens.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/pdf/contract_pdf_service.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
 
@@ -105,20 +107,21 @@ class _ContractPdfPreviewSheetState extends State<ContractPdfPreviewSheet> {
               Row(
                 children: [
                   Expanded(
-                    child: FilledButton.icon(
+                    child: AppButton(
                       key: const Key('pdf_share_button'),
+                      label: 'Поделиться',
+                      icon: Icons.share_outlined,
                       onPressed: _busy ? null : _share,
-                      icon: const Icon(Icons.share_outlined),
-                      label: const Text('Поделиться'),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: OutlinedButton.icon(
+                    child: AppButton(
                       key: const Key('pdf_save_button'),
+                      label: 'Сохранить PDF',
+                      icon: Icons.save_alt_outlined,
+                      variant: AppButtonVariant.secondary,
                       onPressed: _busy ? null : _save,
-                      icon: const Icon(Icons.save_alt_outlined),
-                      label: const Text('Сохранить PDF'),
                     ),
                   ),
                 ],

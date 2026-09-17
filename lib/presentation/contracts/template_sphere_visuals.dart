@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_gradients.dart';
 import '../../data/models/contract_template.dart';
 
 /// Визуальные константы сфер деятельности для библиотеки шаблонов.
 ///
-/// Цветовая маркировка соответствует дизайн-системе приложения:
+/// Цветовая маркировка берётся из дизайн-системы приложения:
 /// IT — синий, Логистика — оранжевый, универсальные — нейтральный серо-синий.
 extension TemplateSphereVisuals on TemplateSphere {
   Color get color => switch (this) {
-    TemplateSphere.it => const Color(0xFF2196F3),
-    TemplateSphere.logistics => const Color(0xFFFF9800),
-    TemplateSphere.universal => const Color(0xFF607D8B),
+    TemplateSphere.it => SphereColors.it,
+    TemplateSphere.logistics => SphereColors.logistics,
+    TemplateSphere.universal => SphereColors.universal,
   };
 
   IconData get icon => switch (this) {

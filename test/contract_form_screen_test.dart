@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:npd_shield/core/constants/contract_field_keys.dart';
+import 'package:npd_shield/core/widgets/widgets.dart';
 import 'package:npd_shield/data/models/contract_draft.dart';
 import 'package:npd_shield/domain/profile/contractor_profile.dart';
 import 'package:npd_shield/presentation/contracts/contract_form_screen.dart';
@@ -191,7 +192,7 @@ void main() {
     expect(popResult, isNull);
     expect(drafts.drafts, isEmpty);
 
-    final button = tester.widget<FilledButton>(
+    final button = tester.widget<AppButton>(
       find.byKey(const Key('save_draft_button')),
     );
     expect(button.onPressed, isNotNull);
