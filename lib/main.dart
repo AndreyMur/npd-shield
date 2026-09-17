@@ -99,6 +99,7 @@ Future<void> main() async {
         documentRepository: documentRepository,
         notificationRepository: notificationRepository,
         notificationService: notificationService,
+        notificationSettingsRepository: notificationSettingsRepository,
         textFilePicker: const FilePickerTextFilePicker(),
         firstRunService: firstRunService,
         activitySpheresService: activitySpheresService,
@@ -198,6 +199,7 @@ class NpdShieldApp extends StatefulWidget {
   final IsarDocumentRepository documentRepository;
   final NotificationRepository notificationRepository;
   final NotificationService notificationService;
+  final NotificationSettingsRepository notificationSettingsRepository;
   final TextFilePicker textFilePicker;
   final FirstRunService firstRunService;
   final ActivitySpheresService activitySpheresService;
@@ -219,6 +221,7 @@ class NpdShieldApp extends StatefulWidget {
     required this.documentRepository,
     required this.notificationRepository,
     required this.notificationService,
+    required this.notificationSettingsRepository,
     required this.textFilePicker,
     required this.firstRunService,
     required this.activitySpheresService,
@@ -328,6 +331,7 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
       documentRepository: widget.documentRepository,
       notificationRepository: widget.notificationRepository,
       notificationService: widget.notificationService,
+      notificationSettingsRepository: widget.notificationSettingsRepository,
       textFilePicker: widget.textFilePicker,
       activitySpheresService: widget.activitySpheresService,
       backupGateway: widget.backupGateway,
