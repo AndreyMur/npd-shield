@@ -221,14 +221,24 @@ class AppTokens extends ThemeExtension<AppTokens> {
       onSurface: Color.lerp(onSurface, other.onSurface, t)!,
       onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
       onDestructive: Color.lerp(onDestructive, other.onDestructive, t)!,
-      brandGradient: LinearGradient.lerp(brandGradient, other.brandGradient, t)!,
-      incomeGradient:
-          LinearGradient.lerp(incomeGradient, other.incomeGradient, t)!,
+      brandGradient: LinearGradient.lerp(
+        brandGradient,
+        other.brandGradient,
+        t,
+      )!,
+      incomeGradient: LinearGradient.lerp(
+        incomeGradient,
+        other.incomeGradient,
+        t,
+      )!,
       riskGradient: LinearGradient.lerp(riskGradient, other.riskGradient, t)!,
-      limitGradient: LinearGradient.lerp(limitGradient, other.limitGradient, t)!,
+      limitGradient: LinearGradient.lerp(
+        limitGradient,
+        other.limitGradient,
+        t,
+      )!,
       sphereIt: Color.lerp(sphereIt, other.sphereIt, t)!,
-      sphereLogistics:
-          Color.lerp(sphereLogistics, other.sphereLogistics, t)!,
+      sphereLogistics: Color.lerp(sphereLogistics, other.sphereLogistics, t)!,
     );
   }
 }
@@ -278,18 +288,40 @@ abstract final class AppRadius {
   static const double chip = 999;
 
   /// [BorderRadius] карточек.
-  static const BorderRadius cardRadius = BorderRadius.all(Radius.circular(card));
+  static const BorderRadius cardRadius = BorderRadius.all(
+    Radius.circular(card),
+  );
 
   /// [BorderRadius] кнопок.
-  static const BorderRadius buttonRadius =
-      BorderRadius.all(Radius.circular(button));
+  static const BorderRadius buttonRadius = BorderRadius.all(
+    Radius.circular(button),
+  );
 
   /// [BorderRadius] полей ввода.
-  static const BorderRadius fieldRadius =
-      BorderRadius.all(Radius.circular(field));
+  static const BorderRadius fieldRadius = BorderRadius.all(
+    Radius.circular(field),
+  );
 
   /// [BorderRadius] чипов (pill).
-  static const BorderRadius chipRadius = BorderRadius.all(Radius.circular(chip));
+  static const BorderRadius chipRadius = BorderRadius.all(
+    Radius.circular(chip),
+  );
+}
+
+/// Пороговые значения адаптивной вёрстки.
+///
+/// Единый источник правды для перехода между мобильным и широким
+/// форм-факторами, а также для ограничения ширины колонки контента.
+abstract final class AppBreakpoints {
+  /// Ширина, с которой включается широкий форм-фактор: боковая навигация и
+  /// ограничение ширины контента.
+  static const double wide = 900;
+
+  /// Максимальная ширина колонки контента на широких экранах.
+  ///
+  /// Сохраняет комфортную длину строки и не даёт тексту растягиваться на всю
+  /// ширину десктопного окна.
+  static const double contentMaxWidth = 760;
 }
 
 /// Elevation-шкала.
