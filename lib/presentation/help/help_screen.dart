@@ -75,35 +75,58 @@ class _HelpScreenState extends State<HelpScreen> {
               ),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xl,
-          ),
-          children: [
-            AppTextField(
-              key: const Key('help_search_field'),
-              controller: _searchController,
-              hint: 'Поиск по справочнику',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      key: const Key('help_search_clear'),
-                      tooltip: 'Очистить',
-                      icon: const Icon(Icons.close),
-                      onPressed: _clearSearch,
-                    ),
-              onChanged: (value) => setState(() => _query = value),
+        child: Center(
+          child: ConstrainedBox(
+            key: const Key('help_content_constraints'),
+            constraints: const BoxConstraints(
+              maxWidth: AppBreakpoints.contentMaxWidth,
             ),
-            const SizedBox(height: AppSpacing.lg),
-            if (isSearching)
-              ..._buildSearchResults(query, results)
-            else
-              ..._buildTableOfContents(),
-          ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: AppTextField(
+                    key: const Key('help_search_field'),
+                    controller: _searchController,
+                    hint: 'Поиск по справочнику',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _query.isEmpty
+                        ? null
+                        : IconButton(
+                            key: const Key('help_search_clear'),
+                            tooltip: 'Очистить',
+                            icon: const Icon(Icons.close),
+                            onPressed: _clearSearch,
+                          ),
+                    onChanged: (value) => setState(() => _query = value),
+                  ),
+                ),
+                Divider(height: 1, color: AppTokens.of(context).border),
+                Expanded(
+                  child: ListView(
+                    key: isSearching
+                        ? const Key('help_search_scroll')
+                        : const Key('help_toc_scroll'),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.xl,
+                    ),
+                    children: isSearching
+                        ? _buildSearchResults(query, results)
+                        : _buildTableOfContents(),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -124,10 +147,7 @@ class _HelpScreenState extends State<HelpScreen> {
       ),
       const SizedBox(height: AppSpacing.xs),
       for (final article in results) ...[
-        _SearchResultTile(
-          article: article,
-          onTap: () => _openArticle(article),
-        ),
+        _SearchResultTile(article: article, onTap: () => _openArticle(article)),
         const SizedBox(height: AppSpacing.sm),
       ],
     ];
@@ -149,10 +169,7 @@ class _HelpScreenState extends State<HelpScreen> {
         ),
         const SizedBox(height: AppSpacing.xs),
         for (final article in quickStart) ...[
-          _QuickStartCard(
-            article: article,
-            onTap: () => _openArticle(article),
-          ),
+          _QuickStartCard(article: article, onTap: () => _openArticle(article)),
           const SizedBox(height: AppSpacing.sm),
         ],
         const SizedBox(height: AppSpacing.sm),
@@ -171,9 +188,7 @@ class _HelpScreenState extends State<HelpScreen> {
         const SizedBox(height: AppSpacing.sm),
       ],
       const SizedBox(height: AppSpacing.sm),
-      _AboutEntry(
-        onTap: () => showAppAboutDialog(context),
-      ),
+      _AboutEntry(onTap: () => showAppAboutDialog(context)),
     ];
   }
 }
@@ -306,7 +321,8 @@ class _SearchEmptyState extends StatelessWidget {
       key: const Key('help_search_empty'),
       icon: Icons.search_off,
       title: 'Ничего не найдено',
-      message: 'По запросу «$query» статей не найдено. Измените запрос '
+      message:
+          'По запросу «$query» статей не найдено. Измените запрос '
           'или откройте оглавление справочника.',
       action: AppButton(
         key: const Key('help_search_open_toc'),
@@ -342,9 +358,7 @@ class _SectionAccordion extends StatelessWidget {
         child: ExpansionTile(
           key: Key('help_section_${section.name}'),
           title: Text(section.label, style: theme.textTheme.titleMedium),
-          tilePadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-          ),
+          tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           childrenPadding: const EdgeInsets.only(bottom: AppSpacing.xs),
           iconColor: tokens.primary,
           collapsedIconColor: tokens.muted,

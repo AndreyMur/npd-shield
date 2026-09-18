@@ -52,7 +52,11 @@ class HelpArticleScreen extends StatelessWidget {
     return Scaffold(
       key: const Key('help_article_screen'),
       appBar: AppBar(
-        title: Text(article.title),
+        title: Text(
+          article.title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           IconButton(
             key: const Key('help_back_to_toc'),
@@ -63,51 +67,59 @@ class HelpArticleScreen extends StatelessWidget {
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.sm,
-            AppSpacing.md,
-            AppSpacing.xl,
-          ),
-          children: [
-            _SectionBadge(label: article.section.label),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              article.summary,
-              key: const Key('help_article_summary'),
-              style: theme.textTheme.bodyLarge,
+        child: Center(
+          child: ConstrainedBox(
+            key: const Key('help_article_content_constraints'),
+            constraints: const BoxConstraints(
+              maxWidth: AppBreakpoints.contentMaxWidth,
             ),
-            if (article.steps.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.lg),
-              Text('Как пользоваться', style: theme.textTheme.titleMedium),
-              const SizedBox(height: AppSpacing.sm),
-              for (var index = 0; index < article.steps.length; index++)
-                _StepTile(index: index + 1, text: article.steps[index]),
-            ],
-            if (article.faq.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                'Частые вопросы и подсказки',
-                style: theme.textTheme.titleMedium,
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.xl,
               ),
-              const SizedBox(height: AppSpacing.sm),
-              for (var index = 0; index < article.faq.length; index++)
-                _FaqCard(index: index, item: article.faq[index]),
-            ],
-            if (related.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.lg),
-              Text('Связанные статьи', style: theme.textTheme.titleMedium),
-              const SizedBox(height: AppSpacing.sm),
-              for (final relatedArticle in related)
-                _RelatedTile(
-                  article: relatedArticle,
-                  onTap: () => _openRelated(context, relatedArticle),
+              children: [
+                _SectionBadge(label: article.section.label),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  article.summary,
+                  key: const Key('help_article_summary'),
+                  style: theme.textTheme.bodyLarge,
                 ),
-            ],
-            const SizedBox(height: AppSpacing.lg),
-            const _DisclaimerCard(key: Key('help_disclaimer')),
-          ],
+                if (article.steps.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Как пользоваться', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  for (var index = 0; index < article.steps.length; index++)
+                    _StepTile(index: index + 1, text: article.steps[index]),
+                ],
+                if (article.faq.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'Частые вопросы и подсказки',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  for (var index = 0; index < article.faq.length; index++)
+                    _FaqCard(index: index, item: article.faq[index]),
+                ],
+                if (related.isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Text('Связанные статьи', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: AppSpacing.sm),
+                  for (final relatedArticle in related)
+                    _RelatedTile(
+                      article: relatedArticle,
+                      onTap: () => _openRelated(context, relatedArticle),
+                    ),
+                ],
+                const SizedBox(height: AppSpacing.lg),
+                const _DisclaimerCard(key: Key('help_disclaimer')),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -210,17 +222,10 @@ class _FaqCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  Icons.help_outline,
-                  size: 18,
-                  color: tokens.primary,
-                ),
+                Icon(Icons.help_outline, size: 18, color: tokens.primary),
                 const SizedBox(width: AppSpacing.xs),
                 Expanded(
-                  child: Text(
-                    item.question,
-                    style: theme.textTheme.titleSmall,
-                  ),
+                  child: Text(item.question, style: theme.textTheme.titleSmall),
                 ),
               ],
             ),

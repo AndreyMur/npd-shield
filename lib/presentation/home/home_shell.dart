@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_tokens.dart';
 import '../../data/backup/backup_service.dart';
 import '../../data/files/backup_file_picker.dart';
 import '../../data/files/export_file_saver.dart';
@@ -95,9 +96,6 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   /// Индекс раздела «Уведомления» в списке разделов.
   static const _notificationsIndex = 8;
-
-  /// Ширина, с которой включается боковая навигация.
-  static const _wideBreakpoint = 900.0;
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -353,7 +351,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     final destinations = _destinations();
-    final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final wide = MediaQuery.sizeOf(context).width >= AppBreakpoints.wide;
     final screens = _screens(showMenuButton: !wide);
 
     if (wide) {
