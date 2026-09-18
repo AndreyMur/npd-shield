@@ -6,6 +6,7 @@ import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/notification_settings_repository.dart';
 import '../../data/services/activity_spheres_service.dart';
 import '../../domain/profile/contractor_profile.dart';
+import '../about/app_about.dart';
 import 'data_management_dialogs.dart';
 import 'notification_settings_screen.dart';
 import 'profile_edit_screen.dart';
@@ -152,19 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showAbout() {
-    showAboutDialog(
-      context: context,
-      applicationName: 'NPD Shield',
-      applicationVersion: '1.0.0',
-      applicationIcon: const Icon(Icons.shield_outlined, size: 40),
-      children: const [
-        Text(
-          'Помощник самозанятого на НПД: учёт доходов и расходов, лимит '
-          '2,4 млн ₽, налог 6%, генератор договоров, чеков и актов, проверка '
-          'контрагентов и уведомления.',
-        ),
-      ],
-    );
+    showAppAboutDialog(context);
   }
 
   @override
@@ -295,7 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             key: const Key('settings_about'),
             leading: const Icon(Icons.info_outline),
             title: const Text('NPD Shield'),
-            subtitle: const Text('Версия 1.0.0'),
+            subtitle: const Text('Версия $appVersion'),
             trailing: const Icon(Icons.chevron_right),
             onTap: _showAbout,
           ),

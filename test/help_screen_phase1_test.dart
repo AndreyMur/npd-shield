@@ -110,7 +110,7 @@ void main() {
       expect(find.byKey(const Key('help_screen')), findsOneWidget);
     });
 
-    testWidgets('HelpScreen показывает заголовок, поиск и пустой список', (
+    testWidgets('HelpScreen показывает заголовок, поиск и контент', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -126,7 +126,7 @@ void main() {
         ),
       );
       expect(search.enabled, isFalse);
-      expect(find.byKey(const Key('help_sections_empty')), findsOneWidget);
+      expect(find.byKey(const Key('help_quick_start_title')), findsOneWidget);
     });
   });
 }
