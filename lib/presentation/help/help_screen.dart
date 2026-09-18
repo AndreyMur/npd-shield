@@ -10,8 +10,9 @@ import 'help_article_screen.dart';
 /// Экран раздела «Помощь».
 ///
 /// Показывает блок «С чего начать» для новых пользователей и оглавление
-/// справочника по разделам приложения. Статьи открываются в отдельном экране
-/// [HelpArticleScreen]. Поиск появится на следующем этапе и пока неактивен.
+/// справочника по разделам приложения. Поле поиска ищет статьи по заголовку и
+/// содержимому офлайн, обновляя результаты по мере ввода. Статьи открываются в
+/// отдельном экране [HelpArticleScreen].
 class HelpScreen extends StatefulWidget {
   /// Открывает боковое меню навигации. Если задан, в шапке появляется
   /// кнопка-гамбургер (используется на телефоне).
@@ -31,6 +32,15 @@ class HelpScreen extends StatefulWidget {
 }
 
 class _HelpScreenState extends State<HelpScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   void _openArticle(HelpArticle article) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -40,13 +50,18 @@ class _HelpScreenState extends State<HelpScreen> {
     );
   }
 
+  void _clearSearch() {
+    _searchController.clear();
+    setState(() => _query = '');
+  }
+
   @override
   Widget build(BuildContext context) {
-    final sections = widget.repository
-        .getSections()
-        .where((section) => section != HelpSection.gettingStarted)
-        .toList();
-    final quickStart = widget.repository.getQuickStartArticles();
+    final query = _query.trim();
+    final isSearching = query.isNotEmpty;
+    final results = isSearching
+        ? widget.repository.search(query)
+        : const <HelpArticle>[];
 
     return Scaffold(
       key: const Key('help_screen'),
@@ -68,49 +83,98 @@ class _HelpScreenState extends State<HelpScreen> {
             AppSpacing.xl,
           ),
           children: [
-            const AppTextField(
-              key: Key('help_search_field'),
-              enabled: false,
+            AppTextField(
+              key: const Key('help_search_field'),
+              controller: _searchController,
               hint: 'Поиск по справочнику',
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _query.isEmpty
+                  ? null
+                  : IconButton(
+                      key: const Key('help_search_clear'),
+                      tooltip: 'Очистить',
+                      icon: const Icon(Icons.close),
+                      onPressed: _clearSearch,
+                    ),
+              onChanged: (value) => setState(() => _query = value),
             ),
             const SizedBox(height: AppSpacing.lg),
-            if (quickStart.isNotEmpty) ...[
-              const _SectionTitle(
-                key: Key('help_quick_start_title'),
-                title: 'С чего начать',
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              for (final article in quickStart) ...[
-                _QuickStartCard(
-                  article: article,
-                  onTap: () => _openArticle(article),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-            ],
-            const _SectionTitle(
-              key: Key('help_toc_title'),
-              title: 'Разделы справочника',
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            for (final section in sections) ...[
-              _SectionAccordion(
-                section: section,
-                articles: widget.repository.getArticlesBySection(section),
-                onOpenArticle: _openArticle,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            _AboutEntry(
-              onTap: () => showAppAboutDialog(context),
-            ),
+            if (isSearching)
+              ..._buildSearchResults(query, results)
+            else
+              ..._buildTableOfContents(),
           ],
         ),
       ),
     );
+  }
+
+  /// Содержимое экрана при активном поиске: результаты или пустое состояние.
+  List<Widget> _buildSearchResults(String query, List<HelpArticle> results) {
+    if (results.isEmpty) {
+      return [
+        _SearchEmptyState(query: query, onOpenTableOfContents: _clearSearch),
+      ];
+    }
+
+    return [
+      _SectionTitle(
+        key: const Key('help_search_results_title'),
+        title: 'Результаты поиска (${results.length})',
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      for (final article in results) ...[
+        _SearchResultTile(
+          article: article,
+          onTap: () => _openArticle(article),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+      ],
+    ];
+  }
+
+  /// Обычное содержимое экрана: «С чего начать», оглавление и «О приложении».
+  List<Widget> _buildTableOfContents() {
+    final sections = widget.repository
+        .getSections()
+        .where((section) => section != HelpSection.gettingStarted)
+        .toList();
+    final quickStart = widget.repository.getQuickStartArticles();
+
+    return [
+      if (quickStart.isNotEmpty) ...[
+        const _SectionTitle(
+          key: Key('help_quick_start_title'),
+          title: 'С чего начать',
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        for (final article in quickStart) ...[
+          _QuickStartCard(
+            article: article,
+            onTap: () => _openArticle(article),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+        ],
+        const SizedBox(height: AppSpacing.sm),
+      ],
+      const _SectionTitle(
+        key: Key('help_toc_title'),
+        title: 'Разделы справочника',
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      for (final section in sections) ...[
+        _SectionAccordion(
+          section: section,
+          articles: widget.repository.getArticlesBySection(section),
+          onOpenArticle: _openArticle,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+      ],
+      const SizedBox(height: AppSpacing.sm),
+      _AboutEntry(
+        onTap: () => showAppAboutDialog(context),
+      ),
+    ];
   }
 }
 
@@ -180,6 +244,76 @@ class _QuickStartCard extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Icon(Icons.chevron_right, color: tokens.muted),
         ],
+      ),
+    );
+  }
+}
+
+/// Плитка результата поиска: название статьи и раздел, тап открывает статью.
+class _SearchResultTile extends StatelessWidget {
+  final HelpArticle article;
+  final VoidCallback onTap;
+
+  const _SearchResultTile({required this.article, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = AppTokens.of(context);
+    return AppCard(
+      key: Key('help_search_result_${article.id}'),
+      onTap: onTap,
+      semanticLabel: 'Результат поиска: ${article.title}',
+      child: Row(
+        children: [
+          Icon(Icons.search, size: 20, color: tokens.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(article.title, style: theme.textTheme.titleSmall),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  article.section.label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: tokens.muted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(Icons.chevron_right, color: tokens.muted),
+        ],
+      ),
+    );
+  }
+}
+
+/// Состояние «нет результатов» с предложением открыть оглавление.
+class _SearchEmptyState extends StatelessWidget {
+  final String query;
+  final VoidCallback onOpenTableOfContents;
+
+  const _SearchEmptyState({
+    required this.query,
+    required this.onOpenTableOfContents,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AppEmptyState(
+      key: const Key('help_search_empty'),
+      icon: Icons.search_off,
+      title: 'Ничего не найдено',
+      message: 'По запросу «$query» статей не найдено. Измените запрос '
+          'или откройте оглавление справочника.',
+      action: AppButton(
+        key: const Key('help_search_open_toc'),
+        label: 'Открыть оглавление',
+        icon: Icons.list_alt,
+        variant: AppButtonVariant.secondary,
+        onPressed: onOpenTableOfContents,
       ),
     );
   }
