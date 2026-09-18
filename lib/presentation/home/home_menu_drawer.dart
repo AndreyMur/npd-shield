@@ -62,6 +62,7 @@ class HomeMenuDrawer extends StatelessWidget {
                   return ListTile(
                     key: Key('home_menu_item_$index'),
                     selected: selected,
+                    minTileHeight: AppSpacing.xxl,
                     selectedTileColor: tokens.primary.withValues(alpha: 0.12),
                     leading: selected
                         ? destination.selectedIcon

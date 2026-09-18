@@ -20,11 +20,16 @@ class ClientsScreen extends StatefulWidget {
   final TransactionRepository transactionRepository;
   final DocumentRepository documentRepository;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const ClientsScreen({
     super.key,
     required this.repository,
     required this.transactionRepository,
     required this.documentRepository,
+    this.onOpenMenu,
   });
 
   @override
@@ -149,7 +154,15 @@ class _ClientsScreenState extends State<ClientsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Клиенты')),
+      appBar: AppBar(
+        title: const Text('Клиенты'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('clients_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('clients_add_button'),
         onPressed: () => _openForm(),

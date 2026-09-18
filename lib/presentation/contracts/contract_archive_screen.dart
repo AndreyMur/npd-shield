@@ -60,6 +60,10 @@ class ContractArchiveScreen extends StatefulWidget {
   /// Необязательный генератор PDF акта (для тестов).
   final ActPdfGenerator? actPdfGenerator;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const ContractArchiveScreen({
     super.key,
     required this.draftRepository,
@@ -75,6 +79,7 @@ class ContractArchiveScreen extends StatefulWidget {
     this.shareService,
     this.previewBuilder,
     this.actPdfGenerator,
+    this.onOpenMenu,
   });
 
   @override
@@ -388,7 +393,15 @@ class _ContractArchiveScreenState extends State<ContractArchiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Мои договоры')),
+      appBar: AppBar(
+        title: const Text('Мои договоры'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('contract_archive_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       body: Column(
         children: [
           Padding(

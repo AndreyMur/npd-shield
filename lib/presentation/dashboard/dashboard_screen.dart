@@ -6,6 +6,7 @@ import '../../core/theme/app_icons.dart';
 import '../../core/theme/app_motion.dart';
 import '../../core/theme/app_tokens.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/widgets.dart';
 import '../../data/models/transaction.dart';
 import '../../data/pdf/contract_pdf_font_loader.dart';
 import '../../data/pdf/contract_pdf_share_service.dart';
@@ -65,11 +66,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Дашборд'),
         leading: widget.onOpenMenu == null
             ? null
-            : IconButton(
+            : AppMenuButton(
                 key: const Key('dashboard_menu_button'),
-                icon: const Icon(Icons.menu),
-                tooltip: 'Меню',
-                onPressed: widget.onOpenMenu,
+                onPressed: widget.onOpenMenu!,
               ),
       ),
       body: Column(

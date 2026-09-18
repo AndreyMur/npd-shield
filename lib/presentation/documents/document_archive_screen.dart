@@ -31,12 +31,17 @@ class DocumentArchiveScreen extends StatefulWidget {
   /// Сервис шаринга и сохранения PDF (по умолчанию — системный).
   final ContractPdfShareService? shareService;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const DocumentArchiveScreen({
     super.key,
     required this.documentRepository,
     this.pdfGenerator,
     this.fontLoader,
     this.shareService,
+    this.onOpenMenu,
   });
 
   @override
@@ -186,6 +191,12 @@ class _DocumentArchiveScreenState extends State<DocumentArchiveScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Архив документов'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('document_archive_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
         actions: [
           IconButton(
             key: const Key('document_group_toggle'),

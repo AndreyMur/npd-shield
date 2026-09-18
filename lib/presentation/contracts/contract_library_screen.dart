@@ -47,6 +47,10 @@ class ContractLibraryScreen extends StatefulWidget {
   /// Справочник клиентов. Если задан — заказчика можно выбрать из него.
   final ClientRepository? clientRepository;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const ContractLibraryScreen({
     super.key,
     required this.templateRepository,
@@ -61,6 +65,7 @@ class ContractLibraryScreen extends StatefulWidget {
     this.riskReportRepository,
     this.documentRepository,
     this.clientRepository,
+    this.onOpenMenu,
   });
 
   @override
@@ -124,7 +129,15 @@ class _ContractLibraryScreenState extends State<ContractLibraryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Библиотека шаблонов')),
+      appBar: AppBar(
+        title: const Text('Библиотека шаблонов'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('contract_library_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       body: FutureBuilder<List<Template>>(
         future: _templatesFuture,
         builder: (context, snapshot) {

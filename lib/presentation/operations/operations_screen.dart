@@ -38,11 +38,16 @@ class OperationsScreen extends StatefulWidget {
   /// «Сейчас» для стабильности тестов.
   final DateTime? now;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const OperationsScreen({
     super.key,
     required this.repository,
     this.clientRepository,
     this.now,
+    this.onOpenMenu,
   });
 
   @override
@@ -269,7 +274,15 @@ class _OperationsScreenState extends State<OperationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Операции')),
+      appBar: AppBar(
+        title: const Text('Операции'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('operations_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('operations_add_button'),
         onPressed: () => _openForm(),

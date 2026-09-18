@@ -29,11 +29,16 @@ class InvoicesScreen extends StatefulWidget {
   /// «Сейчас» для стабильности тестов.
   final DateTime? now;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const InvoicesScreen({
     super.key,
     required this.repository,
     this.clientRepository,
     this.now,
+    this.onOpenMenu,
   });
 
   @override
@@ -188,7 +193,15 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Счета')),
+      appBar: AppBar(
+        title: const Text('Счета'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('invoices_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('invoices_add_button'),
         onPressed: () => _openForm(),

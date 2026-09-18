@@ -50,6 +50,10 @@ class ReportsScreen extends StatefulWidget {
   /// Генерация PDF-отчёта. По умолчанию — встроенный сервис с кириллицей.
   final ReportPdfBuilder? pdfBuilder;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const ReportsScreen({
     super.key,
     required this.transactionRepository,
@@ -59,6 +63,7 @@ class ReportsScreen extends StatefulWidget {
     required this.backupFilePicker,
     this.now,
     this.pdfBuilder,
+    this.onOpenMenu,
   });
 
   @override
@@ -271,7 +276,15 @@ class _ReportsScreenState extends State<ReportsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Отчёты')),
+      appBar: AppBar(
+        title: const Text('Отчёты'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('reports_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       body: ListView(
         key: const Key('reports_list'),
         padding: AppSpacing.screen,
