@@ -125,7 +125,7 @@ void main() {
           matching: find.byType(TextField),
         ),
       );
-      expect(search.enabled, isFalse);
+      expect(search.enabled, isTrue);
       expect(find.byKey(const Key('help_quick_start_title')), findsOneWidget);
     });
   });

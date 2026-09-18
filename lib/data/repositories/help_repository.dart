@@ -1,4 +1,5 @@
 import '../../domain/help/help_article.dart';
+import '../../domain/help/help_search.dart';
 import '../help_articles.dart';
 
 /// Репозиторий контента справочника «Помощь».
@@ -23,6 +24,12 @@ abstract class HelpRepository {
 
   /// Возвращает статьи для блока «С чего начать».
   List<HelpArticle> getQuickStartArticles();
+
+  /// Ищет статьи по заголовку и содержимому.
+  ///
+  /// Поиск выполняется офлайн по встроенному контенту и не требует сети.
+  /// Пустой запрос возвращает пустой список.
+  List<HelpArticle> search(String query);
 }
 
 /// Реализация репозитория на основе встроенного набора статей.
@@ -61,5 +68,10 @@ class EmbeddedHelpRepository implements HelpRepository {
   @override
   List<HelpArticle> getQuickStartArticles() {
     return List.unmodifiable(articles.where((article) => article.quickStart));
+  }
+
+  @override
+  List<HelpArticle> search(String query) {
+    return searchHelpArticles(articles, query);
   }
 }
