@@ -35,6 +35,7 @@ void main() {
     'Уведомления',
     'Отчёты',
     'Настройки',
+    'Помощь',
   ];
 
   const menuButtonKeys = [
@@ -49,6 +50,7 @@ void main() {
     'notifications_menu_button',
     'reports_menu_button',
     'settings_menu_button',
+    'help_menu_button',
   ];
 
   AppNotification unreadNote(int index) => AppNotification(
@@ -111,7 +113,7 @@ void main() {
           .index!;
 
   group('Фаза 40: гамбургер на всех экранах', () {
-    testWidgets('гамбургер открывает меню на всех 11 экранах разделов', (
+    testWidgets('гамбургер открывает меню на всех 12 экранах разделов', (
       tester,
     ) async {
       await pumpShell(tester);

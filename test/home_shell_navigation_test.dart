@@ -34,6 +34,7 @@ void main() {
     'Уведомления',
     'Отчёты',
     'Настройки',
+    'Помощь',
   ];
 
   Future<void> pumpShell(WidgetTester tester, {required double width}) async {
@@ -105,7 +106,7 @@ void main() {
       expect(find.byType(HomeMenuDrawer), findsOneWidget);
     });
 
-    testWidgets('меню содержит все 11 разделов с иконкой и текстом', (
+    testWidgets('меню содержит все 12 разделов с иконкой и текстом', (
       tester,
     ) async {
       await pumpShell(tester, width: 400);

@@ -24,6 +24,7 @@ import '../contracts/contract_archive_screen.dart';
 import '../contracts/contract_library_screen.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../documents/document_archive_screen.dart';
+import '../help/help_screen.dart';
 import '../invoices/invoices_screen.dart';
 import '../notifications/invoice_notification_action.dart';
 import '../notifications/notification_center_screen.dart';
@@ -35,7 +36,7 @@ import '../settings/settings_screen.dart';
 import 'home_menu_drawer.dart';
 
 /// Навигационная оболочка приложения: дашборд, операции, шаблоны, договоры,
-/// документы, Risk Shield, уведомления и настройки.
+/// документы, Risk Shield, уведомления, настройки и помощь.
 ///
 /// На узких экранах (мобильные) используется нижняя панель, на широких
 /// (десктоп) — боковая навигация.
@@ -279,6 +280,7 @@ class _HomeShellState extends State<HomeShell> {
         onThemeModeChanged: widget.onThemeModeChanged,
         onOpenMenu: onOpenMenu,
       ),
+      HelpScreen(onOpenMenu: onOpenMenu),
     ];
   }
 
@@ -339,6 +341,11 @@ class _HomeShellState extends State<HomeShell> {
         outline: Icons.settings_outlined,
         filled: Icons.settings,
         label: 'Настройки',
+      ),
+      _destination(
+        outline: Icons.help_outline,
+        filled: Icons.help,
+        label: 'Помощь',
       ),
     ];
   }
