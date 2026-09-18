@@ -32,6 +32,7 @@ import '../operations/transaction_form_screen.dart';
 import '../reports/reports_screen.dart';
 import '../risk/risk_shield_screen.dart';
 import '../settings/settings_screen.dart';
+import 'home_menu_drawer.dart';
 
 /// Навигационная оболочка приложения: дашборд, операции, шаблоны, договоры,
 /// документы, Risk Shield, уведомления и настройки.
@@ -97,6 +98,8 @@ class _HomeShellState extends State<HomeShell> {
   /// Ширина, с которой включается боковая навигация.
   static const _wideBreakpoint = 900.0;
 
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+
   int _selectedIndex = 0;
   int _unreadCount = 0;
 
@@ -123,6 +126,18 @@ class _HomeShellState extends State<HomeShell> {
   void _select(int index) {
     setState(() => _selectedIndex = index);
     if (index == _notificationsIndex) _refreshUnreadCount();
+  }
+
+  /// Открывает боковое меню на телефоне.
+  void _openMenu() {
+    _scaffoldKey.currentState?.openDrawer();
+  }
+
+  /// Обрабатывает выбор раздела в боковом меню: закрывает меню и
+  /// переключает экран, сохраняя состояние экранов через `IndexedStack`.
+  void _selectFromMenu(int index) {
+    Navigator.of(context).pop();
+    _select(index);
   }
 
   Future<void> _openAddOperation() async {
@@ -180,12 +195,13 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
-  List<Widget> _screens() {
+  List<Widget> _screens({required bool showMenuButton}) {
     return [
       DashboardScreen(
         repository: widget.transactionRepository,
         documentRepository: widget.documentRepository,
         onAddOperation: _openAddOperation,
+        onOpenMenu: showMenuButton ? _openMenu : null,
       ),
       OperationsScreen(
         repository: widget.transactionRepository,
@@ -317,9 +333,9 @@ class _HomeShellState extends State<HomeShell> {
 
   @override
   Widget build(BuildContext context) {
-    final screens = _screens();
     final destinations = _destinations();
     final wide = MediaQuery.sizeOf(context).width >= _wideBreakpoint;
+    final screens = _screens(showMenuButton: !wide);
 
     if (wide) {
       return Scaffold(
@@ -341,7 +357,11 @@ class _HomeShellState extends State<HomeShell> {
             ),
             const VerticalDivider(width: 1),
             Expanded(
-              child: IndexedStack(index: _selectedIndex, children: screens),
+              child: IndexedStack(
+                key: const Key('home_indexed_stack'),
+                index: _selectedIndex,
+                children: screens,
+              ),
             ),
           ],
         ),
@@ -349,11 +369,16 @@ class _HomeShellState extends State<HomeShell> {
     }
 
     return Scaffold(
-      body: IndexedStack(index: _selectedIndex, children: screens),
-      bottomNavigationBar: NavigationBar(
+      key: _scaffoldKey,
+      drawer: HomeMenuDrawer(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: _select,
         destinations: destinations,
+        onSelected: _selectFromMenu,
+      ),
+      body: IndexedStack(
+        key: const Key('home_indexed_stack'),
+        index: _selectedIndex,
+        children: screens,
       ),
     );
   }

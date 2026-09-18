@@ -76,6 +76,18 @@ abstract final class AppTypography {
     fontWeight: FontWeight.w500,
   );
 
+  /// Подпись пункта бокового меню (12 / 1.33, medium).
+  ///
+  /// Намеренно меньше подписей нижней панели навигации (`labelMedium`),
+  /// чтобы 11 разделов помещались в меню и оставались читаемыми.
+  static const menuLabel = TextStyle(
+    fontFamily: AppFonts.inter,
+    fontFamilyFallback: AppFonts.interFallback,
+    fontSize: 12,
+    height: 1.33,
+    fontWeight: FontWeight.w500,
+  );
+
   /// Крупная числовая метрика (28 / 1.29, semibold, mono).
   static const metricLarge = TextStyle(
     fontFamily: AppFonts.jetBrainsMono,
