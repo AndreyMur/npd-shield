@@ -30,6 +30,10 @@ class DashboardScreen extends StatefulWidget {
   /// показывает кнопку «Добавить операцию».
   final VoidCallback? onAddOperation;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   /// Необязательные зависимости карточки документов (для тестов).
   final DocumentPdfGenerator? pdfGenerator;
   final ContractPdfShareService? shareService;
@@ -41,6 +45,7 @@ class DashboardScreen extends StatefulWidget {
     this.now,
     this.documentRepository,
     this.onAddOperation,
+    this.onOpenMenu,
     this.pdfGenerator,
     this.shareService,
     this.fontLoader,
@@ -58,6 +63,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Дашборд'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : IconButton(
+                key: const Key('dashboard_menu_button'),
+                icon: const Icon(Icons.menu),
+                tooltip: 'Меню',
+                onPressed: widget.onOpenMenu,
+              ),
       ),
       body: Column(
         children: [
