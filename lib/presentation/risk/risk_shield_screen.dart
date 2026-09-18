@@ -22,11 +22,16 @@ class RiskShieldScreen extends StatefulWidget {
   /// Репозиторий результатов проверок; если задан — отчёт сохраняется.
   final RiskReportRepository? reportRepository;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const RiskShieldScreen({
     super.key,
     required this.analyzer,
     required this.filePicker,
     this.reportRepository,
+    this.onOpenMenu,
   });
 
   @override
@@ -97,6 +102,12 @@ class _RiskShieldScreenState extends State<RiskShieldScreen> {
       key: const Key('risk_shield_screen'),
       appBar: AppBar(
         title: const Text('Risk Shield'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('risk_shield_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
         actions: [
           IconButton(
             key: const Key('risk_info_button'),

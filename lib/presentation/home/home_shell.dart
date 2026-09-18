@@ -173,6 +173,7 @@ class _HomeShellState extends State<HomeShell> {
 
   Widget _badge(IconData icon) {
     return Badge(
+      key: const Key('home_unread_badge'),
       isLabelVisible: _unreadCount > 0,
       label: Text('$_unreadCount'),
       child: AppIcon(icon),
@@ -196,25 +197,29 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   List<Widget> _screens({required bool showMenuButton}) {
+    final onOpenMenu = showMenuButton ? _openMenu : null;
     return [
       DashboardScreen(
         repository: widget.transactionRepository,
         documentRepository: widget.documentRepository,
         onAddOperation: _openAddOperation,
-        onOpenMenu: showMenuButton ? _openMenu : null,
+        onOpenMenu: onOpenMenu,
       ),
       OperationsScreen(
         repository: widget.transactionRepository,
         clientRepository: widget.clientRepository,
+        onOpenMenu: onOpenMenu,
       ),
       ClientsScreen(
         repository: widget.clientRepository,
         transactionRepository: widget.transactionRepository,
         documentRepository: widget.documentRepository,
+        onOpenMenu: onOpenMenu,
       ),
       InvoicesScreen(
         repository: widget.invoiceRepository,
         clientRepository: widget.clientRepository,
+        onOpenMenu: onOpenMenu,
       ),
       ContractLibraryScreen(
         templateRepository: widget.templateRepository,
@@ -224,6 +229,7 @@ class _HomeShellState extends State<HomeShell> {
         riskReportRepository: widget.riskReportRepository,
         documentRepository: widget.documentRepository,
         clientRepository: widget.clientRepository,
+        onOpenMenu: onOpenMenu,
       ),
       ContractArchiveScreen(
         draftRepository: widget.draftRepository,
@@ -234,19 +240,23 @@ class _HomeShellState extends State<HomeShell> {
         documentRepository: widget.documentRepository,
         transactionRepository: widget.transactionRepository,
         clientRepository: widget.clientRepository,
+        onOpenMenu: onOpenMenu,
       ),
       DocumentArchiveScreen(
         documentRepository: widget.documentRepository,
+        onOpenMenu: onOpenMenu,
       ),
       RiskShieldScreen(
         analyzer: widget.riskAnalyzer,
         filePicker: widget.textFilePicker,
         reportRepository: widget.riskReportRepository,
+        onOpenMenu: onOpenMenu,
       ),
       NotificationCenterScreen(
         repository: widget.notificationRepository,
         notificationService: widget.notificationService,
         onNotificationAction: _handleNotificationAction,
+        onOpenMenu: onOpenMenu,
         onUnreadCountChanged: (count) {
           if (count != _unreadCount) setState(() => _unreadCount = count);
         },
@@ -257,6 +267,7 @@ class _HomeShellState extends State<HomeShell> {
         backupGateway: widget.backupGateway,
         fileSaver: widget.fileSaver,
         backupFilePicker: widget.backupFilePicker,
+        onOpenMenu: onOpenMenu,
       ),
       SettingsScreen(
         onLoadDemoData: widget.onLoadDemoData,
@@ -266,6 +277,7 @@ class _HomeShellState extends State<HomeShell> {
         notificationSettingsRepository: widget.notificationSettingsRepository,
         themeMode: widget.themeMode,
         onThemeModeChanged: widget.onThemeModeChanged,
+        onOpenMenu: onOpenMenu,
       ),
     ];
   }

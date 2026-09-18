@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/widgets/widgets.dart';
 import '../../data/models/transaction.dart';
 import '../../data/repositories/contractor_profile_repository.dart';
 import '../../data/repositories/notification_settings_repository.dart';
@@ -36,6 +37,10 @@ class SettingsScreen extends StatefulWidget {
   /// Применяет выбранную тему.
   final ValueChanged<ThemeMode> onThemeModeChanged;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const SettingsScreen({
     super.key,
     required this.onLoadDemoData,
@@ -45,6 +50,7 @@ class SettingsScreen extends StatefulWidget {
     required this.notificationSettingsRepository,
     required this.themeMode,
     required this.onThemeModeChanged,
+    this.onOpenMenu,
   });
 
   @override
@@ -165,7 +171,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Настройки')),
+      appBar: AppBar(
+        title: const Text('Настройки'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('settings_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
+      ),
       body: ListView(
         children: [
           _SectionHeader(title: 'Профиль'),

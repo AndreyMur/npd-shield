@@ -182,7 +182,7 @@ class _AppButtonState extends State<AppButton> {
       children: [
         Icon(icon),
         const SizedBox(width: AppSpacing.xs),
-        Text(widget.label),
+        Flexible(child: Text(widget.label)),
       ],
     );
   }

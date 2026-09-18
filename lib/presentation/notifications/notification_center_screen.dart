@@ -69,6 +69,10 @@ class NotificationCenterScreen extends StatefulWidget {
   /// Изменение количества непрочитанных (для значка в навигации).
   final ValueChanged<int>? onUnreadCountChanged;
 
+  /// Открывает боковое меню навигации. Если задан, в шапке появляется
+  /// кнопка-гамбургер (используется на телефоне).
+  final VoidCallback? onOpenMenu;
+
   const NotificationCenterScreen({
     super.key,
     required this.repository,
@@ -77,6 +81,7 @@ class NotificationCenterScreen extends StatefulWidget {
     this.onNotificationTap,
     this.onNotificationAction,
     this.onUnreadCountChanged,
+    this.onOpenMenu,
   });
 
   @override
@@ -245,6 +250,12 @@ class _NotificationCenterScreenState extends State<NotificationCenterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Уведомления'),
+        leading: widget.onOpenMenu == null
+            ? null
+            : AppMenuButton(
+                key: const Key('notifications_menu_button'),
+                onPressed: widget.onOpenMenu!,
+              ),
         actions: [
           if (_unreadCount > 0)
             IconButton(
