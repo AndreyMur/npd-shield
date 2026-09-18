@@ -58,7 +58,7 @@ void main() {
       await pumpDashboard(tester, repo, now: DateTime(2026, 8, 31));
 
       expect(find.text('Все сферы'), findsOneWidget);
-      expect(find.byType(SegmentedButton<DashboardFilter>), findsOneWidget);
+      expect(find.byKey(const Key('dashboard_sphere_slider')), findsOneWidget);
       expect(find.text('2 200,00 ₽'), findsWidgets);
       expect(find.text('1 500,00 ₽'), findsWidgets);
       expect(find.text('700,00 ₽'), findsWidgets);

@@ -61,6 +61,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = AppTokens.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Дашборд'),
@@ -74,32 +75,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.xs,
-            ),
-            child: SegmentedButton<DashboardFilter>(
-              segments: const [
-                ButtonSegment(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: AppChipSlider<DashboardFilter>(
+              key: const Key('dashboard_sphere_slider'),
+              semanticLabel: 'Фильтр сфер деятельности',
+              selected: _filter,
+              onChanged: (value) => setState(() => _filter = value),
+              options: [
+                AppSegmentOption(
                   value: DashboardFilter.all,
-                  label: Text('Все'),
-                  icon: Icon(Icons.all_inclusive),
+                  label: 'Все',
+                  icon: Icons.all_inclusive,
+                  accent: tokens.primary,
                 ),
-                ButtonSegment(
+                AppSegmentOption(
                   value: DashboardFilter.it,
-                  label: Text('IT'),
-                  icon: Icon(Icons.code),
+                  label: 'IT',
+                  icon: Icons.code,
+                  accent: tokens.sphereIt,
                 ),
-                ButtonSegment(
+                AppSegmentOption(
                   value: DashboardFilter.logistics,
-                  label: Text('Логистика'),
-                  icon: Icon(Icons.local_shipping),
+                  label: 'Логистика',
+                  icon: Icons.local_shipping,
+                  accent: tokens.sphereLogistics,
                 ),
               ],
-              selected: {_filter},
-              onSelectionChanged: (selection) {
-                setState(() => _filter = selection.first);
-              },
             ),
           ),
           Expanded(

@@ -50,7 +50,7 @@ void main() {
 
     expect(find.byKey(const Key('dashboard_empty')), findsOneWidget);
     expect(find.text('Пока нет операций'), findsOneWidget);
-    expect(find.byType(SegmentedButton<DashboardFilter>), findsOneWidget);
+    expect(find.byKey(const Key('dashboard_sphere_slider')), findsOneWidget);
     expect(find.text('0,00 ₽'), findsNothing);
   });
 

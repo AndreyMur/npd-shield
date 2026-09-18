@@ -1,6 +1,7 @@
 export 'app_button.dart';
 export 'app_card.dart';
 export 'app_chip.dart';
+export 'app_chip_slider.dart';
 export 'app_menu_button.dart';
 export 'app_pressable.dart';
 export 'app_segmented_control.dart';
