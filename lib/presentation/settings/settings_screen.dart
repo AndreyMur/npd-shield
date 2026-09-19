@@ -283,7 +283,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ListTile(
             key: const Key('settings_about'),
             leading: const Icon(Icons.info_outline),
-            title: const Text('NPD Shield'),
+            title: const Text('Своё дело'),
             subtitle: const Text('Версия $appVersion'),
             trailing: const Icon(Icons.chevron_right),
             onTap: _showAbout,

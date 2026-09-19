@@ -19,7 +19,7 @@ class FlutterLocalNotificationService implements NotificationService {
   bool _supported = true;
 
   static const String _channelId = 'npd_shield_notifications';
-  static const String _channelName = 'NPD Shield';
+  static const String _channelName = 'Своё дело';
   static const String _channelDescription =
       'Уведомления о лимите, счетах, аномалиях и дайджесте';
 
@@ -31,7 +31,7 @@ class FlutterLocalNotificationService implements NotificationService {
       iOS: DarwinInitializationSettings(),
       macOS: DarwinInitializationSettings(),
       windows: WindowsInitializationSettings(
-        appName: 'NPD Shield',
+        appName: 'Своё дело',
         appUserModelId: 'com.npdshield.npdShield',
         guid: 'e0a1b2c3-4d5e-6f70-8192-a3b4c5d6e7f8',
       ),

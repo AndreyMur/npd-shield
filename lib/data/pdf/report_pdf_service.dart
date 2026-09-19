@@ -135,7 +135,7 @@ class ReportPdfService {
       pw.Divider(color: PdfColors.grey400),
       pw.SizedBox(height: 6),
       pw.Text(
-        'Отчёт сформирован в приложении NPD Shield на основании введённых '
+        'Отчёт сформирован в приложении «Своё дело» на основании введённых '
         'операций. $kNoLegalForceDisclaimer',
         style: pw.TextStyle(
           fontSize: typography.bodyFontSize - 2,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Название приложения.
-const String appName = 'NPD Shield';
+const String appName = 'Своё дело';
 
 /// Текущая версия приложения.
 const String appVersion = '1.0.0';

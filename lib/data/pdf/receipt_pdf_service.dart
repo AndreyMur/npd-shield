@@ -143,7 +143,7 @@ class ReceiptPdfService {
       pw.Divider(color: PdfColors.grey400),
       pw.SizedBox(height: 6),
       pw.Text(
-        'Чек сформирован в приложении NPD Shield. Для придания чека '
+        'Чек сформирован в приложении «Своё дело». Для придания чека '
         'юридической силы зарегистрируйте расчёт в приложении «Мой налог» '
         'ФНС России. $kNoLegalForceDisclaimer',
         style: pw.TextStyle(
