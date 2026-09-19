@@ -64,7 +64,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final tokens = AppTokens.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Дашборд'),
+        title: const _DashboardBrandTitle(),
         leading: widget.onOpenMenu == null
             ? null
             : AppMenuButton(
@@ -176,6 +176,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
           transactionCount: transactionCount,
         );
     }
+  }
+}
+
+/// Шапка дашборда: логотип приложения и его название.
+class _DashboardBrandTitle extends StatelessWidget {
+  const _DashboardBrandTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/branding/logo_tile.png',
+            width: 28,
+            height: 28,
+            errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.shield, size: 24),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        const Text('Своё дело'),
+      ],
+    );
   }
 }
 

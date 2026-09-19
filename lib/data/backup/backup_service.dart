@@ -295,17 +295,17 @@ class BackupService implements BackupGateway {
       decoded = jsonDecode(utf8.decode(bytes));
     } catch (_) {
       throw const BackupFormatException(
-        'Файл повреждён или не является резервной копией NPD Shield.',
+        'Файл повреждён или не является резервной копией «Своё дело».',
       );
     }
     if (decoded is! Map<String, dynamic>) {
       throw const BackupFormatException(
-        'Файл повреждён или не является резервной копией NPD Shield.',
+        'Файл повреждён или не является резервной копией «Своё дело».',
       );
     }
     if (decoded['format'] != backupFormatId) {
       throw const BackupFormatException(
-        'Неизвестный формат файла. Выберите резервную копию NPD Shield.',
+        'Неизвестный формат файла. Выберите резервную копию «Своё дело».',
       );
     }
     final version = decoded['version'];

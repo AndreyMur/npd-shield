@@ -40,6 +40,7 @@ import 'data/services/first_run_service.dart';
 import 'domain/risk/risk_analyzer.dart';
 import 'presentation/home/home_shell.dart';
 import 'presentation/onboarding/onboarding_screen.dart';
+import 'presentation/splash/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -179,7 +180,7 @@ class _StartupErrorApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      title: 'NPD Shield',
+      title: 'Своё дело',
       home: Scaffold(
         body: Center(child: Text('Не удалось инициализировать базу данных')),
       ),
@@ -241,6 +242,9 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
   /// `null` пока состояние онбординга не загружено.
   bool? _onboardingCompleted;
 
+  /// Показан ли уже фирменный сплэш-экран.
+  bool _splashFinished = false;
+
   @override
   void initState() {
     super.initState();
@@ -294,7 +298,7 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
     return DynamicColorBuilder(
       builder: (lightDynamic, darkDynamic) {
         return MaterialApp(
-          title: 'NPD Shield',
+          title: 'Своё дело',
           themeMode: _themeMode,
           theme: AppTheme.light(lightDynamic),
           darkTheme: AppTheme.dark(darkDynamic),
@@ -305,6 +309,11 @@ class _NpdShieldAppState extends State<NpdShieldApp> {
   }
 
   Widget _buildHome() {
+    if (!_splashFinished) {
+      return SplashScreen(
+        onFinished: () => setState(() => _splashFinished = true),
+      );
+    }
     if (_onboardingCompleted == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),

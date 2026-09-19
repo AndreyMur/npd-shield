@@ -170,7 +170,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings_about')));
     await tester.pumpAndSettle();
 
-    expect(find.text('NPD Shield'), findsWidgets);
+    expect(find.text('Своё дело'), findsWidgets);
     expect(find.text('Версия 1.0.0'), findsOneWidget);
   });
 

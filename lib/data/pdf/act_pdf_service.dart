@@ -139,7 +139,7 @@ class ActPdfService {
       pw.Divider(color: PdfColors.grey400),
       pw.SizedBox(height: 6),
       pw.Text(
-        'Акт сформирован в приложении NPD Shield. $kNoLegalForceDisclaimer',
+        'Акт сформирован в приложении «Своё дело». $kNoLegalForceDisclaimer',
         style: pw.TextStyle(
           fontSize: typography.bodyFontSize - 2,
           color: PdfColors.grey700,

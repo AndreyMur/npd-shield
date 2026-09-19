@@ -118,7 +118,7 @@ void main() {
       await tester.tap(entry);
       await tester.pumpAndSettle();
 
-      expect(find.text('NPD Shield'), findsWidgets);
+      expect(find.text('Своё дело'), findsWidgets);
       expect(find.text('1.0.0'), findsWidgets);
     });
   });

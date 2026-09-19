@@ -47,7 +47,7 @@ class HomeMenuDrawer extends StatelessWidget {
                     color: tokens.primary,
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  Text('NPD Shield', style: theme.textTheme.titleMedium),
+                  Text('Своё дело', style: theme.textTheme.titleMedium),
                 ],
               ),
             ),
